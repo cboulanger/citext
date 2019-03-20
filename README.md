@@ -15,7 +15,7 @@ $ sudo docker build --no-cache -t excite_toolchain .
 ```
 cd excite-docker/Data/1-pdfs
 ```
-**2. Second step:** ExtractingLayout 
+**2. Second step:** Extracting Layout 
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain layout
 ```
@@ -23,20 +23,22 @@ The Outputs will be in This folder :
 ```
 cd excite-docker/Data/2-layouts
 ```
-**3. Third step:** calling Exparser**
+**3. Third step:** Calling Exparser
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain exparser
 ```
 The Outputs will be in This folders :
 ```
-extracted references in plain text format:
+-extracted references in plain text format:
 cd excite-docker/Data/3-refs
-extracted references in xml format:
+
+-extracted references in xml format:
 cd excite-docker/Data/3-refs_seg
-extracted references in BibTeX format: 
+
+-extracted references in BibTeX format: 
 cd excite-docker/Data/3-refs_bibtex 
 ```
-**4. forth step:** Calling Matching
+**4. forth step:** Calling EXMatcher
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain exmatcher
 ```
