@@ -1,22 +1,15 @@
-## Preparation :
-**1. Setup Docker:** 
-
-In order to install Docker on your machine, please refer to This [link](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1).
-
-**2. Put a Copy of source files on server:** 
-
-Put a copy of "excite_toolchain" on your server.
+## How to run
+1. [Install Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1).
+2. Copy all "files" in this repository on your server 
+3. Name of folder will be "excite_toolchain". Enter to the folder with this command:
 ```
 $ cd excite_toolchain
 ```
-**3. Building a Docker image:**
-
-Run this command to Build an image from a Docker file
+4. Build an image from a Dockerfile: Run this command
 ```
 $ sudo docker build --no-cache -t excite_toolchain . 
 ```
 
-## How to run Toolchain:
 **1. Put pdf files in "Data folder":**
 
 Data Folder is located in root of source folder. Put the pdf files in this folder 
@@ -24,7 +17,6 @@ Data Folder is located in root of source folder. Put the pdf files in this folde
 cd excite_toolchain/Data/1-pdfs
 ```
 **1. Layout Extracting:** 
-
 Extracting layouts from pdfs by CERMINE Run this Linux command
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain layout
