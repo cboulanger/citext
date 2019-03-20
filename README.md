@@ -2,6 +2,7 @@
 **1. Setup Docker:** 
 
 In order to install Docker on your machine, please refer to This [link](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1).
+
 **2. Put a Copy of source files on server:** 
 
 Put a copy of "excite_toolchain" on your server.
@@ -24,26 +25,22 @@ cd excite_toolchain/Data/1-pdfs
 ```
 **1. Layout Extracting:** 
 
-Extracting layouts from pdfs by CERMINE
-
-1. Run this Linux command
+Extracting layouts from pdfs by CERMINE Run this Linux command
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain layout
 ```
-
-2. Outputs
-Check This folder to find the Outputa in csv format:
+The Outputs will be in This folder to find the Outputa in csv format:
 ```
-Data/2-layouts
+cd excite_toolchain/Data/2-layouts
 ```
-## Exparser
-For Extracting References by Exparser
+**2. Exparser"**
 
-1. Run this Linux command
+For Extracting References by Exparser Run this Linux command
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain exparser
 ```
-2. Outputs
+
+Outputs
 ```
 extracted references in plain text format:
 Data/3-refs
@@ -53,14 +50,13 @@ extracted references in BibTeX format:
 Data/3-refs_bibtex 
 ```
 
-## Matching
+**3. Matching**
 to call Matching to get matched ID for each reference from Crossref, Run this Linux command
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain exmatcher
 ```
 
-## Outputs
-extracted references in dictionary format: 
+Outputs extracted references in dictionary format: 
 ```
 Data/ 4-refs_crossref
 ```
