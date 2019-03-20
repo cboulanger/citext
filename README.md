@@ -1,8 +1,7 @@
 ## Preparation
 1. [Install Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1).
-2. Copy all "files" in this repository on your server 
-3. The name of folder is "excite_toolchain". 
-4. Change the directory:
+2. Download this repository and copy the files from the local folder to the server.
+3. Change the directory to "excite_toolchain" (which is the name of repository):
 ```
 $ cd excite_toolchain
 ```
