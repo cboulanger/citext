@@ -1,6 +1,6 @@
 ## Preparation
-1. [Install Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1).
-2. Download this repository and copy all downloaded files to the server.
+1. [Install Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1) on your server.
+2. Download this repository and copy all downloaded files to your server.
 3. Change the directory to "excite_toolchain" (which is the name of repository):
 ```
 $ cd excite_toolchain
