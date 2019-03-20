@@ -33,7 +33,7 @@ The Outputs will be in This folder to find the Outputa in csv format:
 ```
 cd excite_toolchain/Data/2-layouts
 ```
-**2. Exparser"**
+**2. Exparser**
 
 For Extracting References by Exparser Run this Linux command
 ```
@@ -43,14 +43,15 @@ $ sudo docker run -v $(pwd):/app excite_toolchain exparser
 Outputs
 ```
 extracted references in plain text format:
-Data/3-refs
+cd excite_toolchain/Data/3-refs
 extracted references in xml format:
-Data/3-refs_seg
+cd excite_toolchain/Data/3-refs_seg
 extracted references in BibTeX format: 
-Data/3-refs_bibtex 
+cd excite_toolchain/Data/3-refs_bibtex 
 ```
 
 **3. Matching**
+
 to call Matching to get matched ID for each reference from Crossref, Run this Linux command
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain exmatcher
@@ -58,5 +59,5 @@ $ sudo docker run -v $(pwd):/app excite_toolchain exmatcher
 
 Outputs extracted references in dictionary format: 
 ```
-Data/ 4-refs_crossref
+cd excite_toolchain/Data/4-refs_crossref
 ```
