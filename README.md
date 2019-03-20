@@ -1,20 +1,20 @@
-# Preparation :
-### Setup Docker
+## Preparation :
+**1. Setup Docker**
 In order to install Docker on your machine, please refer to This [link](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1).
 
-### Put a Copy of files on server
+**2. Put a Copy of files on server**
 Put a copy of "excite_toolchain" on your server.
 ```
 $ cd excite_toolchain
 ```
 
-## Building a Docker image
+**3. Building a Docker image**
 Run this command to Build an image from a Docker file
 ```
 $ sudo docker build --no-cache -t excite_toolchain . 
 ```
 
-# How to run Toolchain:
+## How to run Toolchain:
 ### First Step: Open Data folder 
 Data Folder is located in root of source folder. Put the pdf files in this folder 1-pdfs
 
