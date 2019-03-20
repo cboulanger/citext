@@ -3,12 +3,10 @@
 2. Copy all "files" in this repository on your server 
 3. The name of folder is "excite_toolchain". 
 4. Change the directory:
-
 ```
 $ cd excite_toolchain
 ```
 4. Build an image from a Dockerfile: 
-
 ```
 $ sudo docker build --no-cache -t excite_toolchain . 
 ```
