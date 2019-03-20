@@ -1,19 +1,14 @@
 # Preparation :
 ### Setup Docker
-In order to install Docker on your machine, please refer to This link.
+In order to install Docker on your machine, please refer to This [link](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1).
 
-### put a Copy of code on server
-First of all,  we need to put a copy of excite_toolchain “source files” on server:
-Name of source files folder is: excite_toolchain
-Path of source files on server(for Example): /path_of_source_folder/excite_toolchain
-
-### Change the directory
-Go to the source code directory in server by this command
+### Put a Copy of files on server
+Put a copy of "excite_toolchain" on your server.
 ```
-$ cd /path_of_source_folder/excite_toolchain
+$ cd excite_toolchain
 ```
 
-## Building an image from a Docker file
+## Building a Docker image
 Run this command to Build an image from a Docker file
 ```
 $ sudo docker build --no-cache -t excite_toolchain . 
