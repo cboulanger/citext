@@ -22,7 +22,7 @@ cd excite-docker/Data/1-pdfs
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain layout
 ```
-After that the Output files -Layout files- will be created in this folder :
+The outputs of this step are "Layout files", which will be located in this folder :
 ```
 cd excite-docker/Data/2-layouts
 ```
