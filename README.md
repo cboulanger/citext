@@ -1,7 +1,10 @@
 ## Preparation
 **Step 1:** [Install Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1) on your Linux server.
 
-**Step 2:** Download current repository to your local system and copy all downloaded files to your Linux server.
+**Step 2:** Download the current repository to your local system. 
+Right click on the downloaded file and select "extract all". 
+Change the name of folder to "excite-docker".
+Put this folder to your Linux server
 
 **Step 3:** In server, change the directory to "excite-docker" (which is the name of repository).
 ```
