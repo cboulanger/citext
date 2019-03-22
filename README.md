@@ -2,16 +2,18 @@
 **Step 1:** [Install Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1) on your Linux server.
 
 **Step 2:** Download the current repository to your local system. 
-Right click on the downloaded file and select "extract all". 
-Change the name of folder to "excite-docker".
-Put this folder to your Linux server
+
+1. Right click on the downloaded file and select "extract all". 
+2. Change the name of folder to "excite-docker".
+4. Put this folder to your Linux server.
+3. Please remove all ".gitkeep" from all sub folders in "Data" folder which is located in root .
 
 **Step 3:** In server, change the directory to "excite-docker" (which is the name of repository).
 ```
 $ cd excite-docker
 ```
 
-**Step 4:** Build an image from Docker-file (The name of docker image is excite_toolchain):
+**Step 4:** Build an image from Docker-file. It takes a little time. (The name of docker image is excite_toolchain):
 ```
 $ sudo docker build --no-cache -t excite_toolchain .
 ```
