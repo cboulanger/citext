@@ -1,5 +1,5 @@
 ## Preparation
-**Step 1:** [Install Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1) on your server.
+**Step 1:** [Install Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1) on your Linux server.
 
 **Step 2:** Download current repository to your local system and copy all downloaded files to your Linux server.
 
@@ -16,11 +16,11 @@ $ sudo docker build --no-cache -t excite_toolchain .
 ## How to run
 Please Follow this Step-By-Step Process in Sequence as Described Below.
 
-**Step 1:** the input of this process is PDF file, please put your PDF files in this directory:
+**Step 1:** The input of this process is PDF file, please put your PDF files in this directory:
 ```
 $ cd excite-docker/Data/1-pdfs
 ```
-**Step 2:** Extracting the layout from a PDF will be started by calling a Java module base on CERMINE by executing this command:
+**Step 2:** Extracting the layout from a PDF will be started by calling a Java module base on "CERMINE", by executing this command:
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain layout
 ```
@@ -28,11 +28,11 @@ The outputs of this step are "Layout files", which will be located in this direc
 ```
 $ cd excite-docker/Data/2-layouts
 ```
-**Step 3:** In this step Exparser will be called for extracting references from Layout file by executing this command:
+**Step 3:** In this step "Exparser" will be called for extracting references from "Layout files", by executing this command:
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain exparser
 ```
-The output will be provided in these different formats: plain text, xml and BibTex format and will be located in this directory :
+The output will be provided in these different formats: "plain text", "xml" and "BibTex" format and will be located in this directory :
 ```
 -extracted references in plain text format are available in this directory:
 $ cd excite-docker/Data/3-refs
@@ -43,7 +43,8 @@ $ cd excite-docker/Data/3-refs_seg
 -extracted references in BibTeX format are available in this directory: 
 $ cd excite-docker/Data/3-refs_bibtex 
 ```
-**Step 4:** Calling EXMatcher, .
+**Step 4:** In this step "EXmatcher" will be called for matching references against corresponding items in the defined target bibliographical databases.
+, by executing this command:
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain exmatcher
 ```
