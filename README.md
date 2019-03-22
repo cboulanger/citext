@@ -6,7 +6,7 @@
 1. Right click on the downloaded file and select "extract all". 
 2. Change the name of folder to "excite-docker".
 4. Put this folder to your Linux server.
-3. Please remove all ".gitkeep" files from all sub folders in "Data" folder, "Data"  folder is located in root.
+3. Please remove all ".gitkeep" files from all sub folders in "Data" folder.("Data"  folder is located in root.)
 
 **Step 3:** In server, change the directory to "excite-docker".
 ```
