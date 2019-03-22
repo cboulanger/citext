@@ -8,25 +8,25 @@
 $ cd excite-docker
 ```
 
-**Step 4:** Build an image from Docker-file:
+**Step 4:** Build an image from Docker-file (name of docker image is excite_toolchain):
 ```
 $ sudo docker build --no-cache -t excite_toolchain .
 ```
 
 ## How to run
-**1. First step:** Put your pdf files in this directory:
+**Step 1:** Put your pdf files in this directory:
 ```
 cd excite-docker/Data/1-pdfs
 ```
-**2. Second step:** Extracting Layout 
+**Step 2:** Extracting Layout by executing this command:
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain layout
 ```
-The Outputs will be in This folder :
+After that the Output files -Layout files- will be created in this folder :
 ```
 cd excite-docker/Data/2-layouts
 ```
-**3. Third step:** Calling Exparser
+**Step 3:** Calling Exparser
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain exparser
 ```
