@@ -14,11 +14,13 @@ $ sudo docker build --no-cache -t excite_toolchain .
 ```
 
 ## How to run
-**Step 1:** Put your pdf files in this directory:
+Please Follow this Step-By-Step Process in Sequence as Described Below.
+
+**Step 1:** Put the PDF files in this directory:
 ```
 cd excite-docker/Data/1-pdfs
 ```
-**Step 2:** Extracting Layout by executing this command:
+**Step 2:** Extracting the layout from a PDF will be started by calling a Java module base on CERMINE by executing this command:
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain layout
 ```
@@ -26,26 +28,27 @@ The outputs of this step are "Layout files", which will be located in this folde
 ```
 cd excite-docker/Data/2-layouts
 ```
-**Step 3:** Calling Exparser
+**Step 3:** In this step Exparser will be called for extracting references from Layout file by executing this command:
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain exparser
 ```
-The Outputs will be in This folders :
+The output will be provided in these different formats: plain text, xml and BibTex format and will be located in this folder :
 ```
--extracted references in plain text format:
+-extracted references in plain text format are available in this folder:
 cd excite-docker/Data/3-refs
 
--extracted references in xml format:
+-extracted references in xml format are available in this folder:
 cd excite-docker/Data/3-refs_seg
 
--extracted references in BibTeX format: 
+-extracted references in BibTeX format are available in this folder: 
 cd excite-docker/Data/3-refs_bibtex 
 ```
-**4. forth step:** Calling EXMatcher
+**Step 4:** Calling EXMatcher, .
 ```
 $ sudo docker run -v $(pwd):/app excite_toolchain exmatcher
 ```
-The Outputs will be in This folders :
+The input of EXmatcher is reference strings and segments generated in the previous step. 
+The output will be "matched document ids" and the "probability" for each match and will be located in this folder :
 ```
 cd excite-docker/Data/4-refs_crossref
 ```
