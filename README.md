@@ -4,10 +4,14 @@
 **Step 2:** Download current repository to your local system and copy all downloaded files to your Linux server.
 
 **Step 3:** In server, change the directory to "excite-docker" (which is the name of repository).
-```$ cd excite-docker```
+```
+$ cd excite-docker
+```
 
 **Step 4:** Build an image from Docker-file:
-```$ sudo docker build --no-cache -t excite_toolchain .```
+```
+$ sudo docker build --no-cache -t excite_toolchain .
+```
 
 ## How to run
 **1. First step:** Put your pdf files in this directory:
