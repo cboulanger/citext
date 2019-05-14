@@ -27,6 +27,8 @@ $ cd excite-docker/Data/1-pdfs
 ```
 **Step 2:** Extracting the layout from a PDF will be started by calling a Java module base on "CERMINE", by executing this command:
 ```
+(back to the root of the docker folder.)
+$ cd excite-docker
 $ sudo docker run -v $(pwd):/app excite_toolchain layout
 ```
 The outputs of this step are "Layout files", which will be available in this directory :
@@ -35,6 +37,8 @@ $ cd excite-docker/Data/2-layouts
 ```
 **Step 3:** In this step "Exparser" will be called for extracting references from "Layout files", by executing this command:
 ```
+(back to the root of the docker folder.)
+$ cd excite-docker
 $ sudo docker run -v $(pwd):/app excite_toolchain exparser
 ```
 The output will be provided in these different formats: "plain text", "xml" and "BibTex" format and will be available in this directory :
@@ -51,6 +55,8 @@ $ cd excite-docker/Data/3-refs_bibtex
 **Step 4:** In this step "EXmatcher" will be called for matching references against corresponding items in the defined target bibliographical databases.
 , by executing this command:
 ```
+(back to the root of the docker folder.)
+$ cd excite-docker
 $ sudo docker run -v $(pwd):/app excite_toolchain exmatcher
 ```
 The input of EXmatcher is reference strings and segments generated in the previous step. 
