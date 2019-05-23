@@ -1,7 +1,5 @@
 venue_address = '/app/'
 data_address = '/app/Data/'
-# venue_address = '/export/home/ahosseini/excite-WebAPI-venu/docker/new-version/'
-# data_address = '/export/home/ahosseini/excite-WebAPI-venu/docker/new-version/Data/'#
 
 def config_url_venu():
     return venue_address
@@ -32,6 +30,9 @@ def config_url_Refs_segment_dict():
 
 def config_url_Refs_crossref():
     return data_address + '4-refs_crossref/'
+
+def config_url_exmatcher_crossref_package():
+    return venue_address +'exmatcher_crossref_package/' 
 
 def email_address():
     return 'azam.hosseini@gesis.org'

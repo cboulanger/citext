@@ -16,7 +16,7 @@ import bibtexparser
 import os.path #from pathlib import Path
 # from cologne_phonetics import *
 # import exmatcher_crossref_package.cologne_phonetics as cologne_phonetics
-sys.path.insert(0, config_url_venu() +'exmatcher_crossref_package/')
+sys.path.insert(0, config_url_exmatcher_crossref_package() )
 import cologne_phonetics as cologne_phonetics
 
 

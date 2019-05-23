@@ -20,7 +20,6 @@ def excite_call_Exmatcher_python(filename):
         logf.write('*' * 50 + '\n')
     return command
 
-# @app.task(name='excite_call_Exmatcher')
 def excite_call_Exmatcher():
     try:
         folder_path = config_url_Refs_segment_dict()
@@ -33,9 +32,9 @@ def excite_call_Exmatcher():
         for item in dir_list:
             t11 = time.time()
             if item != 'Thumbs.db':
-                list_of_files.append(item.split('.')[0])
+                list_of_files.append(os.path.splitext(item)[0])
                 print("%s of %s --- File name is : %s" %(i, count, item))            
-                excite_call_Exmatcher_python(item.split('.')[0])
+                excite_call_Exmatcher_python(os.path.splitext(item)[0])
                 print('*' *100)
             i += 1
             t22 = time.time()
@@ -51,5 +50,4 @@ def excite_call_Exmatcher():
         logf.write('*' * 50 + '\n')
 
 if __name__ == "__main__":
-    # chain(excite_call_Exmatcher.si()).apply_async()
     excite_call_Exmatcher()

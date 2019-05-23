@@ -38,7 +38,6 @@ def call_Exparser(list_of_files, subfolder):
             file.close()
 
             txt, valid, _, ref_prob0 = ref_ext(reader)
-            # txt, valid, ref_prob0 = filtering_ref(txt,valid,ref_prob0)   #uncomment this line if you deal with double column documents. Comment it otherwise.
             refs = segment(txt, ref_prob0, valid)
             reslt, refstr, retex = sg_ref(txt, refs, 2)
 
@@ -107,7 +106,7 @@ if __name__ == "__main__":
         list_of_files = []
         for item in dir_list:
             if item != 'Thumbs.db':
-                list_of_files.append(item.split('.')[0])
+                list_of_files.append(os.path.splitext(item)[0])
 
         call_Exparser(list_of_files, subfolder)
     except:            

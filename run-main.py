@@ -63,8 +63,5 @@ if __name__ == "__main__":
         call_run_exparser()
     elif (func_name == 'exmatcher'):
         call_run_exmatcher()
-    # elif (func_name == '4'):
-    #     add.delay(4,2)
-    #     hello.delay()
     else:
         print("Wrong input command!")

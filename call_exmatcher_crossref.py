@@ -4,7 +4,7 @@ reload(sys)
 sys.setdefaultencoding("utf-8")
 from configs import *
 # from exmatcher_crossref_package.crossref import *
-sys.path.insert(0, config_url_venu() +'exmatcher_crossref_package/')
+sys.path.insert(0, config_url_exmatcher_crossref_package())
 from crossref import *
 import json, ast
 import pprint
@@ -59,7 +59,7 @@ def crossref_from_json(ref_json, ref_text, email=None, whole_crossref=False):
         @param:     whole_crossref      if set to True, functions also returns whole crossref output. If false (default), functions returns only the DOI of matched crossref result
     """
     result_dict = {}
-    query_file = config_url_venu() + 'exmatcher_crossref_package/precision_00_dict_main.csv'
+    query_file = config_url_exmatcher_crossref_package() + 'precision_00_dict_main.csv'
     query_df = shrink_table(query_file)
 
     ref_dict = json.loads(ref_json)
