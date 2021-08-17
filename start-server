@@ -1,0 +1,15 @@
+#! /bin/bash
+
+# Installation (see https://github.com/msoap/shell2http)
+# with go >=1.12: 
+#   go get -u github.com/msoap/shell2http
+#   sudo ln -s $(go env GOPATH)/bin/shell2http /usr/local/bin/shell2http
+
+shell2http \
+    -export-all-vars \
+    -log=shell2http.log \
+    -no-index \
+    -cgi \
+    -form \
+        GET:/exparser 'cat upload.html' \
+        POST:/exparser './service'

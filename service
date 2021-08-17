@@ -1,0 +1,24 @@
+#! /bin/bash
+
+filename=$(basename -- "$filepath_uplfile")
+extension="${filename##*.}"
+filename_no_ext="${filename%.*}"
+
+echo "Content-Type: text/plain\n" 
+#echo "Content-Type: application/javascript\n" 
+#echo "Access-Control-Allow-Origin: *\n"
+#echo "Content-Disposition: attachment; filename='${filename_no_ext}.json'"
+echo
+rm -f Data/*/*
+rm -f Data/1-pdfs/.gitkeep
+cat $filepath_uplfile > Data/1-pdfs/${filename_no_ext}.pdf
+/usr/bin/docker run -v  $(pwd):/app excite-docker layout >> logfile.log
+/usr/bin/docker run --rm -v $(pwd):/app excite-docker exparser >> logfile.log
+resultfile="Data/3-refs_seg_dict/${filename_no_ext}.csv"
+touch Data/1-pdfs/.gitkeep
+if [[ -f "$resultfile" ]] ; then
+    refs_as_json=$(cat "$resultfile" | sed -e 's/}$/},/g')
+    echo "[${refs_as_json::-1}]"
+else 
+    echo '{"error":"An error occurred!"}'
+fi
