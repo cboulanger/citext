@@ -1,15 +1,19 @@
 #! /bin/bash
 
 # Installation (see https://github.com/msoap/shell2http)
+# with homebrew (MacOS):
+#   brew tap msoap/tools && brew install shell2http
 # with go >=1.12: 
 #   go get -u github.com/msoap/shell2http
 #   sudo ln -s $(go env GOPATH)/bin/shell2http /usr/local/bin/shell2http
 
 shell2http \
     -export-all-vars \
-    -log=shell2http.log \
-    -no-index \
+    -host=localhost \
+    -port=9000 \
     -cgi \
     -form \
-        GET:/exparser 'cat upload.html' \
-        POST:/exparser './service'
+        GET:/refs_as_json 'echo $(cat upload.html) | sed -e "s/%service%/refs_as_json/g"' \
+        POST:/refs_as_json './services/refs_as_json' \
+        GET:/match_with_zotero 'echo $(cat upload.html) | sed -e "s/%service%/match_with_zotero/g"' \
+        POST:/match_with_zotero './services/match_with_zotero'

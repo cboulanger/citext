@@ -53,3 +53,14 @@ The output will be "matched document ids" and the "probability" for each match a
 ```
 $ cd excite-docker/Data/4-refs_crossref
 ```
+
+## Built-in Server
+
+This repo includes a very simple webserver which exposes exparser functionality.
+
+It requires https://github.com/msoap/shell2http (see there for installation
+instructions).
+
+To start the server, execute `./start-server`, then open
+http://localhost:8080/exparser where you can upload your PDF and get a JSON
+representation of the segmented references back.

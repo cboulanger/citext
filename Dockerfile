@@ -12,8 +12,6 @@ RUN apt update
 # RUN apt upgrade
 # installing python 2.7 and pip for it
 RUN apt -y install python2.7 python-pip
-# installing python-pip for 3.6
-# sudo apt install python3-pip
 ADD requirements-pip2.txt .
 RUN pip install -r requirements-pip2.txt
 
