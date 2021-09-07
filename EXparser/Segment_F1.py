@@ -9,7 +9,7 @@ import codecs
 import numpy as np
 from sklearn import svm
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.naive_bayes import * 
+from sklearn.naive_bayes import *
 from sklearn.feature_extraction.text import *
 from sklearn import preprocessing
 import jenkspy
@@ -51,44 +51,50 @@ def get_score(prob,n,p):    # predicted probability, number of tags and the posi
 
 	
 def comp_prob(label_pred,llin,tlin,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen):
-	abv=['FN','AT','PG','YR']
+	abv=['FN','YR','AT','PG','SR','ED']
+	label_pred=[tmp for tmp in label_pred if tmp in abv]
 	n=[]
-	l=[]
-	d=[]
+	#l=[]
+	#d=[]
 	a=[]
-	g=[]
-	w=1.0*sum([1 if tmp in label_pred else 0 for tmp in abv])/len(abv)
+	#g=[]
+	#w=1.0*sum([1 if tmp in label_pred else 0 for tmp in abv])/len(abv)
+	w=[1 if tmp in label_pred else 0 for tmp in abv]
+	tmp=[label_pred[j] for j in sorted(set([label_pred.index(elem) for elem in label_pred]))]
+	label_pred2=label_pred[::-1]
+	tmp2=[label_pred2[j] for j in sorted(set([label_pred2.index(elem) for elem in label_pred2]))]
 	for tag in abv:
 		if tag in label_pred:
-			n.extend([1.0*len(re.findall(r'('+tag+')+',''.join(label_pred)))/len(label_pred)])
-			tmp = re.finditer(r'('+tag+')+',''.join(label_pred))
-			d.extend([1.0*np.mean([(m.end(0)-m.start(0))/2 for m in tmp])/len(label_pred)])
-			tmp=[0]*2
-			tmp[0]=label_pred.index(tag)
-			tmp[1]=len(label_pred)-list(reversed(label_pred)).index(tag)
-			tmp=filter(lambda a: a != tag, {i for i in label_pred[tmp[0]:tmp[1]]})
-			l.extend([1.0*len(tmp)/len(label_pred)])
-			tmp=[label_pred[j] for j in sorted(set([label_pred.index(elem) for elem in label_pred]))]
-			a.extend([1.0*tmp.index(tag)/len(label_pred)])
+			#n.extend([1.0*len(re.findall(r'('+tag+')+',''.join(label_pred)))/len(label_pred)])
+			#tmp = re.finditer(r'('+tag+')+',''.join(label_pred))
+			#d.extend([1.0*np.mean([(m.end(0)-m.start(0))/2 for m in tmp])/len(label_pred)])
+			#tmp=[0]*2
+			#tmp[0]=label_pred.index(tag)
+			#tmp[1]=len(label_pred)-list(reversed(label_pred)).index(tag)
+			#tmp=filter(lambda a: a != tag, {i for i in label_pred[tmp[0]:tmp[1]]})
+			#l.extend([1.0*len(tmp)/len(label_pred)])
+			#tmp=[label_pred[j] for j in sorted(set([label_pred.index(elem) for elem in label_pred]))]
+			a.extend([tmp.index(tag)+1])
+			n.extend([tmp2.index(tag)+7-len(tmp2)])
 		else:
-			n.extend([-1])
-			l.extend([-1])
-			d.extend([-1])
-			a.extend([-1])
+			n.extend([0])
+			#l.extend([-1])
+			#d.extend([-1])
+			a.extend([0])
 	#g=np.concatenate((l,a,[w],n))   #best 
 
-	g=np.concatenate((n,[w]))
-	g=np.exp(kde_gtag.score([g]))
+	#g=np.concatenate((n,[w]))
+	#g=np.exp(kde_gtag.score([g]))
 	n=np.exp(kde_ntag.score([n]))
-	l=np.exp(kde_ltag.score([l]))
-	d=np.exp(kde_dtag.score([d]))
+	#l=np.exp(kde_ltag.score([l]))
+	#d=np.exp(kde_dtag.score([d]))
 	a=np.exp(kde_atag.score([a]))
-	w=np.exp(kde_wtag.score(w))
-	ll=np.exp(kde_llen.score(llin))
-	tl=np.exp(kde_tlen.score(tlin))
+	w=np.exp(kde_wtag.score([w]))
+	#ll=np.exp(kde_llen.score(llin))
+	#tl=np.exp(kde_tlen.score(tlin))
 	
 	
-	prob=w
+	prob=w*n*a#*tl
 	#prob=n
 	return prob
 
@@ -158,7 +164,8 @@ def main_sg(ln,vtag):
 	
 def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by reference extraction
 	#valid=[1]*len(txt)
-	ref_prob=[max(b[1::]) for b in ref_prob0]
+	#ref_prob=[max(b[1::]) for b in ref_prob0]
+	ref_prob=[b[1] for b in ref_prob0]
 	ref_id=[0]*len(txt)
 	ref_prob=np.array(ref_prob)
 	ref_prob[np.where(np.array(valid)==0)]=0
@@ -183,11 +190,15 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 		l=[txt[start]]
 		tlin=len(' '.join(l).split())   #length in terms of token 
 		lim=[start]*3   # the first cell is the begining of the string, the second is the starting line and the last is the end of the string
-		samples=25
+		samples=17
 		llin=1			#length of the line
+		ww=1
 		for i in range (samples):
 			x=random.randint(0, 1) if (lim[2]-lim[0])>0 else 0    # add or remove 0 
-			w=random.randint(0, 1)   #top or buttom
+			x=0
+			#w=random.randint(0, 1)   #top or buttom
+			w=ww%2
+			ww+=1
 			if x==0:
 				pb,lb,_=main_sg(' '.join(l),0)
 				#rp=restriction(lb,l)
@@ -209,8 +220,14 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 						cp0=comp_prob(lb0,llin+1,tlin0,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
 						pn0=max(ref_prob0[s1][1:3])
 						pn=ref_prob0[s1][3]
-						if (p0*cp0*pn0*rp0)>=(p*cp*pn*rp):
-						#if (cp0)>=(cp):
+						
+						pn0=p0*cp0*pn0*rp0
+						pn=p*cp*pn*rp
+						#with open('rrr.txt','ab') as fid:
+							#fid.write(str(i)+'(up):'+str(pn0)+':'+' '.join(l0)+'\r'+str(pn)+':'+' '.join(l)+'\r\r\r')
+						#if (p0*cp0*pn0*rp0)>=(p*cp*pn*rp):
+						if (pn0)>(pn):
+						#if (p0*cp0*rp0)>=(p*cp*rp):
 							#l=preprocwt(l0)		#if an error occur use this one
 							l=l0
 							lim[0]=s1
@@ -231,8 +248,14 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 						cp0=comp_prob(lb0,llin+1,tlin0,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
 						pn0=max(ref_prob0[s2][2::])
 						pn=ref_prob0[s2][1]
-						if (p0*cp0*pn0*rp0)>=(p*cp*pn*rp):
-						#if (cp0)>=(cp):
+						
+						pn0=p0*cp0*pn0*rp0
+						pn=p*cp*pn*rp
+						#with open('rrr.txt','ab') as fid:
+							#fid.write(str(i)+'(down):'+str(pn0)+':'+' '.join(l0)+'\r'+str(pn)+':'+' '.join(l)+'\r\r\r')
+						#if (p0*cp0*pn0*rp0)>=(p*cp*pn*rp):
+						if (pn0)>(pn):
+						#if (p0*cp0*rp0)>=(p*cp*rp):
 							l=l0
 							lim[2]=s2
 							valid[s2]=0
@@ -290,12 +313,89 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 		u+=1
 		ref_prob[np.where(np.array(valid)==0)]=0
 		tmp=max(ref_prob)
+		
+		
+		
+	##################################################
+	#We try to merge references if they are wrongly splited (rather missted to be merged in the previous step)
+	ref_id=np.array(ref_id)
+	
+	ZZ=[]
+	tmp=np.unique(ref_id,return_index=True)
+	Z = [x for _,x in sorted(zip(tmp[1],tmp[0]))][1::]
+	tmp3=[tmp2 for tmp2 in Z if tmp2 not in ZZ]
+	#ii=random.randint(0,len(Z)-1)
+	while bool(tmp3):
+		tmp=random.choice(tmp3)
+		ZZ.append(tmp)
+		ii=Z.index(tmp)
+	#samples=60
+	#for i in range(samples):
+		#tmp=np.unique(ref_id,return_index=True)
+		#Z = [x for _,x in sorted(zip(tmp[1],tmp[0]))][1::]
+		#ii=random.randint(0,len(Z)-1)
+		id=np.where(ref_id==Z[ii])[0]
+		l=[txt[idd] for idd in id]
+		b,lb,_=main_sg(' '.join(l),0)
+		p=get_score(pb,len(' '.join(l).split()),'a')
+		cp=comp_prob(lb,llin,tlin,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
+		w=random.randint(0, 1)   #top or buttom
+		if ii>0:
+			id1=np.where(ref_id==Z[ii-1])[0]
+			l1=[txt[idd] for idd in id1]
+			l0=l1+l
+			pb,lb0,_=main_sg(' '.join(l0),0)
+			p0=get_score(pb,len(' '.join(l).split()),'e')
+			##
+			p10=get_score(pb,len(' '.join(l1).split()),'b')
+			pb,lb1,_=main_sg(' '.join(l),0)
+			p1=get_score(pb,len(' '.join(l1).split()),'a')
+			##
+			###
+			pn0=max(ref_prob0[id[0]][2::])*max(ref_prob0[id1[-1]][1:3])
+			pn=ref_prob0[id[0]][1]*ref_prob0[id1[-1]][3]
+			###
+			rp0=restriction(lb0,l1[-1],mll,3)*restriction(lb0,l[0],mll,5)*restriction(lb0,l[0],mll,2)*restriction(lb0,l[0],mll,2)
+			rp=restriction(lb,l1[-1],mll,4)*restriction(lb,l[0],mll,6)*restriction(lb,l[0],mll,2)*restriction(lb1,l[0],mll,2)
+			cp0=comp_prob(lb0,llin+1,tlin0,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
+			
+			#with open('rrr.txt','ab') as fid:
+				#fid.write(str(i)+'(up):'+str([pn0,rp0,cp0,p0,p10])+':'+' '.join(l0)+'\r'+str([pn,rp,cp,p,p1])+':'+' '.join(l)+'\r\r\r')
+			if (pn0*rp0*cp0*p0*p10)>(pn*rp*cp*p*p1):
+				ref_id[np.where(ref_id==Z[ii-1])[0]]=Z[ii]
+		if ii<(len(Z)-1):
+			id1=np.where(ref_id==Z[ii+1])[0]
+			l1=[txt[idd] for idd in id1]
+			l0=l+l1	
+			pb,lb0,_=main_sg(' '.join(l0),0)
+			p0=get_score(pb,len(' '.join(l).split()),'b')
+			##
+			p10=get_score(pb,len(' '.join(l1).split()),'e')
+			pb,lb0,_=main_sg(' '.join(l),0)
+			p1=get_score(pb,len(' '.join(l1).split()),'a')
+			##
+			###
+			pn0=max(ref_prob0[id1[0]][2::])*max(ref_prob0[id[-1]][1:3])
+			pn=ref_prob0[id1[0]][1]*ref_prob0[id[-1]][3]
+			###
+			rp0=restriction(lb0,l[-1],mll,3)*restriction(lb0,l1[0],mll,5)*restriction(lb0,l[0],mll,2)*restriction(lb0,l[0],mll,2)
+			rp=restriction(lb,l[-1],mll,4)*restriction(lb0,l1[0],mll,6)*restriction(lb,l[0],mll,2)*restriction(lb1,l[0],mll,2)
+			cp0=comp_prob(lb0,llin+1,tlin0,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
+			#with open('rrr.txt','ab') as fid:
+				#fid.write(str(i)+'(down):'+str([pn0,rp0,cp0,p0,p10])+':'+' '.join(l0)+'\r'+str([pn,rp,cp,p,p1])+':'+' '.join(l)+'\r\r\r')
+			if (pn0*rp0*cp0*p0*p10)>(pn*rp*cp*p*p1):
+				ref_id[np.where(ref_id==Z[ii+1])[0]]=Z[ii]
+				
+		tmp=np.unique(ref_id,return_index=True)
+		Z = [x for _,x in sorted(zip(tmp[1],tmp[0]))][1::]
+		tmp3=[tmp2 for tmp2 in Z if tmp2 not in ZZ]
+	##################################################
 	return ref_id
 	
 def sg_ref(txt,refs,opt):
 	tmp=np.unique(refs,return_index=True)
 	Z = [x for _,x in sorted(zip(tmp[1],tmp[0]))][1::]
-	refs=np.array(refs)
+	#refs=np.array(refs)
 	refstr=[]
 	reslt=[]
 	restex=[]
