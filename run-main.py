@@ -2,6 +2,8 @@
 import time, datetime, json, os, subprocess, traceback
 import sys
 from configs import *
+from EXparser.run_training import _call_extraction_training
+
 
 logf = open(config_url_venu() + 'logfile.log', "a")
 
@@ -56,24 +58,9 @@ def call_run_exparser():
         logf.write('*' * 50 + '\n')
     return command
 
-# todo: finish commands for training
+
 def call_extraction_training():
-    try:
-        proc = subprocess.Popen(['python Feature_Extraction.py'], stdout=subprocess.PIPE, shell=True)
-        (output, err) = proc.communicate()
-        print(output)
-
-        proc = subprocess.Popen(['python Txt2Vec.py'], stdout=subprocess.PIPE, shell=True)
-        (output, err) = proc.communicate()
-        print(output)
-
-        proc = subprocess.Popen(['python Training_Ext.py'], stdout=subprocess.PIPE, shell=True)
-        (output, err) = proc.communicate()
-        print(output)
-    except:
-        print(traceback.format_exc())
-        logf.write(traceback.format_exc())
-        logf.write('*' * 50 + '\n')
+    _call_extraction_training()
 
 
 if __name__ == "__main__":

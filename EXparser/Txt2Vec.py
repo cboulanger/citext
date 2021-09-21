@@ -24,12 +24,12 @@ import re
 import codecs
 import numpy as np
 import jenkspy
-execfile('./src/Initial_Data.py')
+# execfile('/app/EXparser/src/Initial_Data.py')
 
-fold="LRT"
+fold="/app/EXparser/Dataset/LRT"
 fdir=os.listdir(fold)
 for u in range(0,len(fdir)):
-	if not os.path.isfile("RefLD/"+fdir[u]):
+	if not os.path.isfile("/app/EXparser/Dataset/RefLD/"+fdir[u]):
 		print 'File in processing = '+str(u)+' out of '+str(len(fdir))+' . . .'
 		fname=fold+"/"+fdir[u]
 		file = open(fname, "rb")
@@ -59,7 +59,7 @@ for u in range(0,len(fdir)):
 					ref=1
 					i=0
 				R=np.append(R,[[ref]],0)	
-		np.savetxt('RefLD/'+fdir[u], R)	
+		np.savetxt('/app/EXparser/Dataset/RefLD/'+fdir[u], R)
 	else:
 		print 'file already processed'
 		

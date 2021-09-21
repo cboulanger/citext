@@ -25,11 +25,11 @@ files=[{'name':'Features',
 
 for file in files:
 	print 'Data being decompressed . . . About 100mb of data will be downloaded . . .'
-	if not os.path.isdir('./Dataset/'+file['name']):
-		if not os.path.isdir('./Dataset/Data_Comp'):
-			os.mkdir('./Dataset/Data_Comp/')
-		url = 'https://cloud.uni-koblenz-landau.de/s/'+file['url']+'/download' 
-		urllib.urlretrieve(url, './Dataset/Data_Comp/'+file['name']+'.rar')	
-		patoolib.extract_archive("./Dataset/Data_Comp/"+file['name']+".rar", outdir=file['in'])
-shutil.rmtree('./Dataset/Data_Comp') 
-	
+	if not os.path.isdir('/app/EXparser/Dataset/'+file['name']):
+		if not os.path.isdir('/app/EXparser/Dataset/Data_Comp'):
+			os.mkdir('/app/EXparser/Dataset/Data_Comp/')
+		url = 'https://cloud.uni-koblenz-landau.de/s/'+file['url']+'/download'
+		urllib.urlretrieve(url, '/app/EXparser/Dataset/Data_Comp/'+file['name']+'.rar')
+		patoolib.extract_archive("/app/EXparser/Dataset/Data_Comp/"+file['name']+".rar", outdir=file['in'])
+shutil.rmtree('/app/EXparser/Dataset/Data_Comp')
+

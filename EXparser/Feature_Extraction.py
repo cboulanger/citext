@@ -10,19 +10,19 @@ import jenkspy
 import collections
 import sqlite3
 from itertools import groupby
-execfile('./src/Initial_Data.py')
-execfile('./src/gle_fun.py')
-execfile('./src/gle_fun_ext.py')
+# execfile('/app/EXparser//src/Initial_Data.py')
+execfile('/app/EXparser//src/gle_fun.py')
+execfile('/app/EXparser//src/gle_fun_ext.py')
 
-if not os.path.isdir('./Dataset/Features/tmp'):
-	os.mkdir('./Dataset/Data_Comp/tmp/')
+if not os.path.isdir('/app/EXparser/Dataset/Features/tmp'):
+	os.mkdir('/app/EXparser/Dataset/Data_Comp/tmp/')
 
 
-fold="./Dataset/LYT"
+fold="/app/EXparser/Dataset/LYT"
 fdir=os.listdir(fold)
 for u in range(0,len(fdir)):
-	if not os.path.isfile('./Dataset/Features/tmp/'+fdir[u]+'.npy'):
-		np.save('./Dataset/Features/tmp/'+fdir[u]+'.npy',0)
+	if not os.path.isfile('/app/EXparser/Dataset/Features/tmp/'+fdir[u]+'.npy'):
+		np.save('/app/EXparser/Dataset/Features/tmp/'+fdir[u]+'.npy',0)
 		print 'File in processing = '+str(u)+' out of '+str(len(fdir))+' . . .'
 		fname=fold+"/"+fdir[u]
 		file = open(fname, "rb")
@@ -173,7 +173,7 @@ for u in range(0,len(fdir)):
 			FS=np.append(FS,tp,0)
 			del tp
 			#print time.time()-t
-		np.savetxt('./Dataset/Features/'+fdir[u], FS)
+		np.savetxt('/app/EXparser/Dataset/Features/'+fdir[u], FS)
 		file.close()
 	else:
 		print 'File already processed'

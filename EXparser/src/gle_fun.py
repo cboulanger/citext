@@ -1,11 +1,12 @@
 # -*- coding: UTF-8 -*- 
 #Definition: general function for extraction and segemntation
 
+import re, sqlite3
 
 global b1, b2, b3, b4, b5, b6, stopw
 
 # connect databases
-conn = sqlite3.connect('EXparser/Utils/list.db')
+conn = sqlite3.connect('/app/EXparser/Utils/list.db')
 conn.text_factory = str
 cur = conn.cursor()
 
