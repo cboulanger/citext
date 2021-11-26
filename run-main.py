@@ -4,7 +4,6 @@ import sys
 from configs import *
 from EXparser.run_training import _call_extraction_training
 
-
 logf = open(config_url_venu() + 'logfile.log', "a")
 
 
