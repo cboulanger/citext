@@ -1,0 +1,10 @@
+#! /bin/bash
+echo "Content-Type: text/html"
+echo
+echo "<html>
+    <body>
+        <h1>Run EXParser</h1>
+        <form method=POST action=/cgi-bin/post_upload enctype=multipart/form-data>
+        <input type=file name=uplfile><input type=submit></form>
+    </body>
+</html>"

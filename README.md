@@ -85,25 +85,38 @@ $ cd excite-docker/Data/4-refs_crossref
 
 ## Built-in Server
 
-This repo includes a very simple webserver which exposes exparser functionality.
+This repo includes a very simple webserver which allows to run exparser on
+individual files and train the model with new ground truth data.
 
-It requires https://github.com/msoap/shell2http (see there for installation
-instructions).
-
-To start the server, execute `./start-server`, then open
-http://localhost:8080/exparser where you can upload your PDF and get a JSON
-representation of the segmented references back.
+To start the server, execute `./start-server`, then open http://localhost:8000 
 
 ## Training
 
-You can retrain the model, using your own training data. If you want to use
-this feature, you need to have [git-lfs](https://www.atlassian.com/git/tutorials/git-lfs) 
-installed in order to download the large files that are used during training. You also
-need to place training data into the `Exparser/Dataset` folder. 
+You can retrain the model, using your own training data. At the moment feature
+extraction is done before the model training. 
 
-For details, see [here](./EXparser/Dataset/README.md).
+> If you want to use this feature, you need to have
+[git-lfs](https://www.atlassian.com/git/tutorials/git-lfs) installed before you
+check out this repository. git-lfs is necessary to download the large files that
+are used during training.
 
-At the moment feature extraction is done before the model training.
+Before training, run the `prepare-training` script. This will do the following:
+
+- Ask you if you want to you download the [Excite project's ground truth
+  data](https://github.com/exciteproject/Exparser/tree/master/EXparser/Dataset ),
+  which provides a basis to which you can add your own data.
+
+- Download the [EXannotator Web GUI](https://github.com/cboulanger/EXannotator) which can
+  be used to correct training data or produce new training data.
+
+Training data needs to be placed into the `Exparser/Dataset` folder. For
+details, see [here](./EXparser/Dataset/README.md).
+
+To run the training, execute
+
+```
+sudo docker run -v $(pwd):/app excite_toolchain train_extraction
+```
 
 Input files (for features extraction):
 ```
@@ -124,8 +137,3 @@ EXparser/Utils/FSN.npy
 EXparser/Utils/rf.pkl - the model
 ```
 
-To run the training, execute
-
-```
-sudo docker run -v $(pwd):/app excite_toolchain train_extraction
-```

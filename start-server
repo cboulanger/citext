@@ -1,19 +1,26 @@
 #! /bin/bash
 
-# Installation (see https://github.com/msoap/shell2http)
-# with homebrew (MacOS):
-#   brew tap msoap/tools && brew install shell2http
-# with go >=1.12: 
-#   go get -u github.com/msoap/shell2http
-#   sudo ln -s $(go env GOPATH)/bin/shell2http /usr/local/bin/shell2http
+# requirements:
+# - busybox (sudo apt install busybox)
+# - jq (sudo apt install jq)
 
-shell2http \
-    -export-all-vars \
-    -host=localhost \
-    -port=9000 \
-    -cgi \
-    -form \
-        GET:/refs_as_json 'echo $(cat upload.html) | sed -e "s/%service%/refs_as_json/g"' \
-        POST:/refs_as_json './services/refs_as_json' \
-        GET:/match_with_zotero 'echo $(cat upload.html) | sed -e "s/%service%/match_with_zotero/g"' \
-        POST:/match_with_zotero './services/match_with_zotero'
+# configuration
+HOST=127.0.0.1
+BUSYBOX_PORT=8000
+
+# create empty logfile
+rm -f logfile.log
+touch logfile.log
+
+# kill webserver process when script has ended
+_term() {
+  echo "Shutting down servers..."
+  kill -TERM "$BUSYBOX_PID" 2>/dev/null
+}
+trap _term TERM INT
+
+# start webserver
+busybox httpd -f -p $HOST:$BUSYBOX_PORT &
+BUSYBOX_PID=$!
+echo "Started HTTP server at http://$HOST:$BUSYBOX_PORT/index.html."
+wait "$BUSYBOX_PID"

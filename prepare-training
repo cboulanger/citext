@@ -1,0 +1,14 @@
+#! /bin/bash
+# sudo apt install jq busybox
+echo "This will download the Excite gold standard data training data."
+read -r -p "Continue? [Y/n]" response
+response=${response,,} # tolower
+if [[ $response =~ ^(yes|y| ) ]] || [[ -z $response ]]; then
+  git clone --depth 1 https://github.com/exciteproject/Exparser.git tmp
+  cp -a ./tmp/EXparser/Dataset/* Exparser/Dataset
+  rm -rf ./tmp
+  echo "Downloaded training data."
+fi
+echo "Downloading EXannotator Web GUI..."
+mkdir -p EXannotator
+curl -L https://api.github.com/repos/cboulanger/EXannotator/tarball | tar xz --strip=1 -C EXannotator
