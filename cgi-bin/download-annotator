@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+mkdir -p EXannotator
+curl -L https://api.github.com/repos/cboulanger/EXannotator/tarball | tar xz --strip=1 -C EXannotator > /dev/null
+
+
