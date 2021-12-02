@@ -1,8 +1,10 @@
 #! /bin/bash
 
 # requirements:
-# - busybox (sudo apt install busybox)
-# - jq (sudo apt install jq)
+if ! command -v busybox >/dev/null || ! command -v jq >/dev/null; then
+  echo "You need to install the 'jq' and the 'busybox' packages.";
+  exit 1
+fi
 
 # configuration
 HOST=127.0.0.1
