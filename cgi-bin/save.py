@@ -11,13 +11,17 @@ try:
     try:
         payload = json.loads(payload)
     except:
-        print ('{"error":"Invalid JSON data"}')
+        print('{"error":"Invalid JSON data"}')
         sys.exit()
 
     type = payload["type"]
     data = payload["data"]
 
     filename = payload["filename"]
+    if (filename == ""):
+        print('{"error":"No filename given"}')
+        sys.exit()
+
     filepath = os.getcwd() + "/../Exparser/Dataset/"
 
     if type == "layout":

@@ -1,14 +1,20 @@
 #! /bin/bash
 
-# requirements:
-if ! command -v busybox >/dev/null || ! command -v jq >/dev/null; then
-  echo "You need to install the 'jq' and the 'busybox' packages.";
+if ! command -v jq >/dev/null; then
+  echo "You need to install the 'jq' package.";
+  exit 1
+fi
+
+if ! command -v busybox >/dev/null; then
+#if ! command -v python >/dev/null && ! command -v busybox >/dev/null; then
+  echo "You need to have  busybox installed.";
+  #echo "You need to have either python or busybox installed.";
   exit 1
 fi
 
 # configuration
 HOST=127.0.0.1
-BUSYBOX_PORT=8000
+PORT=8000
 
 # create empty logfile
 rm -f logfile.log
@@ -16,13 +22,20 @@ touch logfile.log
 
 # kill webserver process when script has ended
 _term() {
-  echo "Shutting down servers..."
-  kill -TERM "$BUSYBOX_PID" 2>/dev/null
+  echo "Shutting down server..."
+  kill -TERM "$SERVER_PID" 2>/dev/null
 }
 trap _term TERM INT
 
 # start webserver
-busybox httpd -f -p $HOST:$BUSYBOX_PORT &
-BUSYBOX_PID=$!
-echo "Started HTTP server at http://$HOST:$BUSYBOX_PORT/index.html."
-wait "$BUSYBOX_PID"
+#if command -v python3; then
+#  python3 -m http.server --cgi $PORT &
+#elif command -v python2; then
+#  python2 -m CGIHTTPServer $PORT &
+#elif command -v busybox >/dev/null ; then
+  busybox httpd -vv -f -p $HOST:$PORT &
+#fi
+SERVER_PID=$!
+
+echo "Started HTTP server. To access EXcite tools, open http://$HOST:$PORT/index.html"
+wait "$SERVER_PID"
