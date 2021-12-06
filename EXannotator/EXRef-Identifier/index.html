@@ -1,0 +1,121 @@
+<html>
+<head>
+    <title>Excite Reference String Extraction Tool</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style.css">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/jquery-ui.min.css" rel="stylesheet">
+    <link href="css/css-loader.css" rel="stylesheet">
+    <script src="js/jquery-3.2.1.min.js"></script>
+    <script src="scripts.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+</head>
+
+<body>
+<!-- Spinner -->
+<div class="loader loader-default" id="spinner"></div>
+<div class="container-fluid">
+    <div class="panel panel-default top">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-xs-12 col-sm-12 col-md-10 col-lg-10 margin-bottom-5">
+                    <label for="btn-upload" class="btn btn-primary">Choose Files (.txt/.pdf/.csv)</label>
+                    <input type="file" id="btn-upload" class="btn btn-default"
+                           onchange="Actions.upload(); this.value=null; return false;"
+                           accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
+                    <button id="btn-exparser" disabled class="btn btn-primary" type="button"
+                            onclick="Actions.run_exparser();">Analyze</button>
+                    <button id="btn-ref-part" disabled class="btn btn-success" type="button"
+                            onclick="Actions.addTag('ref');">
+                        &lt;ref&gt; (<span class="emphasizeLetter">P</span>art)
+                    </button>
+                    <button id="btn-ref-line" disabled class="btn btn-success" type="button"
+                            onclick="Actions.addTag('ref', true);">
+                        &lt;ref&gt; (<span class="emphasizeLetter">L</span>ine)
+                    </button>
+                    <button id="btn-oth" disabled class="btn btn-secondary" type="button"
+                            onclick="Actions.addTag('oth');">
+                        &lt<span class="emphasizeLetter">O</span>th&gt;
+                    </button>
+                    <button id="btn-remove-tag" disabled class="btn btn-danger" value="btnRemoveTag" type="button"
+                            onclick="Actions.removeTag();">
+                        <span class="emphasizeLetter">R</span>emove Tag
+                    </button>
+                    <button id="btn-export" disabled class="btn btn-primary" type="button"
+                            onclick="Actions.export();">Export</button>
+                    <button id="btn-save" disabled class="btn btn-primary" type="button"
+                            onclick="Actions.save();">Save</button>
+                    <button id="btn-seganno" disabled class="btn btn-primary" type="button"
+                            onclick="Actions.open_in_seganno();">EXRef-Segmentation</button>
+                </div>
+                <div class="col-xs-12 col-sm-12 col-md-2 col-lg-2 textalignr">
+                    <a href="https://excite.informatik.uni-stuttgart.de/"  target="_blank">
+                        <img height="50px" src="images/exCite_logo_150.png" alt="img">
+                    </a>
+                    <p>EXRef-Identifier</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row" style="margin-top: 100px;">
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div class="row bold">
+                        <div class="col-md-3" style="width:75%">
+                            <label id="txtSize">Load text file</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input id="btndeltxt" type="image" src="images/delete2.png" alt="Delete Text File"
+                                   width="24" height="24" style="display : none; " onclick="GUI.removeTextFile()">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 nowrap">
+                            <label id="content1" class="textLabel" Style="overflow:scroll;"></label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="panel panel-default">
+                <div class="panel-body">
+                    <div class="row bold">
+                        <div class="col-md-3" style="width: 75%">
+                            <label id="pdfSize">Load PDF file</label>
+                        </div>
+                        <div class="col-md-2">
+                            <input id="btndelpdf" type="image" src="images/delete2.png" alt="Delete pdf File" width="24"
+                                   height="24" style="display : none; " onclick="GUI.removePdfFile()">
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-12 nowrap">
+                            <iframe id="pdfiframe" class="iframecss" align="centert" src=""></iframe>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="panel panel-default">
+        <div class="panel-body">
+            <div class="row">
+                <div class="col-md-12">Preview tagged text</div>
+            </div>
+            <div class="row pad-10" id="tagedTextdiv">
+                <div class="col-md-12" style="display : none; ">
+                    <textarea disabled id="txaxml" class="txaxml"></textarea>
+                </div>
+                <div class="col-md-12 ptxaxmlcss">
+                    <pre id="ptxaxml"></pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>

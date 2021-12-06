@@ -1,0 +1,335 @@
+body
+{
+    margin1: 0;
+    padding: 0;
+	background: #efefdf !important;
+    font-size: medium !important;
+}
+.btn
+{
+    font-size: medium !important;
+}
+
+.headerDivider {
+     height: 80px;
+}
+/* this block is for the alternative radiobutton design*/
+.radioButtons{
+	-webkit-appearance: none;
+	-moz-appearance: none;
+	appearance: none;
+	border:none;
+	border-radius: 0;
+	font-size: medium;
+	width: 100%
+}
+input[type='radio'] {
+  width:auto;
+  float:left1;
+  margin-right: .75em;
+  background:transparent;
+  border:none;
+}
+input[type='radio']:checked,
+input[type='radio']:not(:checked) {
+  background: transparent;
+  visibility: hidden;
+  margin:0;
+  padding:0;
+}
+input[type='radio'] + label {
+  cursor: pointer;
+}
+input[type='radio']:checked + label::before,
+input[type='radio']:not(:checked) + label::before {
+    content:' ';
+    display:inline-block;
+    width: 17px;
+    height:17px;
+    border: 1px solid #bbb;
+    background: white;
+    margin-right: 1em;
+    box-shadow: inset 0 1px 1px 0 rgba(0,0,0,.1);
+}
+input[type=radio]:checked + label::before,
+input[type=radio]:not(:checked) + label::before {
+  border-radius: 30px;
+}
+input[type='radio']:hover  + label::before {
+  background:#ddd;
+  box-shadow: inset 0 0 0 2px white;
+}
+input[type='checkbox']:checked  + label::before,
+input[type='radio']:checked  + label::before {
+  background:black;
+  box-shadow: inset 0 0 0 2px white;
+}
+
+.tagButton{
+	background: white;
+	font-weight: bold;
+	height: 25px;
+	width: 120px;
+	cursor: pointer;
+	border: 1px solid #b3b3b3;
+}
+.tagButton:hover {background-color: #e3e3e3}
+.tagButton:active {transform: translateY(2px)}
+
+.textLabel {
+	font-family: monospace;
+	font-size: medium;
+    background-color: #f7f9fd;
+	width: 95%;
+	height: 100px;
+	border: 1px solid #669999;
+	cursor: text;
+    overflow-y: scroll;
+    font-weight: normal !important;
+}
+
+.textLabel2 {
+	font-family: monospace;
+	font-size: medium;
+    background-color: #f0f5f5;
+	width: 95%;
+	height: 100px;
+	border: 1px solid #669999;
+	cursor: text;
+    font-weight: normal !important;
+    overflow-y: scroll;
+}
+
+.OriginalHeaderCls
+{
+    color: #003366 !important; 
+    text-align: left;
+    padding-left: 20px !important;
+    width: 95%;
+}
+
+.errorCls
+{
+    font-weight: normal !important;
+    font-color: red;
+    
+}
+.txaxml{
+    font-family: monospace;
+	font-size: medium;
+	width: 95%;
+	height: 120px;
+    background-color: #f8f8f8 !important;
+    overflow-y: scroll;
+}
+
+.count{
+	display: block;
+	width: 35px;
+}
+
+/*Azam Code*/
+.pad-10 {
+    padding: 10px;
+}
+.pad-lr-20 {
+    padding-left: 20px;
+	padding-right: 20px;
+}
+.pad-b-5 {
+    padding-bottom: 5px;
+}
+.pad-t-10 {
+    padding-top: 10px !important;
+}
+.mrg-0 {
+    margin: 0 !important;
+}
+
+.textalignl
+{
+    text-align: left;
+}
+.textalignc
+{
+    text-align: center;
+}
+
+.textalignr
+{
+    text-align: right;
+}
+.margin-bottom-10
+{
+	margin-bottom : 10px;
+}
+.margin-bottom-5
+{
+	margin-bottom : 5px;
+}
+.margin-top-5
+{
+	margin-top : 5px;
+}
+.bold
+{
+	font-weight: bold;
+}
+.text-wrap
+{
+	word-wrap: break-word
+}
+.noborderbtn
+{
+	border: 0px !important;
+	
+}
+
+#dvLoading
+{
+   background:#000 url(img/loading.gif) no-repeat center center;
+   height: 100px;
+   width: 100px;
+   position: fixed;
+   z-index: 1000;
+   left: 50%;
+   top: 50%;
+   margin: -25px 0 0 -25px;
+}
+
+/*Popup Css*/
+/* Popup container - can be anything you want */
+.popup {
+    position: relative;
+    display: inline-block;
+    cursor: pointer;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+/* The actual popup */
+.popup .popuptext {
+    visibility: hidden;
+    width: 200px;
+    height: 75px;
+    background-color: #1F4575;
+    color: #fff;
+    text-align: center;
+    border-radius: 6px;
+    padding: 8px 0;
+    position: absolute;
+    z-index: 1;
+    bottom1: 125%;
+    left1: 50%;
+    margin-left1: -80px;
+    margin: 0px !important;
+}
+/* Popup arrow */
+.popup .popuptext::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    margin-left1: -5px;
+    border-width: 5px;
+    border-style: solid;
+    border-color: #1F4575 transparent transparent transparent;
+}
+/* Toggle this class - hide and show the popup */
+.popup .show {
+    visibility: visible;
+    -webkit-animation: fadeIn 1s;
+    animation: fadeIn 1s;
+}
+
+.popuphidden {
+   visibility: hidden;
+}
+/* Add animation (fade in the popup) */
+@-webkit-keyframes fadeIn {
+    from {opacity: 0;} 
+    to {opacity: 1;}
+}
+@keyframes fadeIn {
+    from {opacity: 0;}
+    to {opacity:1 ;}
+}
+
+
+.hideclass {
+   display : none;
+}
+/* help ppoup css */
+.black_overlay {
+    display: none;
+    position: absolute;
+    top: 0%;
+    left: 0%;
+    width: 100%;
+    height: 100%;
+    background-color: black;
+    z-index: 1001;
+    -moz-opacity: 0.4;
+    opacity: .40;
+    filter: alpha(opacity=40);
+  }
+  .white_content {
+    display: none;
+    position: absolute;
+    top: 10%;
+    left: 10%;
+    width: 75%;
+    height: 75%;
+    padding: 16px;
+    border: 1px solid rgb(114, 113, 177);
+    background-color: white;
+    z-index: 1002;
+    overflow: auto;
+  }
+
+/* ////////////////////////////////////////*/
+.material-switch > input[type="checkbox"] {
+    display: none;   
+}
+
+.material-switch > label {
+    cursor: pointer;
+    height: 0px;
+    position: relative; 
+    width: 40px;  
+}
+
+.material-switch > label::before {
+    background: rgb(0, 0, 0);
+    box-shadow: inset 0px 0px 10px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    content: '';
+    height: 16px;
+    margin-top: -8px;
+    position:absolute;
+    opacity: 0.3;
+    transition: all 0.4s ease-in-out;
+    width: 40px;
+}
+.material-switch > label::after {
+    background: rgb(255, 255, 255);
+    border-radius: 16px;
+    box-shadow: 0px 0px 5px rgba(0, 0, 0, 0.3);
+    content: '';
+    height: 24px;
+    left: -4px;
+    margin-top: -8px;
+    position: absolute;
+    top: -4px;
+    transition: all 0.3s ease-in-out;
+    width: 24px;
+}
+.material-switch > input[type="checkbox"]:checked + label::before {
+    background: inherit;
+    opacity: 0.5;
+}
+.material-switch > input[type="checkbox"]:checked + label::after {
+    background: inherit;
+    left: 20px;
+}
