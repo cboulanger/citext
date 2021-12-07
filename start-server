@@ -5,10 +5,8 @@ if ! command -v jq >/dev/null; then
   exit 1
 fi
 
-if ! command -v busybox >/dev/null; then
-#if ! command -v python >/dev/null && ! command -v busybox >/dev/null; then
-  echo "You need to have  busybox installed.";
-  #echo "You need to have either python or busybox installed.";
+if ! command -v python3 >/dev/null; then
+  echo "You need to have python3 installed.";
   exit 1
 fi
 
@@ -28,13 +26,8 @@ _term() {
 trap _term TERM INT
 
 # start webserver
-#if command -v python3; then
-#  python3 -m http.server --cgi $PORT &
-#elif command -v python2; then
-#  python2 -m CGIHTTPServer $PORT &
-#elif command -v busybox >/dev/null ; then
-  busybox httpd -vv -f -p $HOST:$PORT &
-#fi
+python3 -m http.server --cgi $PORT &
+
 SERVER_PID=$!
 
 echo "Started HTTP server. To access EXcite tools, open http://$HOST:$PORT/index.html"

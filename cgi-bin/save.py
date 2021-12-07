@@ -1,44 +1,42 @@
 #!/usr/bin/python3
 
-import sys
-import json
-import os
+import sys, json, os
 
-print ("Content-type: application/json\n")
+print("Content-type: application/json")
+print()
 
 try:
-    payload = sys.stdin.read()
-    try:
-        payload = json.loads(payload)
-    except:
-        print('{"error":"Invalid JSON data"}')
-        sys.exit()
+    contLen = int(os.environ['CONTENT_LENGTH'])
 
-    type = payload["type"]
+    if contLen == 0:
+        raise RuntimeError("No data")
+
+    payload = sys.stdin.readline()
+
+    payload = json.loads(payload)
+    data_type = payload["type"]
     data = payload["data"]
-
     filename = payload["filename"]
-    if (filename == ""):
-        print('{"error":"No filename given"}')
-        sys.exit()
 
-    filepath = os.getcwd() + "/../Exparser/Dataset/"
+    if filename == "":
+        raise RuntimeError("No filename given")
 
-    if type == "layout":
+    filepath = os.getcwd() + "/Exparser/Dataset/"
+
+    if data_type == "layout":
         filepath += "LRT"
-    elif type == "ref_xml":
+    elif data_type == "ref_xml":
         filepath += "SEG"
     else:
-        print ('{"error":"Invalid type"}')
-        sys.exit()
+        raise RuntimeError("Invalid type")
 
     data = data.encode("utf8")
     file = open(filepath + "/" + filename, "wb")
     file.write(data)
     file.close()
 
-    print ('{"status":"OK"}')
+    print('{"status":"OK"}')
 
-except Exception as err:
-    print ('{"error":"' + str(err) + ' in line ' +  str(err.__traceback__.tb_lineno) + '"}')
+except RuntimeError as err:
+    print('{"error":"'+str(err)+'"}')
 

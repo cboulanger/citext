@@ -1,5 +1,4 @@
 #! /bin/bash
-# sudo apt install jq busybox
 echo "This will download the Excite gold standard data training data."
 read -r -p "Continue? [Y/n]" response
 response=${response,,} # tolower

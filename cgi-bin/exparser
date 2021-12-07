@@ -2,7 +2,7 @@
 echo "Content-type: application/json"
 echo
 
-HOME_DIR=$(realpath ..)
+HOME_DIR=$(realpath .)
 DATA_DIR="$HOME_DIR/Data"
 LOGFILE=$HOME_DIR/logfile.log
 
@@ -14,7 +14,7 @@ filename_no_ext="${filename%.*}"
 
 if [[ "$fileId" == "" ]] || [[ "$filename" == "" ]]; then
   echo '{"error":"No file information given"}'
-  exit 1
+  exit 0
 fi
 
 rm -f $DATA_DIR/*/*
@@ -34,3 +34,4 @@ if [[ -f "$layoutfile" ]] && [[ -f "$refsfile" ]]; then
 else
     echo '{"error":"An error occurred!"}'
 fi
+exit 0
