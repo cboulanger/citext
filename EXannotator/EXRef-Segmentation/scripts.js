@@ -94,7 +94,7 @@ async function saveToFilesystem() {
     filename: `${filename}.xml`,
     type: "ref_xml",
     data
-  });
+  }) + "\n\n";
   let result = await (await fetch(`${SERVER_URL}/save.py`, {
     method: 'post',
     body

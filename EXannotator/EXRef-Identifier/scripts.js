@@ -218,7 +218,7 @@ class Actions {
       filename : textFileName,
       type: "layout",
       data
-    }) + "\n";
+    }) + "\n\n";
     let result = await (await fetch(`${SERVER_URL}/save.py`, {
       method: 'post',
       body
