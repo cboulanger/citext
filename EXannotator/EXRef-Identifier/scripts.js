@@ -133,10 +133,13 @@ class Actions {
   }
 
    static async run_exparser() {
+    if (!confirm("Do you really want to run exparser to identify references in this document?")) {
+      return;
+    }
     const formData = new FormData();
     formData.append("file", pdfFile);
     GUI.showSpinner("Analyzing Layout...");
-    let result = await (await fetch(`${SERVER_URL}/post_upload`, {
+    let result = await (await fetch(`${SERVER_URL}/upload.py`, {
       method: 'post',
       body: formData
     })).json();
@@ -215,7 +218,7 @@ class Actions {
       filename : textFileName,
       type: "layout",
       data
-    });
+    }) + "\n";
     let result = await (await fetch(`${SERVER_URL}/save.py`, {
       method: 'post',
       body
@@ -348,7 +351,7 @@ class GUI {
       .split('\n');
     let tagged_text = "";
     for (let i = 0; i < text_Lines.length; i++) {
-      if (["tsv", "csv"].includes(textFileExt)) {
+      if (textFileName.endsWith(".csv")) {
         // we have layout info in the file, remove from text to re-add later
         let line_parts = text_Lines[i].split('\t');
         if (line_parts.length >= 7) {

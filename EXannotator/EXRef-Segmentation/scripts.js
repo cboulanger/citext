@@ -11,8 +11,26 @@ const LOCAL_STORAGE = {
   LAST_FILE_NAME: "anno2lastfilename"
 }
 
+const colorMap = {
+  "other": "#f4858e",
+  //"author":     "#ff9681",
+  "surname": "#ffce30",
+  "given-names": "#aabb30",
+  "year": "#bfb1d5",
+  "title": "#adddcf",
+  "source": "#abe1fd",
+  "editor": "#fed88f",
+  "volume": "#ffff66",
+  "fpage": "#ccff66",
+  "lpage": "#ffb3ff",
+  "publisher": "#79d279",
+  "issue": "#659bf2",
+  "url": "#5befdb",
+  "identifier": "#d19bf7"
+}
+
+
 function emptyParameters() {
-  //this parameter should be empty At each start
   textLines = [];
   currentLine = 0;
   filename = "";
@@ -27,7 +45,7 @@ $(document).ready(loadSession);
 //load last saved localstorage
 function loadSession() {
   let markedUpText = localStorage.getItem(LOCAL_STORAGE.MARKED_UP_TEXT);
-  let lastXmlText  = localStorage.getItem(LOCAL_STORAGE.LAST_XML_TEXT);
+  let lastXmlText = localStorage.getItem(LOCAL_STORAGE.LAST_XML_TEXT);
   let textFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME);
   let lastFileName = localStorage.getItem(LOCAL_STORAGE.LAST_FILE_NAME);
   let fileToLoad;
@@ -69,11 +87,11 @@ function savelocalStorage() {
 
 async function saveToFilesystem() {
   let data = getXmlText();
-  if (!data || ! filename) return;
+  if (!data || !filename) return;
   savelocalStorage();
   showSpinner(`Saving ${filename}.xml to training data.`);
   let body = JSON.stringify({
-    filename : `${filename}.xml`,
+    filename: `${filename}.xml`,
     type: "ref_xml",
     data
   });
@@ -95,7 +113,7 @@ function checkfile() {
   const fileToLoad = btnLoadFile.files[0];
   filename = fileToLoad.name.split('.').slice(0, -1).join(".");
   fileExt = fileToLoad.name.split('.').pop();
-  if (!["xml","txt","csv"].includes(fileExt)) {
+  if (!["xml", "txt", "csv"].includes(fileExt)) {
     alert("Only .xml, csv or .txt files allowed.");
     return false;
   }
@@ -119,7 +137,7 @@ function loadFile(fileToLoad) {
         textLines.splice(-1, 1);
         // remove enclosing <ref> tags
         textLines = textLines
-          .map(line => line.replace(/<ref>/g,'').replace(/<\/ref>/g,''));
+          .map(line => line.replace(/<ref>/g, '').replace(/<\/ref>/g, ''));
       }
     } else {
       // csv or txt
@@ -128,11 +146,11 @@ function loadFile(fileToLoad) {
         textLines = textLines.map(line => line.split('\t').shift())
       }
       let tmp = textLines
-        .map(line => line.trim().replace(/[-]$/,"~~HYPHEN~~"))
+        .map(line => line.trim().replace(/[-]$/, "~~HYPHEN~~"))
         .join(" ")
-        .replace(/~~HYPHEN~~ /g,"")
-        .replace(/&lt;/g,"<")
-        .replace(/&gt;/g,">");
+        .replace(/~~HYPHEN~~ /g, "")
+        .replace(/&lt;/g, "<")
+        .replace(/&gt;/g, ">");
       textLines = [];
       for (let match of tmp.matchAll(/<ref>(.*?)<\/ref>/g)) {
         textLines.push(match[1]);
@@ -147,20 +165,20 @@ function loadFile(fileToLoad) {
     document.getElementById("lblColoredText").innerHTML = textLines[0];
     document.getElementById("txaxml").value = textLines[0];
     document.getElementById("count").innerHTML = 1 + "/" + textLines.length;
-    Translate_tags_to_color_span();
-    Translate_color_span_to_tag();
+    updateHtmlText();
+    updateXmlText();
     // save current filename
     localStorage.setItem(LOCAL_STORAGE.LAST_FILE_NAME, filename);
   };
   fileReader.readAsText(fileToLoad, "UTF-8");
 }
 
-async function runSegmentation(){
+async function runSegmentation() {
   let result = await (await fetch(`${SERVER_URL}segmentation.py?filename=${filename}.xml`)).json();
   if (result.error) {
     return alert(result.error);
   }
-  if (! result.refs_seg) {
+  if (!result.refs_seg) {
     return alert("Invalid response");
   }
   let fileToLoad = new Blob([result.refs_seg], {type: 'text/xml'});
@@ -175,6 +193,12 @@ function exportFile() {
   }
 }
 
+function reset() {
+  localStorage.setItem(LOCAL_STORAGE.LAST_XML_TEXT, null);
+  emptyParameters();
+  loadSession();
+}
+
 function getXmlText() {
   if (!document.getElementById("txaxml").value) {
     return "";
@@ -184,7 +208,7 @@ function getXmlText() {
   // re-add <author> tag
   for (i = 0; i < textLines.length; i++) {
     if (textLines[i].indexOf('<author>') < 0) {
-      textLines[i] = add_author_tag(textLines[i]);
+      textLines[i] = addAuthorTag(textLines[i]);
     }
   }
   // Rejoin the line, adding a <ref> tag, and replace special chars
@@ -251,12 +275,10 @@ function updateUI() {
   document.getElementById("lblColoredText").innerHTML = textLines[currentLine];
   document.getElementById("txaxml").value = textLines[currentLine];
   document.getElementById("count").innerHTML = (currentLine + 1) + "/" + textLines.length;
-  Translate_tags_to_color_span();
-  Translate_color_span_to_tag();
+  updateHtmlText();
+  updateXmlText();
 }
 
-
-// keynoard shortcuts ///////////////////////////////////////////////////////
 document.addEventListener('keydown', function (event) {
   // alert(event.keyCode);
   sel = window.getSelection();
@@ -264,397 +286,214 @@ document.addEventListener('keydown', function (event) {
   if (selectedtext === '')
     return;
   if (event.keyCode === 65) {
-    // alert('aa was pressed');
-    ChangeColor_TranslateColor('btnauthor');
+    // alert('a was pressed');
+    addTag('btnauthor');
   } else if (event.keyCode === 69) {
-    // alert('ee was pressed');
-    ChangeColor_TranslateColor('btneditor');
+    // alert('e was pressed');
+    addTag('btneditor');
   } else if (event.keyCode === 71) {
-    // alert('gg was pressed');
-    ChangeColor_TranslateColor('btngiven-names');
+    // alert('g was pressed');
+    addTag('btngiven-names');
   } else if (event.keyCode === 83) {
-    // alert('ss was pressed');
-    ChangeColor_TranslateColor('btnsurname');
+    // alert('s was pressed');
+    addTag('btnsurname');
   } else if (event.keyCode === 86) {
-    // alert('vv was pressed');
-    ChangeColor_TranslateColor('btnvolume');
+    // alert('v was pressed');
+    addTag('btnvolume');
   } else if (event.keyCode === 89) {
-    // alert('yy was pressed');
-    ChangeColor_TranslateColor('btnyear');
+    // alert('y was pressed');
+    addTag('btnyear');
   } else if (event.keyCode === 84) {
-    // alert('tt was pressed');
-    ChangeColor_TranslateColor('btntitle');
+    // alert('t was pressed');
+    addTag('btntitle');
   } else if (event.keyCode === 79) {
-    // alert('oo was pressed');
-    ChangeColor_TranslateColor('btnsource');
+    // alert('o was pressed');
+    addTag('btnsource');
   } else if (event.keyCode === 70) {
-    // alert('ff was btnfpage');
-    ChangeColor_TranslateColor('btnfpage');
+    // alert('f was btnfpage');
+    addTag('btnfpage');
   } else if (event.keyCode === 76) {
-    // alert('ll was btnlpage');
-    ChangeColor_TranslateColor('btnlpage');
+    // alert('l was btnlpage');
+    addTag('btnlpage');
   } else if (event.keyCode === 80) {
-    // alert('pp was btnPublisher');
-    ChangeColor_TranslateColor('btnPublisher');
+    // alert('pp was btnpublisher');
+    addTag('btnpublisher');
   } else if (event.keyCode === 72) {
     // alert('hh was pressed');
-    ChangeColor_TranslateColor('btnother');
+    addTag('btnother');
   } else if (event.keyCode === 68) {
     // alert('dd was pressed');
-    ChangeColor_TranslateColor('btnidentifier');
+    addTag('btnidentifier');
   } else if (event.keyCode === 73) {
     // alert('ii was pressed');
-    ChangeColor_TranslateColor('btnissue');
+    addTag('btnissue');
   } else if (event.keyCode === 85) {
     // alert('uu was pressed');
-    ChangeColor_TranslateColor('btnurl');
+    addTag('btnurl');
   } else if (event.keyCode === 82) {
     // alert('rr was pressed');
     removeTag();
   }
 });
 
-//change color in plain text then call other function to translate tags in textarea ////////
-function ChangeColor_TranslateColor(sender) {
-  //check text
-  var coloredText = document.getElementById("lblColoredText").innerHTML;
+function addTag(sender) {
+  let coloredText = document.getElementById("lblColoredText").innerHTML;
   if (coloredText === "") {
-    alert('Please Select a file');
     return;
   }
-  //Get Tag Name
-  var tagname;
-  if (sender.value)
-    tagname = sender.value;
-  else
-    tagname = sender;
-  //Get Selection Text
-  sel = window.getSelection();
-  if (sel.rangeCount && sel.getRangeAt) {
-    range = sel.getRangeAt(0);
-  }
-  // Set design mode to on
-  document.designMode = "on";
-  if (range) {
-    sel.removeAllRanges();
-    sel.addRange(range);
-  }
-  //Colorize text
-  if (tagname === "btnauthor") {
-    document.execCommand("HiliteColor", false, "#ff9681");
-  } else if (tagname === "btnsurname") {
-    document.execCommand("HiliteColor", false, "#ffce30");
-  } else if (tagname === "btngiven-names") {
-    document.execCommand("HiliteColor", false, "#aabb30");
-  } else if (tagname === "btnyear") {
-    document.execCommand("HiliteColor", false, "#bfb1d5");
-  } else if (tagname === "btntitle") {
-    document.execCommand("HiliteColor", false, "#adddcf");
-  } else if (tagname === "btnsource") {
-    document.execCommand("HiliteColor", false, "#abe1fd");
-  } else if (tagname === "btneditor") {
-    document.execCommand("HiliteColor", false, "#fed88f");
-  } else if (tagname === "btnvolume") {
-    document.execCommand("HiliteColor", false, "#ffff66");
-  } else if (tagname === "btnother") {
-    document.execCommand("HiliteColor", false, "#f4858e");
-  } else if (tagname === "btnfpage") {
-    document.execCommand("HiliteColor", false, "#ccff66");
-  } else if (tagname === "btnlpage") {
-    document.execCommand("HiliteColor", false, "#ffb3ff");
-  } else if (tagname === "btnPublisher") {
-    document.execCommand("HiliteColor", false, "#79d279");
-  } else if (tagname === "btnissue") {
-    document.execCommand("HiliteColor", false, "#659bf2");
-  } else if (tagname === "btnurl") {
-    document.execCommand("HiliteColor", false, "#5befdb");
-  } else if (tagname === "btnidentifier") {
-    document.execCommand("HiliteColor", false, "#d19bf7");
+  let tag_name;
+  if (sender.value) {
+    tag_name = sender.value.replace("btn", "");
   } else {
-    document.getElementById("error").innerHTML = " Button broken!";
+    tag_name = sender.replace("btn", "");
   }
-  // Set design mode to off
-  document.designMode = "off";
-  // ?? why??
-  var currentText = document.getElementById("lblColoredText").innerHTML;
-  document.getElementById("lblColoredText").innerHTML = currentText;
-  Translate_color_span_to_tag();
-  // Translate_tags_to_color_span();
-}
-
-function Translate_color_span_to_tag() {
-  //replaces the manually added tags with colortags in lblColoredText.
-  //lblColoredText Contains <span tags>
-  var arrayCopyOflblText = [];
-  document.getElementById("lblColoredText").innerHTML = document.getElementById("lblColoredText").innerHTML.replace(/ <\/span>/gm, "</span> ");
-  arrayCopyOflblText[currentLine] = document.getElementById("lblColoredText").innerHTML;
-  var openSpanValue = "";
-  var tagname = "";
-
-  //replace all
-
-  //for surname
-  openSpanValue = '<span style="background-color: rgb(255, 206, 48);">';
-  while (arrayCopyOflblText[currentLine].indexOf(openSpanValue) !== -1) {
-    var text1 = arrayCopyOflblText[currentLine].substr(0, arrayCopyOflblText[currentLine].indexOf(openSpanValue));
-    var text2 = arrayCopyOflblText[currentLine].substr(arrayCopyOflblText[currentLine].indexOf(openSpanValue), arrayCopyOflblText[currentLine].length);
-    text2 = text2.replace("</span>", "</surname>");
-    arrayCopyOflblText[currentLine] = text1 + text2;
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].replace(openSpanValue, '<surname>');
-  }
-
-  //for given-names
-  openSpanValue = '<span style="background-color: rgb(170, 187, 48);">';
-  while (arrayCopyOflblText[currentLine].indexOf(openSpanValue) !== -1) {
-    var text1 = arrayCopyOflblText[currentLine].substr(0, arrayCopyOflblText[currentLine].indexOf(openSpanValue));
-    var text2 = arrayCopyOflblText[currentLine].substr(arrayCopyOflblText[currentLine].indexOf(openSpanValue), arrayCopyOflblText[currentLine].length);
-    text2 = text2.replace("</span>", "</given-names>");
-    arrayCopyOflblText[currentLine] = text1 + text2;
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].replace(openSpanValue, '<given-names>');
-  }
-
-  //for year
-  openSpanValue = '<span style="background-color: rgb(191, 177, 213);">';
-  while (arrayCopyOflblText[currentLine].indexOf(openSpanValue) !== -1) {
-    var t1 = arrayCopyOflblText[currentLine].substr(0, arrayCopyOflblText[currentLine].indexOf(openSpanValue));
-    var t2 = arrayCopyOflblText[currentLine].substr(arrayCopyOflblText[currentLine].indexOf(openSpanValue), arrayCopyOflblText[currentLine].length).replace("</span>", "</year>")
-    arrayCopyOflblText[currentLine] = t1 + t2;
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].replace('<span style="background-color: rgb(191, 177, 213);">', '<year>');
-  }
-  //for title
-  openSpanValue = '<span style="background-color: rgb(173, 221, 207);">'
-  while (arrayCopyOflblText[currentLine].indexOf(openSpanValue) !== -1) {
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].substr(0, arrayCopyOflblText[currentLine].indexOf(openSpanValue)) + arrayCopyOflblText[currentLine].substr(arrayCopyOflblText[currentLine].indexOf(openSpanValue), arrayCopyOflblText[currentLine].length).replace("</span>", "</title>");
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].replace(openSpanValue, '<title>');
-  }
-  //for source
-  while (arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(171, 225, 253);">') !== -1) {
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].substr(0, arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(171, 225, 253);">')) + arrayCopyOflblText[currentLine].substr(arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(171, 225, 253);">'), arrayCopyOflblText[currentLine].length).replace("</span>", "</source>");
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].replace('<span style="background-color: rgb(171, 225, 253);">', '<source>');
-  }
-  //for editor
-  while (arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(254, 216, 143);">') !== -1) {
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].substr(0, arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(254, 216, 143);">')) + arrayCopyOflblText[currentLine].substr(arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(254, 216, 143);">'), arrayCopyOflblText[currentLine].length).replace("</span>", "</editor>");
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].replace('<span style="background-color: rgb(254, 216, 143);">', '<editor>');
-  }
-  //for volume
-  while (arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(255, 255, 102);">') !== -1) {
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].substr(0, arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(255, 255, 102);">')) + arrayCopyOflblText[currentLine].substr(arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(255, 255, 102);">'), arrayCopyOflblText[currentLine].length).replace("</span>", "</volume>");
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].replace('<span style="background-color: rgb(255, 255, 102);">', '<volume>');
-  }
-  //fpage ================================================================
-  while (arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(204, 255, 102);">') !== -1) {
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].substr(0, arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(204, 255, 102);">')) + arrayCopyOflblText[currentLine].substr(arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(204, 255, 102);">'), arrayCopyOflblText[currentLine].length).replace("</span>", "</fpage>");
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].replace('<span style="background-color: rgb(204, 255, 102);">', '<fpage>');//
-  }
-  //lpage ================================================================
-  while (arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(255, 179, 255);">') !== -1) {
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].substr(0, arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(255, 179, 255);">')) + arrayCopyOflblText[currentLine].substr(arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(255, 179, 255);">'), arrayCopyOflblText[currentLine].length).replace("</span>", "</lpage>");
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].replace('<span style="background-color: rgb(255, 179, 255);">', '<lpage>');//
-  }
-  //btnPublisher ================================================================
-  while (arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(121, 210, 121);">') !== -1) {
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].substr(0, arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(121, 210, 121);">')) + arrayCopyOflblText[currentLine].substr(arrayCopyOflblText[currentLine].indexOf('<span style="background-color: rgb(121, 210, 121);">'), arrayCopyOflblText[currentLine].length).replace("</span>", "</publisher>");
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].replace('<span style="background-color: rgb(121, 210, 121);">', '<publisher>');//
-  }
-  //other ================================================================
-  openSpanValue = '<span style="background-color: rgb(244, 133, 142);">';
-  tagname = 'other';
-  arrayCopyOflblText = subfunction_Translate_color_span_to_tag(arrayCopyOflblText, openSpanValue, tagname);
-  textLines[currentLine] = arrayCopyOflblText[currentLine];
-  //issue ================================================================
-  openSpanValue = '<span style="background-color: rgb(101, 155, 242);">'
-  tagname = 'issue';
-  arrayCopyOflblText = subfunction_Translate_color_span_to_tag(arrayCopyOflblText, openSpanValue, tagname);
-  textLines[currentLine] = arrayCopyOflblText[currentLine];
-  //url ================================================================
-  openSpanValue = '<span style="background-color: rgb(91, 239, 219);">'
-  tagname = 'url';
-  arrayCopyOflblText = subfunction_Translate_color_span_to_tag(arrayCopyOflblText, openSpanValue, tagname);
-  textLines[currentLine] = arrayCopyOflblText[currentLine];
-  //identifier ================================================================
-  openSpanValue = '<span style="background-color: rgb(209, 155, 247);">'
-  tagname = 'identifier';
-  arrayCopyOflblText = subfunction_Translate_color_span_to_tag(arrayCopyOflblText, openSpanValue, tagname);
-  textLines[currentLine] = arrayCopyOflblText[currentLine];
-  // ================================================================
-  var currentText = textLines[currentLine];
-  arrayCopyOflblText[currentLine] = currentText;
-  // ================================================================
-  currentText = add_author_tag(currentText);
-  document.getElementById("txaxml").value = currentText;
-}
-
-function add_author_tag(currentText) {
-  let arr = []
-  let arr_open_surname = getIndicesOf('<surname>', currentText)
-  let arr_close_surname = getIndicesOf('</surname>', currentText)
-  let arr_open_givennames = getIndicesOf('<given-names>', currentText)
-  let arr_close_givennames = getIndicesOf('</given-names>', currentText)
-  let len_of_arr_open_surname = arr_open_surname.length
-  let len_of_arr_open_givennames = arr_open_givennames.length
-
-  let max_number = (len_of_arr_open_surname >= len_of_arr_open_givennames) ? len_of_arr_open_surname : len_of_arr_open_givennames
-
-  String.prototype.splice = function (idx, rem, str) {
-    return this.slice(0, idx) + str + this.slice(idx + Math.abs(rem));
-  };
-
-  for (var i = 0; i < max_number; i++) {
-    arr_open_surname = getIndicesOf('<surname>', currentText)
-    arr_close_surname = getIndicesOf('</surname>', currentText)
-    arr_open_givennames = getIndicesOf('<given-names>', currentText)
-    arr_close_givennames = getIndicesOf('</given-names>', currentText)
-
-    if (arr_open_surname[i] !== undefined && arr_open_givennames[i] === undefined) {
-      arr_open_surname = getIndicesOf('<surname>', currentText)
-      currentText = currentText.splice(arr_open_surname[i], 0, "<author>");
-      arr_close_surname = getIndicesOf('</surname>', currentText)
-      currentText = currentText.splice(arr_close_surname[i] + 10, 0, "</author>");
-    } else if (arr_open_givennames[i] !== undefined && arr_open_surname[i] === undefined) {
-      arr_open_givennames = getIndicesOf('<given-names>', currentText)
-      currentText = currentText.splice(arr_open_givennames[i], 0, "<author>");
-      arr_close_givennames = getIndicesOf('</given-names>', currentText)
-      currentText = currentText.splice(arr_close_givennames[i] + 14, 0, "</author>");
-    } else {
-      if (arr_open_surname[i] < arr_open_givennames[i]) {
-        // surname is first tag AND givennames is second tag
-        arr_open_surname = getIndicesOf('<surname>', currentText)
-        currentText = currentText.splice(arr_open_surname[i], 0, "<author>");
-        arr_close_givennames = getIndicesOf('</given-names>', currentText)
-        currentText = currentText.splice(arr_close_givennames[i] + 14, 0, "</author>");
-      } else if (arr_open_surname[i] > arr_open_givennames[i]) {
-        // givennames is first tag AND surname is second tag
-        arr_open_givennames = getIndicesOf('<given-names>', currentText)
-        currentText = currentText.splice(arr_open_givennames[i], 0, "<author>");
-        arr_close_surname = getIndicesOf('</surname>', currentText)
-        currentText = currentText.splice(arr_close_surname[i] + 10, 0, "</author>");
+  let sel = window.getSelection();
+  // trim whitespace from selection, not working
+  //let range = sel.getRangeAt(0);
+  //sel.removeAllRanges();
+  //set.addRange(fix_selection(range));
+  let node = sel.focusNode;
+  // prevent tag nesting except if <other> tag is part of any other tag except <other>
+  do {
+    if (node.getAttribute) {
+      let tag = node.getAttribute("data-tag");
+      if (tag && !(tag_name === "other" && tag !== "other")) {
+        return;
       }
     }
-  }
-  return currentText;
+    node = node.parentNode;
+  } while (node)
+  let parentNode = document.createElement("span");
+  parentNode.setAttribute("data-tag", tag_name);
+  parentNode.style.backgroundColor = colorMap[tag_name];
+  sel.getRangeAt(0).surroundContents(parentNode);
+  updateXmlText();
 }
 
-function getIndicesOf(searchStr, str) {
-  var searchStrLen = searchStr.length;
-  if (searchStrLen === 0) {
-    return [];
-  }
-  var startIndex = 0, index, indices = [];
-  while ((index = str.indexOf(searchStr, startIndex)) > -1) {
-    indices.push(index);
-    startIndex = index + searchStrLen;
-  }
-  return indices;
+function updateXmlText() {
+  let coloredText = document.getElementById("lblColoredText").innerHTML;
+  let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
+  let regex2 = /<span data-tag="([^"]+)".*?>(.+?)<\/span>/g;
+  let xmlText = coloredText
+    .replace(regex1, "<other>$1</other>")
+    .replace(regex2, "<$1>$2</$1>")
+  xmlText = addAuthorTag(xmlText);
+  document.getElementById("txaxml").value = xmlText;
 }
 
-function subfunction_Translate_color_span_to_tag(arrayCopyOflblText, openSpanValue, tagname) {
-  while (arrayCopyOflblText[currentLine].indexOf(openSpanValue) !== -1) {
-    var t1 = arrayCopyOflblText[currentLine].substr(0, arrayCopyOflblText[currentLine].indexOf(openSpanValue));
-    var t2 = arrayCopyOflblText[currentLine].substr(arrayCopyOflblText[currentLine].indexOf(openSpanValue), arrayCopyOflblText[currentLine].length).replace("</span>", "</" + tagname + ">");
-    arrayCopyOflblText[currentLine] = t1 + t2;
-    arrayCopyOflblText[currentLine] = arrayCopyOflblText[currentLine].replace(openSpanValue, '<' + tagname + '>');
+function updateHtmlText() {
+  let tmp = document.getElementById("txaxml").value
+    .replace(/<author>/g, "")
+    .replace(/<\/author>/g, "");
+  for (let [tag_name, colorCode] of Object.entries(colorMap)) {
+    let regex = new RegExp(`<${tag_name}>(.*?)</${tag_name}>`, 'g');
+    let replacement = `<span data-tag="${tag_name}" style="background-color:${colorCode}">$1</span>`;
+    tmp = tmp.replace(regex, replacement);
   }
-  return arrayCopyOflblText;
+  document.getElementById("lblColoredText").innerHTML = tmp;
 }
 
-function Translate_tags_to_color_span() {// replaces the manually added tags with colortags for lblColoredText.
-  textLines[currentLine] = document.getElementById("txaxml").value;
-
-  var textCopy = textLines;
-  // //author
-  // while (textCopy[currentLine].indexOf("<author>") !== -1) {
-  // 	textCopy[currentLine] = textCopy[currentLine].replace("</author>", "</span>");
-  // 	textCopy[currentLine] = textCopy[currentLine].replace('<author>', '<span style="background-color: rgb(255, 150, 129);">');
-  // }
-  //surname
-  while (textCopy[currentLine].indexOf("<surname>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</surname>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<surname>', '<span style="background-color: rgb(255, 206, 48);">');
+function addAuthorTag(xml) {
+  let startTag = "<author>";
+  let endTag = "</author>";
+  let firstStartTagMatch = null;
+  let secondStartTagMatch = null;
+  let lastEndTagMatch = null;
+  let offset = 0;
+  let matches = xml.matchAll(/<\/?([^>]+)>/g);
+  let pos;
+  for (let match of matches) {
+    let [tag, tagName] = match;
+    if (["surname", "given-names"].includes(tagName)) {
+      if (!tag.startsWith("</")) {
+        // opening tag
+        if (firstStartTagMatch === null) {
+          // insert <author> before opening first surname or given-names
+          firstStartTagMatch = match;
+          pos = match.index + offset;
+          xml = xml.substr(0, pos) + startTag + xml.substr(pos);
+          offset += startTag.length;
+          continue;
+        }
+        if (secondStartTagMatch === null) {
+          if (tag !== firstStartTagMatch[0]) {
+            // if the second opening tag is not the same as the first, remember it and go on
+            secondStartTagMatch = match;
+            continue;
+          }
+          // tag repeats
+        }
+      } else {
+        // closing tag
+        lastEndTagMatch = match;
+        if (!secondStartTagMatch || tagName !== secondStartTagMatch[1]) {
+          continue;
+        }
+      }
+      // insert </author> after the last closing tag
+      pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
+      xml = xml.substr(0, pos) + endTag + xml.substr(pos);
+      offset += endTag.length;
+      if (!tag.startsWith("</")) {
+        // insert new opening tag
+        pos = match.index + offset;
+        xml = xml.substr(0, pos) + startTag + xml.substr(pos);
+        offset += startTag.length;
+      }
+      // reset matches
+      firstStartTagMatch = null;
+      secondStartTagMatch = null;
+      lastEndTagMatch = null;
+    }
   }
-  //2
-  while (textCopy[currentLine].indexOf('</span><span style="background-color: rgb(255, 206, 48);>') !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace('</span><span style="background-color: rgb(255, 206, 48);>', '<span style="background-color: rgb(255, 206, 48);">');
+  if (lastEndTagMatch) {
+    // insert missing closing tag
+    pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
+    xml = xml.substr(0, pos) + endTag + xml.substr(pos);
   }
-  //given-names
-  while (textCopy[currentLine].indexOf("<given-names>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</given-names>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<given-names>', '<span style="background-color: rgb(170, 187, 48);">');
-  }
-  //2
-  while (textCopy[currentLine].indexOf('</span><span style="background-color: rgb(170, 187, 48);">') !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace('</span><span style="background-color: rgb(170, 187, 48);">', '<span style="background-color: rgb(170, 187, 48);">');
-  }
-  //year
-  while (textCopy[currentLine].indexOf("<year>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</year>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<year>', '<span style="background-color: rgb(191, 177, 213);">');
-  }
-  while (textCopy[currentLine].indexOf("<title>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</title>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<title>', '<span style="background-color: rgb(173, 221, 207);">');
-  }
-  while (textCopy[currentLine].indexOf("<source>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</source>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<source>', '<span style="background-color: rgb(171, 225, 253);">');
-  }
-  while (textCopy[currentLine].indexOf("<editor>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</editor>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<editor>', '<span style="background-color: rgb(254, 216, 143);">');
-  }
-  //volume
-  while (textCopy[currentLine].indexOf("<volume>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</volume>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<volume>', '<span style="background-color: rgb(255, 255, 102);">');
-  }
-  //fpage
-  while (textCopy[currentLine].indexOf("<fpage>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</fpage>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<fpage>', '<span style="background-color: rgb(204, 255, 102);">');//
-  }
-  //lpage
-  while (textCopy[currentLine].indexOf("<lpage>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</lpage>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<lpage>', '<span style="background-color: rgb(255, 179, 255);">');//
-  }
-  //lpage
-  while (textCopy[currentLine].indexOf("<publisher>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</publisher>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<publisher>', '<span style="background-color: rgb(121, 210, 121);">');//
-  }
-  // other
-  while (textCopy[currentLine].indexOf("<other>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</other>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<other>', '<span style="background-color: rgb(244, 133, 142);">');
-  }
-  // issue
-  while (textCopy[currentLine].indexOf("<issue>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</issue>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<issue>', '<span style="background-color: rgb(101, 155, 242);">');
-  }
-  // url
-  while (textCopy[currentLine].indexOf("<url>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</url>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<url>', '<span style="background-color: rgb(91, 239, 219);">');
-  }
-  // identifier
-  while (textCopy[currentLine].indexOf("<identifier>") !== -1) {
-    textCopy[currentLine] = textCopy[currentLine].replace("</identifier>", "</span>");
-    textCopy[currentLine] = textCopy[currentLine].replace('<identifier>', '<span style="background-color: rgb(209, 155, 247);">');
-  }
-  document.getElementById("lblColoredText").innerHTML = textCopy[currentLine];
+  return xml;
 }
 
-// delete function /////////////////////////////////////////////////////////////////
 function removeTag() {
   let sel = window.getSelection();
-  if (sel.toString() === "") {
-    alert('No Selection');
+  if (!sel) {
     return;
   }
   if (sel.anchorNode.parentElement.toString() === "[object HTMLSpanElement]") {
     $(sel.anchorNode.parentElement).contents().unwrap();
-    Translate_color_span_to_tag();
   }
+  updateXmlText();
 }
 
+function removeAllTags() {
+  document.getElementById("lblColoredText").innerHTML =
+    document.getElementById("lblColoredText").innerHTML
+      .replace(/<\/?span[^>]*>/g, "");
+  updateXmlText();
+}
+
+// from https://stackoverflow.com/a/62125595
+function fix_selection(range) {
+    var selection = window.getSelection();
+    var selected = range.toString();
+    range = selection.getRangeAt(0);
+    let start = selection.anchorOffset;
+    let end = selection.focusOffset;
+    if (!selection.isCollapsed) {
+        if (/\s+$/.test(selected)) { // Removes leading spaces
+            if (start > end) {
+                range.setEnd(selection.focusNode, --start);
+            } else {
+                range.setEnd(selection.anchorNode, --end);
+            }
+        }
+        if (/^\s+/.test(selected)) { // Removes trailing spaces
+            if (start > end) {
+                range.setStart(selection.anchorNode, ++end);
+            } else {
+                range.setStart(selection.focusNode, ++start);
+            }
+        }
+    }
+    return range
+}
