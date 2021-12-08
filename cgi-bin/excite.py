@@ -38,11 +38,15 @@ try:
     elif command == "exparser":
         # references
         result_path = refs_dir + filename + ".csv"
-        #cleanup.append(result_path)
+        cleanup.append(result_path)
 
     elif command == "segmentation":
+        # this command won't be called in the docker instance because
+        # the file at result_path has already been produced in the previous step
         result_path = refs_seg_dir + filename + ".xml"
-        # cleanup.append(result_path)
+        if not os.path.isfile(result_path):
+            raise RuntimeError("You need to run the 'exparser' command first.")
+        cleanup.append(result_path)
 
     else:
         raise RuntimeError("Invalid command: " + command)
