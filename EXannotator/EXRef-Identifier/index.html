@@ -4,6 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.1/css/all.css" crossorigin="anonymous">
     <link href="css/bootstrap.min.css" rel="stylesheet">
     <link href="css/jquery-ui.min.css" rel="stylesheet">
     <link href="css/css-loader.css" rel="stylesheet">
@@ -15,43 +16,97 @@
 <body>
 <!-- Spinner -->
 <div class="loader loader-default" id="spinner"></div>
+<ul id="contextMenu" class="dropdown-menu" role="menu">
+    <li><a id="btn-ref-part" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('ref');" href="#">
+        Markup selection as reference
+    </a></li>
+    <li><a id="btn-ref-line" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('ref', true);" href="#">
+        Markup whole lines as reference
+    </a></li>
+    <li><a id="btn-oth" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('oth');" href="#">
+        Markup as non-reference
+    </a></li>
+    <li class="divider"></li>
+    <li><a id="btn-remove-tag" class="ui-state-disabled" tabindex="-1" onclick="Actions.removeTag();" href="#">
+        Remove Tag
+    </a></li>
+</ul>
+<div id="modal-help" class="modal" tabindex="-1" role="dialog">
+  <div class="modal-dialog" role="document">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 class="modal-title">EXcite Reference Identification Training</h2>
+      </div>
+      <div class="modal-body">
+        <p>With this web app, you can mark up citation data in text extracted from a PDF,
+            which then can be used to train the <a href="https://excite.informatik.uni-stuttgart.de/" target="_blank">
+                EXcite</a> reference extraction model. Please proceed as follows:</p>
+          <ol>
+              <li>
+                  Load a text to mark up. This can be done in several ways:
+                  <ul>
+                      <li>Load a PDF and extract text and layout data by clicking the "Analyze" button. This takes a while.</li>
+                      <li>Load a previously processed file (.csv) to continue working on it.</li>
+                      <li>Load a textfile (.txt) containing OCR data, which does not contain layout information.</li>
+                  </ul>
+              </li>
+              <li>
+                  Mark up the text by selecting the parts of the text that contains citation/reference data.
+                  After selecting text, a menu popup is shown with the available options. You can
+                  <ul>
+                      <li>Mark up the selected fragment</li>
+                      <li>Markup the whole line of all line that are selected</li>
+                      <li>
+                          Remove a section within a previously marked up area which contains non-reference data;
+                          typically these are headers and footers which are inserted into a reference that spans
+                          a page break.
+                      </li>
+                      <li>Remove markup</li>
+                  </ul>
+              </li>
+              <li>
+                  After you have finished your markup, save the document to the backend. You can also download
+                  it to your computer using the "Export" button.
+              </li>
+              <li>
+                  Go to the Reference Segmentation Tool to continue training.
+              </li>
+          </ol>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+      </div>
+    </div>
+  </div>
+</div>
 <div class="container-fluid">
     <div class="panel panel-default top">
         <div class="panel-body">
             <div class="row">
                 <div class="col-xs-12 col-sm-12 col-md-10 col-lg-10 margin-bottom-5">
-                    <label for="btn-upload" class="btn btn-primary">Choose Files (.txt/.pdf/.csv)</label>
+                    <label for="btn-upload" class="btn btn-primary">Load file(s) (.txt/.pdf/.csv)</label>
                     <input type="file" id="btn-upload" class="btn btn-default"
                            onchange="Actions.upload(); this.value=null; return false;"
                            accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
                     <button id="btn-exparser" disabled class="btn btn-primary" type="button"
-                            onclick="Actions.run_exparser();">Analyze</button>
-                    <button id="btn-ref-part" disabled class="btn btn-success" type="button"
-                            onclick="Actions.addTag('ref');">
-                        &lt;ref&gt; (<span class="emphasizeLetter">P</span>art)
-                    </button>
-                    <button id="btn-ref-line" disabled class="btn btn-success" type="button"
-                            onclick="Actions.addTag('ref', true);">
-                        &lt;ref&gt; (<span class="emphasizeLetter">L</span>ine)
-                    </button>
-                    <button id="btn-oth" disabled class="btn btn-secondary" type="button"
-                            onclick="Actions.addTag('oth');">
-                        &lt<span class="emphasizeLetter">O</span>th&gt;
-                    </button>
-                    <button id="btn-remove-tag" disabled class="btn btn-danger" value="btnRemoveTag" type="button"
-                            onclick="Actions.removeTag();">
-                        <span class="emphasizeLetter">R</span>emove Tag
+                            onclick="Actions.run_exparser();">Analyze
                     </button>
                     <button id="btn-export" disabled class="btn btn-primary" type="button"
-                            onclick="Actions.export();">Export</button>
+                            onclick="Actions.export();">Export
+                    </button>
                     <button id="btn-save" disabled class="btn btn-primary" type="button"
-                            onclick="Actions.save();">Save</button>
+                            onclick="Actions.save();">Save
+                    </button>
                     <button id="btn-seganno" disabled class="btn btn-primary" type="button"
-                            onclick="Actions.open_in_seganno();">EXRef-Segmentation</button>
+                            onclick="Actions.open_in_seganno();">EXRef-Segmentation
+                    </button>
+                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#modal-help">
+                       <i class="fas fa-question-circle"></i>&nbsp;Help
+                    </button>
                 </div>
                 <div class="col-xs-12 col-sm-12 col-md-2 col-lg-2 textalignr">
-                    <a href="https://excite.informatik.uni-stuttgart.de/"  target="_blank">
-                        <img height="50px" src="images/exCite_logo_150.png" alt="img">
+                    <a href="https://excite.informatik.uni-stuttgart.de/" target="_blank">
+                        <img height="30px" src="images/exCite_logo_150.png" alt="img">
                     </a>
                     <p>EXRef-Identifier</p>
                 </div>
@@ -67,9 +122,19 @@
                         <div class="col-md-3" style="width:75%">
                             <label id="txtSize">Load text file</label>
                         </div>
-                        <div class="col-md-2">
-                            <input id="btndeltxt" type="image" src="images/delete2.png" alt="Delete Text File"
-                                   width="24" height="24" style="display : none; " onclick="GUI.removeTextFile()">
+                        <div class="col-md-3">
+                            <button id="btndeltxt" alt="Remove text file"
+                                    style="display : none; " onclick="GUI.removeTextFile()">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button id="btnfindPrevRef" alt="Find previous reference"
+                                    style="display: none; " onclick="GUI.findNextRef(-1,this)">
+                                <i class="fas  fa-arrow-left"></i>
+                            </button>
+                            <button id="btnfindNextRef" alt="Find next reference"
+                                    style="display: none; " onclick="GUI.findNextRef(1, this)">
+                                <i class="fas  fa-arrow-right"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="row">
@@ -88,8 +153,10 @@
                             <label id="pdfSize">Load PDF file</label>
                         </div>
                         <div class="col-md-2">
-                            <input id="btndelpdf" type="image" src="images/delete2.png" alt="Delete pdf File" width="24"
-                                   height="24" style="display : none; " onclick="GUI.removePdfFile()">
+                            <button id="btndelpdf" alt="Remove PDF file"
+                                    style="display : none; " onclick="GUI.removePdfFile()">
+                                <i class="fas fa-trash"></i>
+                            </button>
                         </div>
                     </div>
                     <div class="row">

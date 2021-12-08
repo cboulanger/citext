@@ -100,8 +100,8 @@ class Actions {
     // prevent nesting of tags except <oth> in <ref>
     let node = sel.focusNode;
     do {
-      if (node.getAttribute) {
-        let tag = node.getAttribute("data-tag");
+      if (node.dataset) {
+        let tag = node.dataset.tag;
         if (tag && !(tag_name === "oth" && tag === "ref")) {
           return;
         }
@@ -281,19 +281,6 @@ class Utils {
 class GUI {
 
   static init() {
-    // assign key down to buttons
-    document.addEventListener('keydown', function (e) {
-      if (!window.getSelection().toString()) return;
-      if (e.code === "KeyR") {
-        Actions.removeTag();
-      } else if (e.code === "KeyO") {
-        GUI.updateColor('oth');
-      } else if (e.code === "KeyP") {
-        GUI.updateColor('ref');
-      }
-    });
-
-
     // on page load
     $(document).ready(function () {
       // force remove PDF because loading saved src doesn't work yet
@@ -301,10 +288,6 @@ class GUI {
         localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC ) || */ 'about:blank';
       // disable buttone (on reload)
       $("#btn-exparser").prop("disabled", true);
-      $("#btn-oth").prop("disabled", true);
-      $("#btn-ref-part").prop("disabled", true);
-      $("#btn-ref-line").prop("disabled", true);
-      $("#btn-remove-tag").prop("disabled", true);
       $("#btn-export").prop("disabled", true);
       $("#btn-save").prop("disabled", true);
       $("#btn-seganno").prop("disabled", true);
@@ -316,9 +299,8 @@ class GUI {
         GUI.setTextContent(markedUpText);
       }
       // long-pressing selects span
-      $(document).ready(function () {
+      $(document).ready(() => {
         let longpress = false;
-
         $(document).on('click', e => {
           if (!longpress) return;
           let sel = window.getSelection();
@@ -332,17 +314,52 @@ class GUI {
             sel.addRange(range)
           }
         });
-
         let startTime, endTime;
         $(document).on('pointerdown', function () {
           startTime = new Date().getTime();
         });
-
         $(document).on('pointerup', function () {
           endTime = new Date().getTime();
           longpress = (endTime - startTime >= 500);
         });
       });
+
+      // show popup on select
+      $(document).ready(() => {
+        const contextMenu = $("#contextMenu");
+        const contentLabel = $("#content1");
+        contentLabel.on("pointerup", e => {
+          let sel = window.getSelection();
+          let node = sel.focusNode;
+          let tag;
+          while (node !== contentLabel) {
+            if (node.dataset) {
+              tag = node.dataset.tag;
+              break;
+            }
+            node = node.parentNode;
+          }
+          $("#btn-ref-part").toggleClass("ui-state-disabled", Boolean(tag));
+          $("#btn-ref-line").toggleClass("ui-state-disabled", Boolean(tag));
+          $("#btn-oth").toggleClass("ui-state-disabled", !Boolean(tag) || tag === "oth");
+          $("#btn-remove-tag").toggleClass("ui-state-disabled", !Boolean(tag));
+          if (contextMenu.is(":visible") || !sel.toString().trim()) {
+            contextMenu.hide();
+            return;
+          }
+          contextMenu
+            .show()
+            .css({
+              position: "absolute",
+              left: e.pageX,
+              top: e.pageY
+            });
+        });
+        contextMenu.on("pointerup", () => setTimeout(() => {
+          contextMenu.hide();
+          window.getSelection().removeAllRanges();
+        }, 100));
+      })
 
       // save text before leaving the page
       window.onbeforeunload = Actions.saveToLocalStorage;
@@ -360,16 +377,14 @@ class GUI {
   static removeTextFile() {
     document.getElementById("txtSize").innerHTML = "Load text file";
     $("#btndeltxt").hide();
+    $("#btnfindNextRef").hide();
+    $("#btnfindPrevRef").hide();
     document.getElementById("content1").innerHTML = "";
     document.getElementById("ptxaxml").innerHTML = "";
     textFileName = "";
     cols2numbers = [];
     localStorage.removeItem(LOCAL_STORAGE.TEXT_FILE_NAME);
     localStorage.removeItem(LOCAL_STORAGE.MARKED_UP_TEXT);
-    $("#btn-oth").prop("disabled", true);
-    $("#btn-ref-part").prop("disabled", true);
-    $("#btn-ref-line").prop("disabled", true);
-    $("#btn-remove-tag").prop("disabled", true);
     $("#btn-export").prop("disabled", true);
     $("#btn-save").prop("disabled", true);
     $("#btn-seganno").prop("disabled", true);
@@ -381,6 +396,24 @@ class GUI {
     document.getElementById("pdfiframe").src = 'about:blank';
     pdfFileName = "";
     $("#btn-exparser").prop("disabled", true);
+  }
+
+  static findNextRef(offset = 1, btn) {
+    const contentDiv = document.getElementById("content1");
+    let currentRefNode = this.__currentRefNode;
+    let nodes = Array.from(contentDiv.getElementsByTagName("span"));
+    if (!currentRefNode) {
+      currentRefNode = nodes.find(node => node.dataset.tag === "ref");
+      if (!currentRefNode) return;
+    } else {
+      let index = nodes.findIndex(node => node === currentRefNode);
+      if (index < 0 || index + offset === offset < 0 ? -1 : nodes.length) {
+        return
+      }
+      currentRefNode = nodes[index + offset];
+    }
+    currentRefNode.scrollIntoView({behavior: 'smooth', block: 'center', inline: 'start'});
+    this.__currentRefNode = currentRefNode;
   }
 
   static updateTaggedText() {
@@ -436,10 +469,8 @@ class GUI {
       .replace(/</g, "&lt;");
     // enable buttons
     $("#btndeltxt").show();
-    $("#btn-oth").prop("disabled", false);
-    $("#btn-ref-part").prop("disabled", false);
-    $("#btn-ref-line").prop("disabled", false);
-    $("#btn-remove-tag").prop("disabled", false);
+    $("#btnfindNextRef").show();
+    $("#btnfindPrevRef").show();
     $("#btn-seganno").prop("disabled", false);
     $("#btn-save").prop("disabled", false);
     $("#btn-export").prop("disabled", false);
