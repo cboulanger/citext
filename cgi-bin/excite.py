@@ -1,6 +1,6 @@
 #!/usr/bin/python3
 
-import json, os, cgi, shutil, subprocess, io, sys
+import json, os, cgi, shutil, subprocess, io, sys, tempfile
 
 print("Content-type: application/json")
 print()
@@ -28,7 +28,9 @@ try:
 
     if command == "layout":
         try:
-            shutil.move("/tmp/" + filename + ".pdf", pdf_dir + filename + ".pdf")
+            source = tempfile.gettempdir() + "/" + filename + ".pdf"
+            target = pdf_dir + filename + ".pdf"
+            shutil.move(source, target)
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
 
