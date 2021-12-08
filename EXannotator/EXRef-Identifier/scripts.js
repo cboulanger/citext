@@ -91,18 +91,18 @@ class Actions {
     }
   }
 
-  static addTag(tag_name, wholeLine= false) {
+  static addTag(tag_name, wholeLine = false) {
     let sel = window.getSelection();
     if (sel.toString() === "") return;
     if (wholeLine) {
-      sel.setBaseAndExtent(sel.anchorNode,0, sel.focusNode, sel.focusNode.length);
+      sel.setBaseAndExtent(sel.anchorNode, 0, sel.focusNode, sel.focusNode.length);
     }
     // prevent nesting of tags except <oth> in <ref>
     let node = sel.focusNode;
     do {
       if (node.getAttribute) {
         let tag = node.getAttribute("data-tag");
-        if (tag && !(tag_name === "oth" && tag === "ref" )) {
+        if (tag && !(tag_name === "oth" && tag === "ref")) {
           return;
         }
       }
@@ -124,19 +124,14 @@ class Actions {
 
   static removeTag() {
     let sel = window.getSelection();
-    if (!sel) {
-      return;
+    if (!sel) return;
+    let el = sel.focusNode;
+    while (el) {
+      if (el.dataset && el.dataset.tag) break;
+      el = el.parentElement;
     }
-    if (sel.anchorNode.parentElement.toString() === "[object HTMLSpanElement]") {
-      $(sel.anchorNode.parentElement).contents().unwrap();
-    }
-    // let fn = sel.focusNode;
-    // console.log(fn)
-    // [fn.previousSibling,fn, fn.nextSibling].forEach(node => {
-    //   if ( node && node.outerHTML) {
-    //     node.outerHTML = node.textContent || "";
-    //   }
-    // })
+    if (!el) return;
+    $(el).contents().unwrap();
     GUI.updateTaggedText();
   }
 
@@ -153,7 +148,7 @@ class Actions {
     return result
   }
 
-   static async run_exparser() {
+  static async run_exparser() {
     if (!confirm("Do you really want to run exparser to identify references in this document?")) {
       return;
     }
@@ -184,8 +179,6 @@ class Actions {
     // combine layout doc and references
     let words = layoutDoc.replace(/\n/g, "~~~CR~~~ ").split(" ");
     refs = refs.split('\n').filter(Boolean);
-
-    console.log({words, refs});
     for (let ref of refs) {
       let refWords = ref.split(" ");
       // try to match each occurrence of the first word of the reference
@@ -193,19 +186,19 @@ class Actions {
       let indices = words.map((word, index) => word === refWords[0] ? index : '').filter(String);
       for (let index of indices) {
         let i;
-        for (i=1; i < refWords.length; i++) {
+        for (i = 1; i < refWords.length; i++) {
           // compare ref word with punctuation removed ...
-          let refWord = refWords[i].replace(/\p{P}/gu,"").trim();
+          let refWord = refWords[i].replace(/\p{P}/gu, "").trim();
           // ... with current word without punctuation and without the layout stuff
           let currWord = words[index + i]
-            .replace(/\p{P}/gu,"")
-            .replace(/(\t[^\t]+){6}/,"")
+            .replace(/\p{P}/gu, "")
+            .replace(/(\t[^\t]+){6}/, "")
             .trim();
           // if word contains hyphen, join with next word if exists
           if (currWord.match(/\p{Pd}/gu) && words[index + i + 1]) {
             currWord = currWord + words[index + i + 1]
-              .replace(/\p{P}/gu,"")
-              .replace(/(\t[^\t]+){6}/,"")
+              .replace(/\p{P}/gu, "")
+              .replace(/(\t[^\t]+){6}/, "")
               .trim();
           }
           if (refWord === currWord) continue;
@@ -215,14 +208,14 @@ class Actions {
         if (i === refWords.length) {
           // found! add tags
           words[index] = "<ref>" + words[index];
-          words[index +i -1] += "</ref>";
+          words[index + i - 1] += "</ref>";
         }
       }
     }
     textFileName = pdfFileName.replace(".pdf", ".csv");
     $("#txtSize").text(textFileName);
     textFileExt = "csv";
-    layoutDoc = words.join(" ").replace(/~~~CR~~~/g,"\n")
+    layoutDoc = words.join(" ").replace(/~~~CR~~~/g, "\n")
     GUI.setTextContent(layoutDoc);
   }
 
@@ -242,7 +235,7 @@ class Actions {
     localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
     GUI.showSpinner(`Saving ${textFileName} to training data.`);
     let body = JSON.stringify({
-      filename : textFileName,
+      filename: textFileName,
       type: "layout",
       data
     }) + "\n\n";
@@ -291,7 +284,6 @@ class GUI {
     // assign key down to buttons
     document.addEventListener('keydown', function (e) {
       if (!window.getSelection().toString()) return;
-      console.log(e.code);
       if (e.code === "KeyR") {
         Actions.removeTag();
       } else if (e.code === "KeyO") {
@@ -300,6 +292,7 @@ class GUI {
         GUI.updateColor('ref');
       }
     });
+
 
     // on page load
     $(document).ready(function () {
@@ -316,12 +309,41 @@ class GUI {
       $("#btn-save").prop("disabled", true);
       $("#btn-seganno").prop("disabled", true);
       // get text from local storage
-      let markedUpText =  localStorage.getItem(LOCAL_STORAGE.MARKED_UP_TEXT);
+      let markedUpText = localStorage.getItem(LOCAL_STORAGE.MARKED_UP_TEXT);
       if (markedUpText) {
         textFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME)
         document.getElementById("txtSize").innerHTML = textFileName;
         GUI.setTextContent(markedUpText);
       }
+      // long-pressing selects span
+      $(document).ready(function () {
+        let longpress = false;
+
+        $(document).on('click', e => {
+          if (!longpress) return;
+          let sel = window.getSelection();
+          if (!sel.focusNode || !sel.focusNode.parentElement) return;
+          let p = sel.focusNode.parentElement;
+          if (e.target !== p) return;
+          if (p.dataset && p.dataset.tag) {
+            sel.removeAllRanges();
+            let range = document.createRange();
+            range.selectNodeContents(p);
+            sel.addRange(range)
+          }
+        });
+
+        let startTime, endTime;
+        $(document).on('pointerdown', function () {
+          startTime = new Date().getTime();
+        });
+
+        $(document).on('pointerup', function () {
+          endTime = new Date().getTime();
+          longpress = (endTime - startTime >= 500);
+        });
+      });
+
       // save text before leaving the page
       window.onbeforeunload = Actions.saveToLocalStorage;
     });
@@ -368,7 +390,7 @@ class GUI {
       document.getElementById("content1").innerHTML
         .replace(regex1, "<oth>$1</oth>")
         .replace(regex2, "<ref>$1</ref>")
-        .replace(/<br>/g,"\n")
+        .replace(/<br>/g, "\n")
         .replace(/</g, "&lt;");
   }
 
@@ -410,7 +432,7 @@ class GUI {
     }
     document.getElementById("content1").innerHTML = html;
     document.getElementById("ptxaxml").innerHTML = tagged_text
-      .replace(/<br>/g,"\n")
+      .replace(/<br>/g, "\n")
       .replace(/</g, "&lt;");
     // enable buttons
     $("#btndeltxt").show();

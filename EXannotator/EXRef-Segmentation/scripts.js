@@ -42,6 +42,35 @@ function emptyParameters() {
 
 $(document).ready(loadSession);
 
+// long-pressing selects span
+$(document).ready(function () {
+  let longpress = false;
+
+  $(document).on('click', e => {
+    if (!longpress) return;
+    let sel = window.getSelection();
+    if (!sel.focusNode || !sel.focusNode.parentElement) return;
+    let p = sel.focusNode.parentElement;
+    if (e.target !== p) return;
+    if (p.dataset && p.dataset.tag) {
+      sel.removeAllRanges();
+      let range = document.createRange();
+      range.selectNodeContents(p);
+      sel.addRange(range)
+    }
+  });
+
+  let startTime, endTime;
+  $(document).on('pointerdown', function () {
+    startTime = new Date().getTime();
+  });
+
+  $(document).on('pointerup', function () {
+    endTime = new Date().getTime();
+    longpress = (endTime - startTime >= 500);
+  });
+});
+
 //load last saved localstorage
 function loadSession() {
   let markedUpText = localStorage.getItem(LOCAL_STORAGE.MARKED_UP_TEXT);
@@ -460,12 +489,14 @@ function addAuthorTag(xml) {
 
 function removeTag() {
   let sel = window.getSelection();
-  if (!sel) {
-    return;
+  if (!sel) return;
+  let el = sel.focusNode;
+  while (el) {
+    if (el.dataset && el.dataset.tag) break;
+    el = el.parentElement;
   }
-  if (sel.anchorNode.parentElement.toString() === "[object HTMLSpanElement]") {
-    $(sel.anchorNode.parentElement).contents().unwrap();
-  }
+  if (!el) return;
+  $(el).contents().unwrap();
   updateXmlText();
 }
 
