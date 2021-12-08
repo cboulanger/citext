@@ -1,13 +1,8 @@
 #!/usr/bin/python3
 
-# for debugging only
-import cgitb
-cgitb.enable();
-print("Content-type: text/html")
-
 import json, os, cgi, shutil, subprocess, io, sys
 
-#print("Content-type: application/json")
+print("Content-type: application/json")
 print()
 
 data_dir     = os.getcwd() + "/Data"
