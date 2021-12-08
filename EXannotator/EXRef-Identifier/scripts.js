@@ -379,6 +379,7 @@ class GUI {
     $("#btndeltxt").hide();
     $("#btnfindNextRef").hide();
     $("#btnfindPrevRef").hide();
+    $("#btnToggleMarkedUpView").hide();
     document.getElementById("content1").innerHTML = "";
     document.getElementById("ptxaxml").innerHTML = "";
     textFileName = "";
@@ -471,6 +472,7 @@ class GUI {
     $("#btndeltxt").show();
     $("#btnfindNextRef").show();
     $("#btnfindPrevRef").show();
+    $("#btnToggleMarkedUpView").show();
     $("#btn-seganno").prop("disabled", false);
     $("#btn-save").prop("disabled", false);
     $("#btn-export").prop("disabled", false);
@@ -522,6 +524,11 @@ class GUI {
       .trim();
     // return sanitized text
     return t2;
+  }
+
+  static toggleXmlView() {
+    const container = $("#view-markup");
+    container.is(":visible") ? container.hide() : container.show();
   }
 }
 
