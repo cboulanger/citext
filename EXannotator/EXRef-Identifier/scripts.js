@@ -10,7 +10,8 @@ let colorCounter = 0;
 const SERVER_URL = "http://127.0.0.1:8000/cgi-bin/";
 const LOCAL_STORAGE = {
   MARKED_UP_TEXT: "marked_up_text",
-  TEXT_FILE_NAME: "anno2filename"
+  TEXT_FILE_NAME: "anno2filename",
+  PDF_IFRAME_SRC: "excite_pdf_iframe_source"
 }
 
 
@@ -129,37 +130,62 @@ class Actions {
     if (sel.anchorNode.parentElement.toString() === "[object HTMLSpanElement]") {
       $(sel.anchorNode.parentElement).contents().unwrap();
     }
+    // let fn = sel.focusNode;
+    // console.log(fn)
+    // [fn.previousSibling,fn, fn.nextSibling].forEach(node => {
+    //   if ( node && node.outerHTML) {
+    //     node.outerHTML = node.textContent || "";
+    //   }
+    // })
     GUI.updateTaggedText();
+  }
+
+  static checkResult(result) {
+    if (result.error) {
+      GUI.hideSpinner();
+      alert("Error: " + result.error);
+      return false;
+    }
+    if (!result.success) {
+      alert("Invalid response.")
+      return false;
+    }
+    return result
   }
 
    static async run_exparser() {
     if (!confirm("Do you really want to run exparser to identify references in this document?")) {
       return;
     }
-    const formData = new FormData();
+    // 1. file upload
+    let formData = new FormData();
     formData.append("file", pdfFile);
-    GUI.showSpinner("Analyzing Layout...");
+    GUI.showSpinner("Uploading file...");
     let result = await (await fetch(`${SERVER_URL}/upload.py`, {
       method: 'post',
       body: formData
     })).json();
-    GUI.hideSpinner();
-    if (result.error) {
-      alert("Error: " + result.error);
-      return;
-    }
+    if (!this.checkResult(result)) return;
+    // 2. layout
+    GUI.showSpinner("Analyzing Layout...");
+    let filenameNoExt = pdfFileName.split('.').slice(0, -1).join(".");
+    let url = `${SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}`
+    result = await (await fetch(url)).json();
+    if (!this.checkResult(result)) return;
+    let layoutDoc = result.success;
+    // 3. reference identification
     GUI.showSpinner("Identifying references, this will take a while...");
-    let url = `${SERVER_URL}/exparser?${result.id}:${pdfFileName}`;
+    url = `${SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}`
     result = await (await fetch(url)).json();
     GUI.hideSpinner();
-    if (result.error) {
-      alert("Error: " + result.error);
-      return;
-    }
-    let words = result.layout
-      .join("\n ")
-      .split(" ");
-    let refs = result.refs.filter(Boolean);
+    if (!this.checkResult(result)) return;
+    let refs = result.success;
+
+    // combine layout doc and references
+    let words = layoutDoc.replace(/\n/g, "~~~CR~~~ ").split(" ");
+    refs = refs.split('\n').filter(Boolean);
+
+    console.log({words, refs});
     for (let ref of refs) {
       let refWords = ref.split(" ");
       // try to match each occurrence of the first word of the reference
@@ -196,7 +222,8 @@ class Actions {
     textFileName = pdfFileName.replace(".pdf", ".csv");
     $("#txtSize").text(textFileName);
     textFileExt = "csv";
-    GUI.setTextContent(words.join(" "));
+    layoutDoc = words.join(" ").replace(/~~~CR~~~/g,"\n")
+    GUI.setTextContent(layoutDoc);
   }
 
   static export() {
@@ -236,6 +263,7 @@ class Actions {
     let text = GUI.getTextToExport();
     localStorage.setItem(LOCAL_STORAGE.MARKED_UP_TEXT, text);
     localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
+    localStorage.setItem(LOCAL_STORAGE.PDF_IFRAME_SRC, document.getElementById("pdfiframe").src);
   }
 }
 
@@ -275,8 +303,9 @@ class GUI {
 
     // on page load
     $(document).ready(function () {
-      // force remove PDF
-      document.getElementById("pdfiframe").src = 'about:blank';
+      // force remove PDF because loading saved src doesn't work yet
+      document.getElementById("pdfiframe").src = /*
+        localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC ) || */ 'about:blank';
       // disable buttone (on reload)
       $("#btn-exparser").prop("disabled", true);
       $("#btn-oth").prop("disabled", true);

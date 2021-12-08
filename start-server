@@ -1,10 +1,5 @@
 #! /bin/bash
 
-if ! command -v jq >/dev/null; then
-  echo "You need to install the 'jq' package.";
-  exit 1
-fi
-
 if ! command -v python3 >/dev/null; then
   echo "You need to have python3 installed.";
   exit 1
@@ -13,10 +8,6 @@ fi
 # configuration
 HOST=127.0.0.1
 PORT=8000
-
-# create empty logfile
-rm -f logfile.log
-touch logfile.log
 
 # kill webserver process when script has ended
 _term() {

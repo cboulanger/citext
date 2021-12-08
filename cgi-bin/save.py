@@ -5,6 +5,8 @@ import sys, json, os
 print("Content-type: application/json")
 print()
 
+result = {}
+
 try:
     contLen = int(os.environ['CONTENT_LENGTH'])
 
@@ -35,8 +37,17 @@ try:
     file.write(data)
     file.close()
 
-    print('{"status":"OK"}')
+    result["success"] = True
 
 except RuntimeError as err:
-    print('{"error":"'+str(err)+'"}')
+    result["error"] = str(err)
+
+except BaseException as err:
+    import traceback
+    traceback.print_exc()
+    result["error"] = str(err)
+
+finally:
+    # return result
+    print(json.dumps(result))
 

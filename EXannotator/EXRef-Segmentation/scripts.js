@@ -174,14 +174,18 @@ function loadFile(fileToLoad) {
 }
 
 async function runSegmentation() {
-  let result = await (await fetch(`${SERVER_URL}segmentation.py?filename=${filename}.xml`)).json();
+  showSpinner("Running reference segmentation...");
+  let url = `${SERVER_URL}/excite.py?command=segmentation&file=${filename}`
+  let result = await (await fetch(url)).json();
+  hideSpinner();
   if (result.error) {
     return alert(result.error);
   }
-  if (!result.refs_seg) {
+  if (!result.success) {
     return alert("Invalid response");
   }
-  let fileToLoad = new Blob([result.refs_seg], {type: 'text/xml'});
+  let fileToLoad = new Blob([result.success], {type: 'text/xml'});
+  fileExt="xml";
   loadFile(fileToLoad);
 }
 

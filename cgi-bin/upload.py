@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 
-import sys, os, cgi, tempfile
+import os, cgi, tempfile, json
 print("Content-type: application/json")
 print()
+
+result = {}
 
 try:
     if not os.environ['CONTENT_LENGTH']:
@@ -20,7 +22,16 @@ try:
 
     open(filepath, 'wb').write(fileitem.file.read())
 
-    print('{"id":"' + filename + '"}')
+    result["success"] = True
 
 except RuntimeError as err:
-    print('{"error":"'+str(err)+'"}')
+    result["error"] = str(err)
+
+except BaseException as err:
+    import traceback
+    traceback.print_exc()
+    result["error"] = str(err)
+
+finally:
+    # return result
+    print(json.dumps(result))
