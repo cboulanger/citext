@@ -23,7 +23,7 @@ result = {}
 try:
     if command is None:
         raise RuntimeError("No command")
-    if filename is None:
+    if filename is None and command != "train_extraction":
         raise RuntimeError("No filename")
 
     if command == "layout":
@@ -50,28 +50,46 @@ try:
             raise RuntimeError("You need to run the 'exparser' command first.")
         cleanup.append(result_path)
 
+    elif command == "train_extraction":
+        result_path = None
+
     else:
         raise RuntimeError("Invalid command: " + command)
 
     # only call docker command if file doesn't already exist
-    if not os.path.isfile(result_path):
+    if result_path is None or not os.path.isfile(result_path):
         # run docker command and write output to server output
         args = ['docker', 'run', '--rm', '-v' + os.getcwd() + ':/app', 'excite_toolchain', command]
         sys.stderr.write(" ".join(args) + "\n")
         tsk = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
 
-        while tsk.poll() is None:
+        # check for process completion and copy output to stderr
+        last_line = ""
+        return_code = 0
+        while True:
+            return_code = tsk.poll()
+            if return_code is not None: break
             line = str(tsk.stdout.readline())
+            if line.strip() != "":
+                last_line = line.strip()
             sys.stderr.write(line)
 
-    # return result of excite command
-    try:
-        result_file = io.open(result_path, mode="r", encoding="utf-8")
-        result["success"] = result_file.read()
-        result_file.close()
+        # subprocess returned with error
+        if return_code != 0:
+            raise RuntimeError(last_line)
 
-    except Exception as err:
-        raise RuntimeError(str(err))
+    if result_path is None:
+        result["success"] = True
+
+    else:
+        # return result of excite command
+        try:
+            result_file = io.open(result_path, mode="r", encoding="utf-8")
+            result["success"] = result_file.read()
+            result_file.close()
+
+        except Exception as err:
+            raise RuntimeError(str(err))
 
 except RuntimeError as err:
     result["error"] = str(err)
