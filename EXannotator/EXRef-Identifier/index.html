@@ -67,6 +67,7 @@
                             </li>
                             <li>Remove markup</li>
                         </ul>
+                        Long-clicking or tapping on a marked up section of a text will select it.
                     </li>
                     <li>
                         After you have finished your markup, save the document to the backend. You can also download
@@ -83,121 +84,92 @@
         </div>
     </div>
 </div>
-<div class="container-fluid">
-    <div class="panel panel-default top">
-        <div class="panel-body">
-            <div class="row">
-                <div class="col-xs-12 col-sm-12 col-md-10 col-lg-10 margin-bottom-5">
-                    <label for="btn-upload" class="btn btn-primary">
-                        <i class="fas fa-file"></i>&nbsp;Load
-                    </label>
-                    <input type="file" id="btn-upload" class="btn btn-default"
-                           onchange="Actions.upload(); this.value=null; return false;"
-                           accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
-                    <button id="btn-exparser" disabled class="btn btn-primary" type="button"
-                            onclick="Actions.run_exparser();">
-                        <i class="fas fa-search"></i>&nbsp;Analyze
-                    </button>
-                    <button id="btn-save" disabled class="btn btn-primary" type="button"
-                            onclick="Actions.save();">
-                        <i class="fas fa-save"></i>&nbsp;Save
-                    </button>
-                    <button id="btn-export" disabled class="btn btn-primary" type="button"
-                            onclick="Actions.export();">
-                        <i class="fas fa-file-export"></i>&nbsp;Export
-                    </button>
-                    <button id="btn-seganno" disabled class="btn btn-primary" type="button"
-                            onclick="Actions.open_in_seganno();">
-                        <i class="fas fa-file-upload"></i>&nbsp;Segmentation
-                    </button>
-                    <button type="button" class="btn btn-info" data-toggle="modal" data-target="#modal-help">
-                        <i class="fas fa-question-circle"></i>&nbsp;Help
-                    </button>
-                </div>
-                <div class="col-xs-12 col-sm-12 col-md-2 col-lg-2 textalignr">
-                    <a href="https://excite.informatik.uni-stuttgart.de/" target="_blank">
-                        <img height="30px" src="images/exCite_logo_150.png" alt="img">
-                    </a>
-                    <p>EXRef-Identifier</p>
-                </div>
-            </div>
-        </div>
+<nav class="navbar navbar-default navbar-fixed-top">
+    <!-- menu -->
+    <div id="navbar-buttons" class="navbar-left">
+        <label for="btn-upload" class="btn btn-primary">
+            <i class="fas fa-file"></i>&nbsp;Load
+        </label>
+        <input type="file" id="btn-upload" class="btn btn-default"
+               onchange="Actions.upload(); this.value=null; return false;"
+               accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
+        <button id="btn-exparser" disabled class="btn btn-primary" type="button"
+                onclick="Actions.run_exparser();">
+            <i class="fas fa-search"></i>&nbsp;Analyze
+        </button>
+        <button id="btn-save" disabled class="btn btn-primary" type="button"
+                onclick="Actions.save();">
+            <i class="fas fa-save"></i>&nbsp;Save
+        </button>
+        <button id="btn-export" disabled class="btn btn-primary" type="button"
+                onclick="Actions.export();">
+            <i class="fas fa-file-export"></i>&nbsp;Export
+        </button>
+        <button id="btn-seganno" disabled class="btn btn-primary" type="button"
+                onclick="Actions.open_in_seganno();">
+            <i class="fas fa-file-upload"></i>&nbsp;Segmentation
+        </button>
+        <button type="button" class="btn btn-info" data-toggle="modal" data-target="#modal-help">
+            <i class="fas fa-question-circle"></i>&nbsp;Help
+        </button>
     </div>
-    <!-- Document view -->
-    <div id="view-documents" class="row" style="margin-top: 100px;">
-        <div class="col-md-6">
-            <div class="panel panel-default">
-                <div class="panel-body">
-                    <div class="row bold">
-                        <div class="col-md-3" style="width:75%">
-                            <label id="txtSize">Load text file</label>
-                        </div>
-                        <div class="col-md-3">
-                            <button id="btnfindPrevRef" alt="Find previous reference"
-                                    style="display: none; " onclick="GUI.findNextRef(-1,this)">
-                                <i class="fas  fa-arrow-left"></i>
-                            </button>
-                            <button id="btnfindNextRef" alt="Find next reference"
-                                    style="display: none; " onclick="GUI.findNextRef(1, this)">
-                                <i class="fas  fa-arrow-right"></i>
-                            </button>
-                            <span style="min-width:10px"></span>
-                            <button id="btnToggleMarkedUpView" alt="Show marked-up text"
-                                    style="display: none;" onclick="GUI.toggleXmlView()">
-                                <i class="fas fa-file-code"></i>
-                            </button>
-                            <button id="btndeltxt" alt="Remove text file"
-                                    style="display : none; " onclick="GUI.removeTextFile()">
-                                <i class="fas fa-trash"></i>
-                            </button>
+    <!-- logo -->
+    <div class="navbar-brand navbar-right">
+        <a href="https://excite.informatik.uni-stuttgart.de/" target="_blank">
+            <img height="30px" src="images/exCite_logo_150.png" alt="img">
+        </a>
+        <p>EXRef-Identifier</p>
+    </div>
+</nav>
+<div id="main-container" class="grid-container">
+    <!-- text to mark up -->
+    <div class="view-text">
+        <div class="view-text-display" id="text-content">
+        </div>
+        <div class="view-text-label">
+            <label id="text-label">Load text file</label>
+        </div>
+        <div class="view-text-buttons">
+            <button id="btnfindPrevRef" onclick="GUI.findNextRef(-1,this)">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+            <button id="btnfindNextRef" onclick="GUI.findNextRef(1, this)">
+                <i class="fas fa-arrow-right"></i>
+            </button>
+            <span style="min-width:10px"></span>
+            <button id="btnToggleMarkedUpView" onclick="GUI.toggleMarkedUpView()">
+                <i class="fas fa-file-code"></i>
+            </button>
+            <button id="btndeltxt" onclick="GUI.removeTextFile()">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
 
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12 nowrap">
-                            <label id="content1" class="textLabel" Style="overflow:scroll;"></label>
-                        </div>
-                    </div>
-                </div>
-            </div>
+    </div>
+    <!-- pdf view -->
+    <div class="view-pdf">
+        <div class="view-pdf-display">
+            <iframe id="pdfiframe" class="iframecss" src=""></iframe>
         </div>
-        <div class="col-md-6">
-            <div class="panel panel-default">
-                <div class="panel-body">
-                    <div class="row bold">
-                        <div class="col-md-3" style="width: 75%">
-                            <label id="pdfSize">Load PDF file</label>
-                        </div>
-                        <div class="col-md-2">
-                            <button id="btndelpdf" alt="Remove PDF file"
-                                    style="display : none; " onclick="GUI.removePdfFile()">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                        </div>
-                    </div>
-                    <div class="row">
-                        <div class="col-md-12 nowrap">
-                            <iframe id="pdfiframe" class="iframecss" align="centert" src=""></iframe>
-                        </div>
-                    </div>
-                </div>
-            </div>
+        <div class="view-pdf-label">
+            <label id="pdf-label">Load PDF file</label>
+        </div>
+        <div class="view-pdf-buttons">
+            <button id="btndelpdf"
+                    style="display : none; " onclick="GUI.removePdfFile()">
+                <i class="fas fa-trash"></i>
+            </button>
         </div>
     </div>
-    <div id="view-markup" class="panel panel-default">
-        <div class="panel-body">
-            <div class="row">
-                <div class="col-md-12">Preview tagged text</div>
-            </div>
-            <div class="row pad-10" id="tagedTextdiv">
-                <div class="col-md-12" style="display : none; ">
-                    <textarea disabled id="txaxml" class="txaxml"></textarea>
-                </div>
-                <div class="col-md-12 ptxaxmlcss">
-                    <pre id="ptxaxml"></pre>
-                </div>
-            </div>
+    <!-- marked-up text -->
+    <div class="view-markup">
+        <div class="view-markup-display" id="markup-content-container">
+            <pre id="markup-content"></pre>
         </div>
+        <div class="view-markup-label">
+            <label>Preview tagged text</label>
+        </div>
+        <div class="view-markup-buttons"></div>
     </div>
 </div>
 </body>

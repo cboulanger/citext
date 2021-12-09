@@ -60,12 +60,13 @@ class Actions {
         return;
       }
       if (fileExt === 'pdf') {
-        document.getElementById("pdfSize").innerHTML = filename;
+        document.getElementById("pdf-label").innerHTML = filename;
         pdfFileName = filename;
         pdfFile = file;
         let tmppath = URL.createObjectURL(file);
         document.getElementById('pdfiframe').src = "web/viewer.html?file=" + tmppath;
         $("#btndelpdf").show();
+        GUI.showPdfView(true);
         $("#btn-exparser").prop("disabled", false)
       } else {
         const fileReader = new FileReader();
@@ -73,7 +74,7 @@ class Actions {
           let text = String(e.target.result);
           textFileName = filename;
           textFileExt = fileExt;
-          document.getElementById("txtSize").innerHTML = textFileName;
+          document.getElementById("text-label").innerHTML = textFileName;
           localStorage.setItem(LOCAL_STORAGE.MARKED_UP_TEXT, text);
           localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
           GUI.setTextContent(text);
@@ -213,7 +214,7 @@ class Actions {
       }
     }
     textFileName = pdfFileName.replace(".pdf", ".csv");
-    $("#txtSize").text(textFileName);
+    $("#text-label").text(textFileName);
     textFileExt = "csv";
     layoutDoc = words.join(" ").replace(/~~~CR~~~/g, "\n")
     GUI.setTextContent(layoutDoc);
@@ -284,9 +285,14 @@ class GUI {
     // on page load
     $(document).ready(function () {
       // force remove PDF because loading saved src doesn't work yet
-      document.getElementById("pdfiframe").src = /*
-        localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC ) || */ 'about:blank';
-      // disable buttone (on reload)
+      //document.getElementById("pdfiframe").src = localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC ) ||'about:blank';
+      document.getElementById("pdfiframe").src = 'about:blank';
+
+      // hide optional views
+      GUI.showPdfView(false);
+      GUI.toggleMarkedUpView();
+
+      // disable buttons (on reload)
       $("#btn-exparser").prop("disabled", true);
       $("#btn-export").prop("disabled", true);
       $("#btn-save").prop("disabled", true);
@@ -295,9 +301,10 @@ class GUI {
       let markedUpText = localStorage.getItem(LOCAL_STORAGE.MARKED_UP_TEXT);
       if (markedUpText) {
         textFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME)
-        document.getElementById("txtSize").innerHTML = textFileName;
+        document.getElementById("text-label").innerHTML = textFileName;
         GUI.setTextContent(markedUpText);
       }
+
       // long-pressing selects span
       $(document).ready(() => {
         let longpress = false;
@@ -312,6 +319,7 @@ class GUI {
             let range = document.createRange();
             range.selectNodeContents(p);
             sel.addRange(range)
+            GUI.showPopupOnSelect(e);
           }
         });
         let startTime, endTime;
@@ -327,39 +335,18 @@ class GUI {
       // show popup on select
       $(document).ready(() => {
         const contextMenu = $("#contextMenu");
-        const contentLabel = $("#content1");
-        contentLabel.on("pointerup", e => {
-          let sel = window.getSelection();
-          let node = sel.focusNode;
-          let tag;
-          while (node !== contentLabel) {
-            if (node.dataset) {
-              tag = node.dataset.tag;
-              break;
-            }
-            node = node.parentNode;
-          }
-          $("#btn-ref-part").toggleClass("ui-state-disabled", Boolean(tag));
-          $("#btn-ref-line").toggleClass("ui-state-disabled", Boolean(tag));
-          $("#btn-oth").toggleClass("ui-state-disabled", !Boolean(tag) || tag === "oth");
-          $("#btn-remove-tag").toggleClass("ui-state-disabled", !Boolean(tag));
-          if (contextMenu.is(":visible") || !sel.toString().trim()) {
-            contextMenu.hide();
-            return;
-          }
-          contextMenu
-            .show()
-            .css({
-              position: "absolute",
-              left: e.pageX,
-              top: e.pageY
-            });
-        });
+        const contentLabel = $("#text-content");
+        contentLabel.on("pointerup", GUI.showPopupOnSelect);
         contextMenu.on("pointerup", () => setTimeout(() => {
           contextMenu.hide();
           window.getSelection().removeAllRanges();
         }, 100));
       })
+
+      // synchronize scroll positions
+      $('#text-content').on('scroll', e => {
+        $('#markup-content-container').scrollTop(e.currentTarget.scrollTop);
+      });
 
       // save text before leaving the page
       window.onbeforeunload = Actions.saveToLocalStorage;
@@ -375,13 +362,13 @@ class GUI {
   }
 
   static removeTextFile() {
-    document.getElementById("txtSize").innerHTML = "Load text file";
+    document.getElementById("text-label").innerHTML = "Load text file";
     $("#btndeltxt").hide();
     $("#btnfindNextRef").hide();
     $("#btnfindPrevRef").hide();
     $("#btnToggleMarkedUpView").hide();
-    document.getElementById("content1").innerHTML = "";
-    document.getElementById("ptxaxml").innerHTML = "";
+    document.getElementById("text-content").innerHTML = "";
+    document.getElementById("markup-content").innerHTML = "";
     textFileName = "";
     cols2numbers = [];
     localStorage.removeItem(LOCAL_STORAGE.TEXT_FILE_NAME);
@@ -392,23 +379,26 @@ class GUI {
   }
 
   static removePdfFile() {
-    document.getElementById("pdfSize").innerHTML = "Load PDF file";
+    document.getElementById("pdf-label").innerHTML = "Load PDF file";
     $("#btndelpdf").hide();
     document.getElementById("pdfiframe").src = 'about:blank';
     pdfFileName = "";
     $("#btn-exparser").prop("disabled", true);
+    GUI.showPdfView(false);
   }
 
   static findNextRef(offset = 1, btn) {
-    const contentDiv = document.getElementById("content1");
+    const contentDiv = document.getElementById("text-content");
     let currentRefNode = this.__currentRefNode;
     let nodes = Array.from(contentDiv.getElementsByTagName("span"));
     if (!currentRefNode) {
       currentRefNode = nodes.find(node => node.dataset.tag === "ref");
-      if (!currentRefNode) return;
+      if (!currentRefNode) {
+        return;
+      }
     } else {
       let index = nodes.findIndex(node => node === currentRefNode);
-      if (index < 0 || index + offset === offset < 0 ? -1 : nodes.length) {
+      if (index < 0 || index + offset === (offset < 0 ? -1 : nodes.length)) {
         return
       }
       currentRefNode = nodes[index + offset];
@@ -420,8 +410,8 @@ class GUI {
   static updateTaggedText() {
     let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
     let regex2 = /<span data-tag="ref".*?>(.+?)<\/span>/g;
-    document.getElementById("ptxaxml").innerHTML =
-      document.getElementById("content1").innerHTML
+    document.getElementById("markup-content").innerHTML =
+      document.getElementById("text-content").innerHTML
         .replace(regex1, "<oth>$1</oth>")
         .replace(regex2, "<ref>$1</ref>")
         .replace(/<br>/g, "\n")
@@ -433,7 +423,8 @@ class GUI {
       .replace(/\r/g, "")
       .replace(/\n\n/g, '\n')
       .replace(/\n\n/g, '\n')
-      .split('\n');
+      .split('\n')
+      .map(line => line.trim());
     let tagged_text = "";
     for (let i = 0; i < text_Lines.length; i++) {
       if (textFileName.endsWith(".csv")) {
@@ -464,8 +455,8 @@ class GUI {
       html = html.replace("</oth>", "</span>");
       html = html.replace('<oth>', otherSpanValue);
     }
-    document.getElementById("content1").innerHTML = html;
-    document.getElementById("ptxaxml").innerHTML = tagged_text
+    document.getElementById("text-content").innerHTML = html;
+    document.getElementById("markup-content").innerHTML = tagged_text
       .replace(/<br>/g, "\n")
       .replace(/</g, "&lt;");
     // enable buttons
@@ -480,8 +471,8 @@ class GUI {
 
   static getTextToExport() {
     GUI.updateTaggedText();
-    let xmlText = document.getElementById("ptxaxml").innerHTML;
-    let t1 = xmlText.split('\n');
+    let markedUpText = document.getElementById("markup-content").innerHTML;
+    let t1 = markedUpText.split('\n');
     let t2 = [];
     let rowFirstColumn = '';
     let allFirstColumns = '';
@@ -526,9 +517,48 @@ class GUI {
     return t2;
   }
 
-  static toggleXmlView() {
-    const container = $("#view-markup");
-    container.is(":visible") ? container.hide() : container.show();
+  static toggleMarkedUpView() {
+    if (this.__xmlViewState === undefined) this.__xmlViewState = true;
+    let state = this.__xmlViewState = !this.__xmlViewState;
+    $(".view-markup")[state ? "show" : "hide"]();
+    document.getElementById("main-container")
+      .style.gridTemplateRows = this.__xmlViewState ? "50% 50%" : "100% 0"
+  }
+
+  static showPdfView(state) {
+    $(".view-pdf")[state ? "show" : "hide"]();
+    document.getElementById("main-container")
+      .style.gridTemplateColumns = state ? "50% 50%" : "100% 0"
+  }
+
+  static showPopupOnSelect(e) {
+    const contextMenu = $("#contextMenu");
+    const contentLabel = $("#text-content");
+    let sel = window.getSelection();
+    let node = sel.focusNode;
+    let tag;
+    while (node !== contentLabel) {
+      if (node.dataset) {
+        tag = node.dataset.tag;
+        break;
+      }
+      node = node.parentNode;
+    }
+    $("#btn-ref-part").toggleClass("ui-state-disabled", Boolean(tag));
+    $("#btn-ref-line").toggleClass("ui-state-disabled", Boolean(tag));
+    $("#btn-oth").toggleClass("ui-state-disabled", !Boolean(tag) || tag === "oth");
+    $("#btn-remove-tag").toggleClass("ui-state-disabled", !Boolean(tag));
+    if (!sel.toString().trim()) {
+      contextMenu.hide();
+      return;
+    }
+    contextMenu
+      .show()
+      .css({
+        position: "absolute",
+        left: e.pageX,
+        top: e.pageY
+      });
   }
 }
 
