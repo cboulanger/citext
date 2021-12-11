@@ -101,7 +101,7 @@ class Actions {
     // prevent nesting of tags except <oth> in <ref>
     let node = sel.focusNode;
     do {
-      if (node.dataset) {
+      if (node && node.dataset) {
         let tag = node.dataset.tag;
         if (tag && !(tag_name === "oth" && tag === "ref")) {
           return;
@@ -303,6 +303,8 @@ class GUI {
         textFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME)
         document.getElementById("text-label").innerHTML = textFileName;
         GUI.setTextContent(markedUpText);
+      } else {
+        $("#modal-help").show();
       }
 
       // long-pressing selects span
@@ -311,6 +313,7 @@ class GUI {
         $(document).on('click', e => {
           if (!longpress) return;
           let sel = window.getSelection();
+          if (sel.toString().length) return; // so that <oth> element can be inserted into selection
           if (!sel.focusNode || !sel.focusNode.parentElement) return;
           let p = sel.focusNode.parentElement;
           if (e.target !== p) return;
@@ -361,14 +364,16 @@ class GUI {
     $("#spinner").removeClass("is-active");
   }
 
+
   static removeTextFile() {
-    document.getElementById("text-label").innerHTML = "Load text file";
+    $("#text-label").html("");
+    $("#text-content").html("");
+    $("#markup-content").html("");
     $("#btndeltxt").hide();
     $("#btnfindNextRef").hide();
     $("#btnfindPrevRef").hide();
     $("#btnToggleMarkedUpView").hide();
-    document.getElementById("text-content").innerHTML = "";
-    document.getElementById("markup-content").innerHTML = "";
+
     textFileName = "";
     cols2numbers = [];
     localStorage.removeItem(LOCAL_STORAGE.TEXT_FILE_NAME);
@@ -379,7 +384,7 @@ class GUI {
   }
 
   static removePdfFile() {
-    document.getElementById("pdf-label").innerHTML = "Load PDF file";
+    $("pdf-label").html("");
     $("#btndelpdf").hide();
     document.getElementById("pdfiframe").src = 'about:blank';
     pdfFileName = "";
@@ -387,24 +392,29 @@ class GUI {
     GUI.showPdfView(false);
   }
 
-  static findNextRef(offset = 1, btn) {
+  static findNextRef(offset =0) {
     const contentDiv = document.getElementById("text-content");
     let currentRefNode = this.__currentRefNode;
     let nodes = Array.from(contentDiv.getElementsByTagName("span"));
+    let index;
     if (!currentRefNode) {
       currentRefNode = nodes.find(node => node.dataset.tag === "ref");
       if (!currentRefNode) {
         return;
       }
+      index = 0;
     } else {
-      let index = nodes.findIndex(node => node === currentRefNode);
+      index = nodes.findIndex(node => node === currentRefNode);
       if (index < 0 || index + offset === (offset < 0 ? -1 : nodes.length)) {
-        return
+        return;
       }
       currentRefNode = nodes[index + offset];
     }
+    $("btnfindPrevRef").prop("disabled", index < 1);
+    $("btnfindNextRef").prop("disabled", index === nodes.length);
     currentRefNode.scrollIntoView({behavior: 'smooth', block: 'center', inline: 'start'});
     this.__currentRefNode = currentRefNode;
+    return currentRefNode;
   }
 
   static updateTaggedText() {
@@ -455,10 +465,12 @@ class GUI {
       html = html.replace("</oth>", "</span>");
       html = html.replace('<oth>', otherSpanValue);
     }
-    document.getElementById("text-content").innerHTML = html;
-    document.getElementById("markup-content").innerHTML = tagged_text
+    $("#text-content").html(html);
+    $("#text-content").scrollTop(0);
+    $("#markup-content").html(tagged_text
       .replace(/<br>/g, "\n")
-      .replace(/</g, "&lt;");
+      .replace(/</g, "&lt;"));
+    this.__currentRefNode = null;
     // enable buttons
     $("#btndeltxt").show();
     $("#btnfindNextRef").show();
@@ -467,6 +479,7 @@ class GUI {
     $("#btn-seganno").prop("disabled", false);
     $("#btn-save").prop("disabled", false);
     $("#btn-export").prop("disabled", false);
+    this.findNextRef();
   }
 
   static getTextToExport() {
@@ -537,7 +550,7 @@ class GUI {
     let sel = window.getSelection();
     let node = sel.focusNode;
     let tag;
-    while (node !== contentLabel) {
+    while (node && node !== contentLabel) {
       if (node.dataset) {
         tag = node.dataset.tag;
         break;

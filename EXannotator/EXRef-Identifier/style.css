@@ -1,24 +1,46 @@
+html, body {
+    height: 100%
+}
+
 body {
-    margin1: 0;
     padding: 0;
     background: #e5e9f9 !important;
     font-size: medium !important;
+    margin: 0;
+    overflow: hidden;
 }
 
 nav {
     height:70px;
+    border-width: 0px;
+    overflow: hidden;
+}
+
+.navbar {
+    padding: 10px;
+    margin-bottom: 0px !important;
+}
+
+.navbar-brand {
+    margin-right: 0px !important;
+}
+
+.navbar-brand {
+    padding: 0px !important;
+}
+
+#app-logo {
+    height: 40px;
+    margin: 5px;
+}
+
+#app-title {
+    float: right;
+    margin-top: 20px;
 }
 
 #navbar-buttons {
-    padding: 20px;
-}
-
-#main-container {
-    margin-top: 80px;
-}
-
-.grid-container {
-    margin: 5px;
+    padding-right: 10px;
 }
 
 .iframecss {
@@ -27,12 +49,20 @@ nav {
     width: 100%;
 }
 
+#pdf-label, #text-label {
+    vertical-align: middle;
+    padding-left: 10px;
+}
+
+.view-text-buttons > button, .view-pdf-buttons > button {
+    vertical-align: middle;
+}
+
 .view-text-display {
     font-family: Menlo,Monaco,Consolas,"Courier New",monospace !important;
     font-size: small !important;
     border: 1px solid #779caf;
     cursor: text;
-    white-space: nowrap !important;
     overflow: scroll;
     padding: 10px;
 }
