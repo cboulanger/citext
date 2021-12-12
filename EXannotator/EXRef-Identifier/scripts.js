@@ -6,6 +6,8 @@ let textFileExt = "";
 let cols1text = [];
 let cols2numbers = [];
 let colorCounter = 0;
+const pageMarkerPrefix = "[" + "-".repeat(40);
+const pageMarkerSuffix = "-".repeat(40) + "]";
 
 const SERVER_URL = "http://127.0.0.1:8000/cgi-bin/";
 const LOCAL_STORAGE = {
@@ -60,11 +62,13 @@ class Actions {
         return;
       }
       if (fileExt === 'pdf') {
-        document.getElementById("pdf-label").innerHTML = filename;
+        $("#pdf-label").html(filename);
         pdfFileName = filename;
         pdfFile = file;
         let tmppath = URL.createObjectURL(file);
-        document.getElementById('pdfiframe').src = "web/viewer.html?file=" + tmppath;
+        const pdfiframe = $("#pdfiframe");
+        pdfiframe.on("load", GUI._onPdfIframeLoaded);
+        pdfiframe.prop("src", "web/viewer.html?file=" + tmppath);
         $("#btndelpdf").show();
         GUI.showPdfView(true);
         $("#btn-exparser").prop("disabled", false)
@@ -120,7 +124,7 @@ class Actions {
     }
     parentNode.style.backgroundColor = backgroundColor;
     sel.getRangeAt(0).surroundContents(parentNode);
-    GUI.updateTaggedText()
+    GUI.updateMarkedUpText()
   }
 
   static removeTag() {
@@ -133,7 +137,7 @@ class Actions {
     }
     if (!el) return;
     $(el).contents().unwrap();
-    GUI.updateTaggedText();
+    GUI.updateMarkedUpText();
   }
 
   static checkResult(result) {
@@ -282,11 +286,18 @@ class Utils {
 class GUI {
 
   static init() {
+
+    this.__numPages = 0;
+    this.__currentPage = 1;
+    this.__currentRefNode = null;
+    this.__xmlViewState = true; // will be toggled to off at startup
+    this.__pdfJsApplication = null;
+
     // on page load
     $(document).ready(function () {
       // force remove PDF because loading saved src doesn't work yet
       //document.getElementById("pdfiframe").src = localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC ) ||'about:blank';
-      document.getElementById("pdfiframe").src = 'about:blank';
+      $("#pdfiframe").prop('src', 'about:blank');
 
       // hide optional views
       GUI.showPdfView(false);
@@ -297,6 +308,7 @@ class GUI {
       $("#btn-export").prop("disabled", true);
       $("#btn-save").prop("disabled", true);
       $("#btn-seganno").prop("disabled", true);
+
       // get text from local storage
       let markedUpText = localStorage.getItem(LOCAL_STORAGE.MARKED_UP_TEXT);
       if (markedUpText) {
@@ -322,7 +334,7 @@ class GUI {
             let range = document.createRange();
             range.selectNodeContents(p);
             sel.addRange(range)
-            GUI.showPopupOnSelect(e);
+            GUI._showPopupOnSelect(e);
           }
         });
         let startTime, endTime;
@@ -339,7 +351,7 @@ class GUI {
       $(document).ready(() => {
         const contextMenu = $("#contextMenu");
         const contentLabel = $("#text-content");
-        contentLabel.on("pointerup", GUI.showPopupOnSelect);
+        contentLabel.on("pointerup", GUI._showPopupOnSelect);
         contextMenu.on("pointerup", () => setTimeout(() => {
           contextMenu.hide();
           window.getSelection().removeAllRanges();
@@ -353,6 +365,16 @@ class GUI {
 
       // save text before leaving the page
       window.onbeforeunload = Actions.saveToLocalStorage;
+
+      // check if we have a backend
+      // fetch(SERVER_URL + "status.py")
+      //   .then(response => response.json())
+      //   .then(result => {
+      //     if (result.success) {
+      $("#btn-exparser").removeClass("hidden");
+      $("#btn-save").removeClass("hidden");
+      //   }
+      // })
     });
   }
 
@@ -369,10 +391,7 @@ class GUI {
     $("#text-label").html("");
     $("#text-content").html("");
     $("#markup-content").html("");
-    $("#btndeltxt").hide();
-    $("#btnfindNextRef").hide();
-    $("#btnfindPrevRef").hide();
-    $("#btnToggleMarkedUpView").hide();
+    $(".view-text-buttons").hide();
 
     textFileName = "";
     cols2numbers = [];
@@ -392,7 +411,7 @@ class GUI {
     GUI.showPdfView(false);
   }
 
-  static findNextRef(offset =0) {
+  static findNextRef(offset = 0) {
     const contentDiv = document.getElementById("text-content");
     let currentRefNode = this.__currentRefNode;
     let nodes = Array.from(contentDiv.getElementsByTagName("span"));
@@ -417,17 +436,6 @@ class GUI {
     return currentRefNode;
   }
 
-  static updateTaggedText() {
-    let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
-    let regex2 = /<span data-tag="ref".*?>(.+?)<\/span>/g;
-    document.getElementById("markup-content").innerHTML =
-      document.getElementById("text-content").innerHTML
-        .replace(regex1, "<oth>$1</oth>")
-        .replace(regex2, "<ref>$1</ref>")
-        .replace(/<br>/g, "\n")
-        .replace(/</g, "&lt;");
-  }
-
   static setTextContent(text) {
     let text_Lines = text
       .replace(/\r/g, "")
@@ -436,13 +444,23 @@ class GUI {
       .split('\n')
       .map(line => line.trim());
     let tagged_text = "";
+    let yval = 0;
+    this.__numPages = 0;
     for (let i = 0; i < text_Lines.length; i++) {
       if (textFileName.endsWith(".csv")) {
         // we have layout info in the file, remove from text to re-add later
         let line_parts = text_Lines[i].split('\t');
         if (line_parts.length >= 7) {
-          cols2numbers[i] = line_parts.slice(-6).join('\t');
-          cols1text[i] = line_parts.slice(0, -6).join(' ');
+          let layout_info = line_parts.slice(-6);
+          let text_content = line_parts.slice(0, -6).join(' ');
+          cols2numbers[i] = layout_info.join('\t');
+          cols1text[i] = text_content;
+          let lineYval = layout_info[1];
+          if (yval === 0 || yval - lineYval > 300) {
+            this.__numPages++;
+            cols1text[i] = `<div class="page-marker" data-page="${this.__numPages}"></div>\n` + cols1text[i];
+          }
+          yval = lineYval;
         } else {
           cols1text[i] = text_Lines[i];
         }
@@ -454,6 +472,13 @@ class GUI {
       } else {
         tagged_text = tagged_text + cols1text[i] + '<br>';
       }
+    }
+    if (this.__numPages > 0) {
+      $("#label-page-number").html("1");
+      $("#page-navigation").show();
+    } else {
+      $("#label-page-number").html("");
+      $("#page-navigation").hide();
     }
     let html = tagged_text;
     while (html.indexOf("<ref>") !== -1) {
@@ -467,25 +492,40 @@ class GUI {
     }
     $("#text-content").html(html);
     $("#text-content").scrollTop(0);
-    $("#markup-content").html(tagged_text
-      .replace(/<br>/g, "\n")
-      .replace(/</g, "&lt;"));
+    // select page in PDF if available
+
+    $("#text-content > .page-marker").on("click", e => {
+      if (this.__pdfJsApplication) {
+        this.goToPdfPage(parseInt((e.target.dataset.page)))
+      }
+    });
+
+    this.updateMarkedUpText();
     this.__currentRefNode = null;
     // enable buttons
-    $("#btndeltxt").show();
-    $("#btnfindNextRef").show();
-    $("#btnfindPrevRef").show();
-    $("#btnToggleMarkedUpView").show();
+    $(".view-text-buttons").show();
     $("#btn-seganno").prop("disabled", false);
     $("#btn-save").prop("disabled", false);
     $("#btn-export").prop("disabled", false);
-    this.findNextRef();
+  }
+
+  static updateMarkedUpText() {
+    let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
+    let regex2 = /<span data-tag="ref".*?>(.+?)<\/span>/g;
+    let markedUpText = $("#text-content").html()
+      .replace(/<div class="page-marker"[^>]*><\/div>\n/g, "")
+      .replace(regex1, "<oth>$1</oth>")
+      .replace(regex2, "<ref>$1</ref>")
+      .replace(/<br>/g, "\n")
+      .replace(/</g, "&lt;");
+    $("#markup-content").html(markedUpText)
+    return markedUpText;
   }
 
   static getTextToExport() {
-    GUI.updateTaggedText();
-    let markedUpText = document.getElementById("markup-content").innerHTML;
-    let t1 = markedUpText.split('\n');
+    GUI.updateMarkedUpText();
+    let markedUpText = $("#markup-content").html();
+    let t1 = markedUpText.split('\n')
     let t2 = [];
     let rowFirstColumn = '';
     let allFirstColumns = '';
@@ -493,7 +533,6 @@ class GUI {
     let suffix = '</ref>'
     let other_suffix = '</oth>'
     for (let i = 0; i < t1.length; i++) {
-      // allFirstColumns needed for extracting references part (only references)
       rowFirstColumn = t1[i];
       // add one space to the end of line if it is multi line ref and doesn't have hyphen or dash at end
       if (!(rowFirstColumn.substr(-suffix.length) === suffix) || (rowFirstColumn.substr(-other_suffix.length) === other_suffix))
@@ -531,7 +570,6 @@ class GUI {
   }
 
   static toggleMarkedUpView() {
-    if (this.__xmlViewState === undefined) this.__xmlViewState = true;
     let state = this.__xmlViewState = !this.__xmlViewState;
     $(".view-markup")[state ? "show" : "hide"]();
     document.getElementById("main-container")
@@ -544,7 +582,7 @@ class GUI {
       .style.gridTemplateColumns = state ? "50% 50%" : "100% 0"
   }
 
-  static showPopupOnSelect(e) {
+  static _showPopupOnSelect(e) {
     const contextMenu = $("#contextMenu");
     const contentLabel = $("#text-content");
     let sel = window.getSelection();
@@ -573,6 +611,54 @@ class GUI {
         top: e.pageY
       });
   }
+
+  static _onPdfIframeLoaded() {
+    setTimeout(() => {
+      GUI.__pdfJsApplication = window.frames[0].PDFViewerApplication;
+      GUI.__pdfJsApplication.eventBus.on('pagechanging', GUI._onPdfPageChanging);
+    }, 100)
+  }
+
+  static _onPdfPageChanging(e) {
+    if (e.pageNumber) {
+      GUI.goToPage(e.pageNumber)
+    }
+  }
+
+  static goToPdfPage(page) {
+    if (this.__pdfJsApplication) {
+      if (page < 0 || page > this.__pdfJsApplication.pagesCount) {
+        console.error("PDF page out of bounds: " + page);
+        return;
+      }
+      this.__pdfJsApplication.page = page;
+    }
+  }
+
+  static goToPage(page) {
+    this.__currentPage = page;
+    $("#label-page-number").html(page);
+    this.goToPdfPage(page);
+    let tc = $("#text-content");
+    //let tcTop = tc.scrollTop();
+    let pageMarker = tc.find(`div[data-page="${page}"]`);
+    if (pageMarker) {
+      pageMarker[0].scrollIntoView({block: "start"});
+    }
+  }
+
+  static goToPrevPage() {
+    if (this.__currentPage > 1) {
+      this.goToPage(--this.__currentPage);
+    }
+  }
+
+  static goToNextPage() {
+    if (this.__currentPage < this.__numPages) {
+      this.goToPage(++this.__currentPage);
+    }
+  }
+
 }
 
 // start

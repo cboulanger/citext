@@ -79,8 +79,9 @@
                 </ol>
             </div>
             <div class="modal-footer">
-                <button  type="button" class="btn btn-secondary"
-                        data-dismiss="modal" onclick="$('#modal-help').hide()">Close</button>
+                <button type="button" class="btn btn-secondary"
+                        data-dismiss="modal" onclick="$('#modal-help').hide()">Close
+                </button>
             </div>
         </div>
     </div>
@@ -91,14 +92,14 @@
         <label for="btn-upload" class="btn btn-primary">
             <i class="fas fa-file"></i>&nbsp;Load
         </label>
-        <input type="file" id="btn-upload" class="btn btn-default"
+        <input type="file" id="btn-upload" class="btn btn-default" style="display:none"
                onchange="Actions.upload(); this.value=null; return false;"
                accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
-        <button id="btn-exparser" disabled class="btn btn-primary" type="button"
+        <button id="btn-exparser" disabled class="btn btn-primary hidden" type="button"
                 onclick="Actions.run_exparser();">
             <i class="fas fa-search"></i>&nbsp;Analyze
         </button>
-        <button id="btn-save" disabled class="btn btn-primary" type="button"
+        <button id="btn-save" disabled class="btn btn-primary hidden" type="button"
                 onclick="Actions.save();">
             <i class="fas fa-save"></i>&nbsp;Save
         </button>
@@ -140,6 +141,16 @@
             <button id="btnfindNextRef" onclick="GUI.findNextRef(1, this)">
                 <i class="fas fa-arrow-down"></i>
             </button>
+            <span id="page-navigation">
+                <button id="btn-prev-page" onclick="GUI.goToPrevPage()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <span id="label-page-number"></span>
+                <button id="btn-next-page" onclick="GUI.goToNextPage()">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </span>
+
             <span style="min-width:10px"></span>
             <button id="btnToggleMarkedUpView" onclick="GUI.toggleMarkedUpView()">
                 <i class="fas fa-file-code"></i>
