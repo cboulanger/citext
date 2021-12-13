@@ -367,14 +367,14 @@ class GUI {
       window.onbeforeunload = Actions.saveToLocalStorage;
 
       // check if we have a backend
-      // fetch(SERVER_URL + "status.py")
-      //   .then(response => response.json())
-      //   .then(result => {
-      //     if (result.success) {
+       fetch(SERVER_URL + "status.py")
+         .then(response => response.json())
+         .then(result => {
+           if (result.success) {
       $("#btn-exparser").removeClass("hidden");
       $("#btn-save").removeClass("hidden");
-      //   }
-      // })
+         }
+      })
     });
   }
 

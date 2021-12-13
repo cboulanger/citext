@@ -1,94 +1,41 @@
-## Preparation
+# EXParser Docker Image
 
-**Step 1:** [Install
-Docker](https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1)
-on your Linux server.
+This is a docker image of a collection of [tools](https://excite.informatik.uni-stuttgart.de/#software) 
+from the [EXcite project](https://excite.informatik.uni-stuttgart.de/)
+which serve to extract citation data from PDF Documents. In particular, it provides a Web UI 
+for producing training material which is needed to improve citation recognition for
+particular corpora of scholarly literatur where the current algorith does not perform well.
 
-**Step 2:** Download current repository to your local system and copy all
-downloaded files to your Linux server.
+The code has been forked from https://git.gesis.org/hosseiam/excite-docker, but parts of the frontend 
+have been completely rewritten. 
 
-**Step 3:** In server, change the directory to "excite-docker" (which is the
-name of repository).
+Demos of the training frontends are available here (no backend functionality):
 
-```
-$ cd excite-docker
-```
+- [Reference String Extraction](EXannotator/EXRef-Identifier/index.html) 
+- [Reference Segmentation](EXannotator/EXRef-Segmentation/index.html)
 
-**Step 4:** Build an image from Docker-file (The name of docker image is
-excite_toolchain):
+## Installation
 
-```
-$ sudo docker build --no-cache -t excite_toolchain .
-```
+1. Install prerequisites: [Docker](https://docs.docker.com/install) and [Python v3](https://www.python.org/downloads/)
+2. Clone this repo: `git clone https://github.com/cboulanger/excite-docker.git && cd excite-docker`
+3. Build docker image: `sudo docker build --no-cache -t excite_toolchain .`
+4. Run server: `./start-server`
+5. Open frontend at http://127.0.0.1:8000/index.html
 
-## How to run
+## Run extraction via CLI
 
-Please follow this Step-By-Step process in sequence as described below.
+You can also use this image as a CLI tool to extract references from a batch of PDFs (this was the original 
+purpose of the repo it was forked from):
 
-**Step 1:** The input of this process is PDF file, please put your PDF files in
-this directory:
-
-```
-$ cd excite-docker/Data/1-pdfs
-```
-
-**Step 2:** Extracting the layout from a PDF will be started by calling a Java
-module base on "CERMINE", by executing this command:
-
-```
-$ sudo docker run -v $(pwd):/app excite_toolchain layout
-```
-
-The outputs of this step are "Layout files", which will be available in this
-directory :
-
-```
-$ cd excite-docker/Data/2-layouts
-```
-
-**Step 3:** In this step "Exparser" will be called for extracting references
-from "Layout files", by executing this command:
-
-```
-$ sudo docker run -v $(pwd):/app excite_toolchain exparser
-```
-
+1. put your PDF files in `Data/1-pdfs`
+2.Run the layout analysis: `docker run -v $(pwd):/app excite_toolchain layout`
+2. Run citation extraction: `docker run -v $(pwd):/app excite_toolchain exparser`. 
 The output will be provided in these different formats: "plain text", "xml" and
-"BibTex" format and will be available in this directory :
-
-```
--extracted references in plain text format are available in this directory:
-$ cd excite-docker/Data/3-refs
-
--extracted references in xml format are available in this directory:
-$ cd excite-docker/Data/3-refs_seg
-
--extracted references in BibTeX format are available in this directory: 
-$ cd excite-docker/Data/3-refs_bibtex 
-```
-
-**Step 4:** In this step "EXmatcher" will be called for matching references
-against corresponding items in the defined target bibliographical databases,
-by executing this command:
-
-```
-$ sudo docker run -v $(pwd):/app excite_toolchain exmatcher
-```
-
-The input of EXmatcher is reference strings and segments generated in the
-previous step. The output will be "matched document ids" and the "probability"
-for each match and will be available in this directory :
-
-```
-$ cd excite-docker/Data/4-refs_crossref
-```
-
-## Built-in Server
-
-This repo includes a very simple webserver which allows to run exparser on
-individual files and train the model with new ground truth data.
-
-To start the server, execute `./start-server`, then open http://localhost:8000 
+"BibTex" format and will be available in the directories `Data/3-refs`, `Data/3-refs_seg` 
+and `Data/3-refs_bibtex`
+3. Match references against the data in the [CrossRef database](https://www.crossref.org/): 
+`docker run -v $(pwd):/app excite_toolchain exmatcher`. Any matched reference will be in 
+`Data/4-refs_crossref`
 
 ## Training
 
