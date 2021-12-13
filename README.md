@@ -11,8 +11,8 @@ have been completely rewritten.
 
 Demos of the training frontends are available here (no backend functionality):
 
-- [Reference String Extraction](EXannotator/EXRef-Identifier/index.html) 
-- [Reference Segmentation](EXannotator/EXRef-Segmentation/index.html)
+- [Reference String Extraction](https://cboulanger.github.io/excite-docker/EXannotator/EXRef-Identifier/index.html) 
+- [Reference Segmentation](https://cboulanger.github.io/excite-docker/EXannotator/EXRef-Segmentation/index.html)
 
 ## Installation
 
