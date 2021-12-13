@@ -217,9 +217,9 @@ class Actions {
         }
       }
     }
-    textFileName = pdfFileName.replace(".pdf", ".csv");
-    $("#text-label").text(textFileName);
     textFileExt = "csv";
+    textFileName = filenameNoExt + ".csv";
+    $("#text-label").text(textFileName);
     layoutDoc = words.join(" ").replace(/~~~CR~~~/g, "\n")
     GUI.setTextContent(layoutDoc);
   }
@@ -447,7 +447,7 @@ class GUI {
     let yval = 0;
     this.__numPages = 0;
     for (let i = 0; i < text_Lines.length; i++) {
-      if (textFileName.endsWith(".csv")) {
+      if (textFileName.endsWith(".csv") || textFileExt === "csv") {
         // we have layout info in the file, remove from text to re-add later
         let line_parts = text_Lines[i].split('\t');
         if (line_parts.length >= 7) {
