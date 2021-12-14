@@ -302,6 +302,7 @@ class Actions {
   static undo() {
     if (versions.length) {
       $("#text-content").html(versions.pop());
+      GUI.updateMarkedUpText();
     }
     if (!versions.length) {
       $("#btn-undo").prop("disabled", true)
@@ -385,7 +386,7 @@ class GUI {
             sel.removeAllRanges();
             let range = document.createRange();
             range.selectNodeContents(p);
-            sel.addRange(range)
+            sel.addRange(range);
             GUI._showPopupOnSelect(e);
           }
         });
@@ -659,7 +660,7 @@ class GUI {
     }
     $("#btn-ref-part").toggleClass("ui-state-disabled", Boolean(tag));
     $("#btn-ref-line").toggleClass("ui-state-disabled", Boolean(tag));
-    $("#btn-oth").toggleClass("ui-state-disabled", !Boolean(tag) || tag === "oth");
+    $("#btn-oth").toggleClass("ui-state-disabled", !Boolean(tag) || tag === "oth" || node === sel.focusNode);
     $("#btn-remove-tag").toggleClass("ui-state-disabled", !Boolean(tag));
     $("#btn-paste").toggleClass("ui-state-disabled", !Boolean(clipboard.length));
     $("#btn-insert-before").toggleClass("ui-state-disabled", !Boolean(clipboard.length));
