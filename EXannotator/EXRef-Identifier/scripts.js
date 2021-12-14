@@ -6,8 +6,9 @@ let textFileExt = "";
 let cols1text = [];
 let cols2numbers = [];
 let colorCounter = 0;
-const pageMarkerPrefix = "[" + "-".repeat(40);
-const pageMarkerSuffix = "-".repeat(40) + "]";
+let clipboard = "";
+let versionIndex = 0;
+let versions = [];
 
 const SERVER_URL = "http://127.0.0.1:8000/cgi-bin/";
 const LOCAL_STORAGE = {
@@ -65,13 +66,8 @@ class Actions {
         $("#pdf-label").html(filename);
         pdfFileName = filename;
         pdfFile = file;
-        let tmppath = URL.createObjectURL(file);
-        const pdfiframe = $("#pdfiframe");
-        pdfiframe.on("load", GUI._onPdfIframeLoaded);
-        pdfiframe.prop("src", "web/viewer.html?file=" + tmppath);
-        $("#btndelpdf").show();
-        GUI.showPdfView(true);
-        $("#btn-exparser").prop("disabled", false)
+        let objectURL = URL.createObjectURL(file);
+        GUI.loadPdfFile(objectURL);
       } else {
         const fileReader = new FileReader();
         fileReader.onload = (e) => {
@@ -97,6 +93,7 @@ class Actions {
   }
 
   static addTag(tag_name, wholeLine = false) {
+    GUI.saveState();
     let sel = window.getSelection();
     if (sel.toString() === "") return;
     if (wholeLine) {
@@ -153,8 +150,21 @@ class Actions {
     return result
   }
 
-  static async run_exparser() {
-    if (!confirm("Do you really want to run exparser to identify references in this document?")) {
+  static async run_excite_command(command) {
+    let confirmMsg;
+    switch (command) {
+      case "layout":
+        confirmMsg = "Do you really want to run layout analysis?";
+        break;
+      case "exparser":
+        confirmMsg = "Do you really want to run layout analysis and reference extraction?";
+        break;
+      default:
+        alert("Invalid command: " + command);
+        return;
+    }
+    confirmMsg += " This will overwrite the current document.";
+    if (!confirm(confirmMsg)) {
       return;
     }
     // 1. file upload
@@ -172,15 +182,24 @@ class Actions {
     let url = `${SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}`
     result = await (await fetch(url)).json();
     if (!this.checkResult(result)) return;
+    textFileExt = "csv";
+    textFileName = filenameNoExt + ".csv";
     let layoutDoc = result.success;
-    // 3. reference identification
-    GUI.showSpinner("Identifying references, this will take a while...");
-    url = `${SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}`
-    result = await (await fetch(url)).json();
+    if (command === "exparser") {
+      // 3. reference identification
+      GUI.showSpinner("Identifying references, this will take a while...");
+      url = `${SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}`
+      result = await (await fetch(url)).json();
+      if (!this.checkResult(result)) return;
+      let refs = result.success;
+      layoutDoc = this.combineLayoutAndRefs(layoutDoc, refs);
+    }
     GUI.hideSpinner();
-    if (!this.checkResult(result)) return;
-    let refs = result.success;
+    $("#text-label").text(textFileName);
+    GUI.setTextContent(layoutDoc);
+  }
 
+  static combineLayoutAndRefs(layoutDoc, refs) {
     // combine layout doc and references
     let words = layoutDoc.replace(/\n/g, "~~~CR~~~ ").split(" ");
     refs = refs.split('\n').filter(Boolean);
@@ -217,11 +236,8 @@ class Actions {
         }
       }
     }
-    textFileExt = "csv";
-    textFileName = filenameNoExt + ".csv";
-    $("#text-label").text(textFileName);
     layoutDoc = words.join(" ").replace(/~~~CR~~~/g, "\n")
-    GUI.setTextContent(layoutDoc);
+    return layoutDoc
   }
 
   static export() {
@@ -261,8 +277,37 @@ class Actions {
     let text = GUI.getTextToExport();
     localStorage.setItem(LOCAL_STORAGE.MARKED_UP_TEXT, text);
     localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
-    localStorage.setItem(LOCAL_STORAGE.PDF_IFRAME_SRC, document.getElementById("pdfiframe").src);
   }
+
+  static replaceSelection() {
+    $("contextMenu").hide();
+    setTimeout(() => {
+      let replacementText = prompt("Please enter text to replace the selected text with:");
+      GUI.replaceSelection(replacementText);
+    }, 100);
+  }
+
+  static copy() {
+    clipboard = window.getSelection().toString();
+  }
+
+  static paste() {
+    GUI.replaceSelection(clipboard);
+  }
+
+  static insertBefore() {
+    GUI.replaceSelection(clipboard + window.getSelection().toString());
+  }
+
+  static undo() {
+    if (versions.length) {
+      $("#text-content").html(versions.pop());
+    }
+    if (!versions.length) {
+      $("#btn-undo").prop("disabled", true)
+    }
+  }
+
 }
 
 class Utils {
@@ -292,15 +337,22 @@ class GUI {
     this.__currentRefNode = null;
     this.__xmlViewState = true; // will be toggled to off at startup
     this.__pdfJsApplication = null;
+    this.__fs = null;
 
     // on page load
     $(document).ready(function () {
+
       // force remove PDF because loading saved src doesn't work yet
-      //document.getElementById("pdfiframe").src = localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC ) ||'about:blank';
-      $("#pdfiframe").prop('src', 'about:blank');
+      let dataUrl = false; // localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC);
+      if (dataUrl) {
+        fetch(dataUrl)
+          .then(res => res.blob())
+          .then(objectURL => GUI.loadPdfFile(objectURL));
+      } else {
+        GUI.showPdfView(false);
+      }
 
       // hide optional views
-      GUI.showPdfView(false);
       GUI.toggleMarkedUpView();
 
       // disable buttons (on reload)
@@ -367,14 +419,14 @@ class GUI {
       window.onbeforeunload = Actions.saveToLocalStorage;
 
       // check if we have a backend
-       fetch(SERVER_URL + "status.py")
-         .then(response => response.json())
-         .then(result => {
-           if (result.success) {
-      $("#btn-exparser").removeClass("hidden");
-      $("#btn-save").removeClass("hidden");
-         }
-      })
+      fetch(SERVER_URL + "status.py")
+        .then(response => response.json())
+        .then(result => {
+          if (result.success) {
+            $("#btn-exparser").removeClass("hidden");
+            $("#btn-save").removeClass("hidden");
+          }
+        })
     });
   }
 
@@ -392,14 +444,23 @@ class GUI {
     $("#text-content").html("");
     $("#markup-content").html("");
     $(".view-text-buttons").hide();
-
     textFileName = "";
     cols2numbers = [];
+    versions = [];
     localStorage.removeItem(LOCAL_STORAGE.TEXT_FILE_NAME);
     localStorage.removeItem(LOCAL_STORAGE.MARKED_UP_TEXT);
     $("#btn-export").prop("disabled", true);
     $("#btn-save").prop("disabled", true);
     $("#btn-seganno").prop("disabled", true);
+  }
+
+  static loadPdfFile(objectURL) {
+    const pdfiframe = $("#pdfiframe");
+    pdfiframe.on("load", GUI._onPdfIframeLoaded);
+    pdfiframe.prop("src", "web/viewer.html?file=" + objectURL);
+    $("#btndelpdf").show();
+    GUI.showPdfView(true);
+    $("#btn-exparser").prop("disabled", false)
   }
 
   static removePdfFile() {
@@ -492,6 +553,7 @@ class GUI {
     }
     $("#text-content").html(html);
     $("#text-content").scrollTop(0);
+    versions = [html];
     // select page in PDF if available
 
     $("#text-content > .page-marker").on("click", e => {
@@ -599,6 +661,8 @@ class GUI {
     $("#btn-ref-line").toggleClass("ui-state-disabled", Boolean(tag));
     $("#btn-oth").toggleClass("ui-state-disabled", !Boolean(tag) || tag === "oth");
     $("#btn-remove-tag").toggleClass("ui-state-disabled", !Boolean(tag));
+    $("#btn-paste").toggleClass("ui-state-disabled", !Boolean(clipboard.length));
+    $("#btn-insert-before").toggleClass("ui-state-disabled", !Boolean(clipboard.length));
     if (!sel.toString().trim()) {
       contextMenu.hide();
       return;
@@ -657,6 +721,21 @@ class GUI {
     if (this.__currentPage < this.__numPages) {
       this.goToPage(++this.__currentPage);
     }
+  }
+
+  static replaceSelection(replacementText) {
+    this.saveState();
+    let sel = window.getSelection();
+    if (sel.rangeCount) {
+      let range = sel.getRangeAt(0);
+      range.deleteContents();
+      range.insertNode(document.createTextNode(replacementText));
+    }
+  }
+
+  static saveState() {
+    versions.push($("#text-content").html());
+    $("#btn-undo").prop("disabled", false)
   }
 
 }

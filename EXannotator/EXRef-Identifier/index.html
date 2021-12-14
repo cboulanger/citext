@@ -14,91 +14,36 @@
 </head>
 
 <body>
-<!-- Spinner -->
-<div class="loader loader-default" id="spinner"></div>
-<ul id="contextMenu" class="dropdown-menu" role="menu">
-    <li><a id="btn-ref-part" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('ref');" href="#">
-        Markup selection as reference
-    </a></li>
-    <li><a id="btn-ref-line" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('ref', true);" href="#">
-        Markup whole lines as reference
-    </a></li>
-    <li><a id="btn-oth" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('oth');" href="#">
-        Markup as non-reference
-    </a></li>
-    <li class="divider"></li>
-    <li><a id="btn-remove-tag" class="ui-state-disabled" tabindex="-1" onclick="Actions.removeTag();" href="#">
-        Remove Tag
-    </a></li>
-</ul>
-<div id="modal-help" class="modal" tabindex="-1" role="dialog">
-    <div class="modal-dialog" role="document">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3 class="modal-title">EXcite Reference Identification Training</h3>
-            </div>
-            <div class="modal-body">
-                <p>With this web app, you can mark up citation data in text extracted from a PDF,
-                    which then can be used to train the <a href="https://excite.informatik.uni-stuttgart.de/"
-                                                           target="_blank">
-                        EXcite</a> reference extraction model. Please proceed as follows:</p>
-                <ol>
-                    <li>
-                        Load a text to mark up. This can be done in several ways:
-                        <ul>
-                            <li>Load a PDF and extract text and layout data by clicking the "Analyze" button. This takes
-                                a while.
-                            </li>
-                            <li>Load a previously processed file (.csv) to continue working on it.</li>
-                            <li>Load a textfile (.txt) containing OCR data, which does not contain layout information.
-                            </li>
-                        </ul>
-                    </li>
-                    <li>
-                        Mark up the text by selecting the parts of the text that contains citation/reference data.
-                        After selecting text, a menu popup is shown with the available options. You can
-                        <ul>
-                            <li>Mark up the selected fragment</li>
-                            <li>Markup the whole line of all line that are selected</li>
-                            <li>
-                                Remove a section within a previously marked up area which contains non-reference data;
-                                typically these are headers and footers which are inserted into a reference that spans
-                                a page break.
-                            </li>
-                            <li>Remove markup</li>
-                        </ul>
-                        Long-clicking or tapping on a marked up section of a text will select it.
-                    </li>
-                    <li>
-                        After you have finished your markup, save the document to the backend. You can also download
-                        it to your computer using the "Export" button.
-                    </li>
-                    <li>
-                        Go to the Reference Segmentation Tool to continue training.
-                    </li>
-                </ol>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary"
-                        data-dismiss="modal" onclick="$('#modal-help').hide()">Close
-                </button>
-            </div>
-        </div>
-    </div>
-</div>
+<!-- navigation bar -->
 <nav class="navbar navbar-default">
     <!-- menu -->
     <div id="navbar-buttons" class="navbar-left">
-        <label for="btn-upload" class="btn btn-primary">
-            <i class="fas fa-file"></i>&nbsp;Load
-        </label>
-        <input type="file" id="btn-upload" class="btn btn-default" style="display:none"
+        <div class="btn-group">
+            <button id="btn-load" type="button"
+                    class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-file"></i>&nbsp;Load&nbsp;<span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="btn-load">
+                <li><a class="dropdown-item" href="#" onclick="$('#btn-upload').click();">New document(s)</a></li>
+            </ul>
+        </div>
+        <input type="file" id="btn-upload" style="display:none"
                onchange="Actions.upload(); this.value=null; return false;"
                accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
-        <button id="btn-exparser" disabled class="btn btn-primary hidden" type="button"
-                onclick="Actions.run_exparser();">
-            <i class="fas fa-search"></i>&nbsp;Analyze
-        </button>
+
+        <div class="btn-group">
+            <button id="btn-exparser" type="button" disabled
+                    class="btn btn-primary hidden dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-search"></i>&nbsp;Analyze PDF <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="btn-exparser">
+                <li><a class="dropdown-item" href="#" onclick="Actions.run_excite_command('layout');">Layout</a></li>
+                <li><a class="dropdown-item" href="#" onclick="Actions.run_excite_command('exparser');">Reference
+                    identification</a></li>
+            </ul>
+        </div>
         <button id="btn-save" disabled class="btn btn-primary hidden" type="button"
                 onclick="Actions.save();">
             <i class="fas fa-save"></i>&nbsp;Save
@@ -110,6 +55,10 @@
         <button id="btn-seganno" disabled class="btn btn-primary" type="button"
                 onclick="Actions.open_in_seganno();">
             <i class="fas fa-file-upload"></i>&nbsp;Segmentation
+        </button>
+        <button id="btn-undo" disabled class="btn btn-default" type="button"
+                onclick="Actions.undo();">
+            <i class="fas fa-undo"></i>&nbsp;Undo
         </button>
         <button type="button" class="btn btn-info" data-toggle="modal" data-target="#modal-help">
             <i class="fas fa-question-circle"></i>&nbsp;Help
@@ -123,7 +72,6 @@
         <span id="app-title">
             EXRef-Identifier
         </span>
-
     </div>
 </nav>
 <div id="main-container" class="grid-container">
@@ -185,6 +133,89 @@
             <label>Preview tagged text</label>
         </div>
         <div class="view-markup-buttons"></div>
+    </div>
+</div>
+<!-- spinner -->
+<div class="loader loader-default" id="spinner"></div>
+<!-- context menu -->
+<ul id="contextMenu" class="dropdown-menu" role="menu">
+    <li><a id="btn-ref-part" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('ref');" href="#">
+        Markup selection as reference
+    </a></li>
+    <li><a id="btn-ref-line" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('ref', true);" href="#">
+        Markup whole lines as reference
+    </a></li>
+    <li><a id="btn-oth" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('oth');" href="#">
+        Markup as non-reference
+    </a></li>
+    <li><a id="btn-remove-tag" class="ui-state-disabled" tabindex="-1" onclick="Actions.removeTag();" href="#">
+        Remove Tag
+    </a></li>
+    <li class="divider"></li>
+    <li><a id="btn-copy" tabindex="-1" onclick="Actions.copy();" href="#">
+        Copy
+    </a></li>
+    <li><a id="btn-paste" class="ui-state-disabled" tabindex="-1" onclick="Actions.paste();" href="#">
+        Paste
+    </a></li>
+    <li><a id="btn-insert-before" class="ui-state-disabled" tabindex="-1" onclick="Actions.insertBefore();" href="#">
+        Insert before
+    </a></li>
+</ul>
+<!-- help window -->
+<div id="modal-help" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">EXcite Reference Identification Training</h3>
+            </div>
+            <div class="modal-body">
+                <p>With this web app, you can mark up citation data in text extracted from a PDF,
+                    which then can be used to train the <a href="https://excite.informatik.uni-stuttgart.de/"
+                                                           target="_blank">
+                        EXcite</a> reference extraction model. Please proceed as follows:</p>
+                <ol>
+                    <li>
+                        Load a text to mark up. This can be done in several ways:
+                        <ul>
+                            <li>Load a PDF and extract text and layout data by clicking the "Analyze" button. This takes
+                                a while.
+                            </li>
+                            <li>Load a previously processed file (.csv) to continue working on it.</li>
+                            <li>Load a textfile (.txt) containing OCR data, which does not contain layout information.
+                            </li>
+                        </ul>
+                    </li>
+                    <li>
+                        Mark up the text by selecting the parts of the text that contains citation/reference data.
+                        After selecting text, a menu popup is shown with the available options. You can
+                        <ul>
+                            <li>Mark up the selected fragment</li>
+                            <li>Markup the whole line of all line that are selected</li>
+                            <li>
+                                Remove a section within a previously marked up area which contains non-reference data;
+                                typically these are headers and footers which are inserted into a reference that spans
+                                a page break.
+                            </li>
+                            <li>Remove markup</li>
+                        </ul>
+                        Long-clicking or tapping on a marked up section of a text will select it.
+                    </li>
+                    <li>
+                        After you have finished your markup, save the document to the backend. You can also download
+                        it to your computer using the "Export" button.
+                    </li>
+                    <li>
+                        Go to the Reference Segmentation Tool to continue training.
+                    </li>
+                </ol>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-dismiss="modal" onclick="$('#modal-help').hide()">Close
+                </button>
+            </div>
+        </div>
     </div>
 </div>
 </body>
