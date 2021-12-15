@@ -11,13 +11,14 @@ body {
 }
 
 nav {
-    height:70px;
     border-width: 0px;
-    overflow: hidden;
 }
 
 .navbar {
-    padding: 10px;
+    padding-top: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 0;
     margin-bottom: 0px !important;
 }
 
@@ -27,6 +28,10 @@ nav {
 
 .navbar-brand {
     padding: 0px !important;
+}
+
+.dropdown-menu {
+    z-index: auto;
 }
 
 #app-logo {
