@@ -18,8 +18,8 @@ Demos of the training frontends are available here (no backend functionality):
 
 1. Install prerequisites: [Docker](https://docs.docker.com/install) and [Python v3](https://www.python.org/downloads/)
 2. Clone this repo: `git clone https://github.com/cboulanger/excite-docker.git && cd excite-docker`
-3. Build docker image: `sudo docker build --no-cache -t excite_toolchain .`
-4. Run server: `./start-server`
+3. Build docker image: `./bin/build`
+4. Run server: `./bin/start-server`
 5. Open frontend at http://127.0.0.1:8000/index.html
 
 ## Run extraction via CLI
@@ -47,7 +47,7 @@ extraction is done before the model training.
 check out this repository. git-lfs is necessary to download the large files that
 are used during training.
 
-Before training, run the `prepare-training` script. This will do the following:
+Before training, run `./bin/prepare-training`. This will do the following:
 
 - Ask you if you want to you download the [Excite project's ground truth
   data](https://github.com/exciteproject/Exparser/tree/master/EXparser/Dataset ),
@@ -59,11 +59,7 @@ Before training, run the `prepare-training` script. This will do the following:
 Training data needs to be placed into the `Exparser/Dataset` folder. For
 details, see [here](./EXparser/Dataset/README.md).
 
-To run the training, execute
-
-```
-sudo docker run -v $(pwd):/app excite_toolchain train_extraction
-```
+To run the training, execute `./bin/training`.
 
 Input files (for features extraction):
 ```
