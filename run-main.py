@@ -58,6 +58,21 @@ def call_run_exparser():
     return command
 
 
+def call_segmentation():
+    command = ''
+    try:
+        command = 'python run-segmentation.py'
+        print(command)
+        proc = subprocess.Popen([command], stdout=subprocess.PIPE, shell=True)
+        (output, err) = proc.communicate()
+        print(output)
+    except:
+        print(traceback.format_exc())
+        logf.write(traceback.format_exc())
+        logf.write('*' * 50 + '\n')
+    return command
+
+
 def call_extraction_training():
     _call_extraction_training()
 
@@ -70,6 +85,8 @@ if __name__ == "__main__":
         call_run_layout_extractor()
     elif func_name == 'exparser':
         call_run_exparser()
+    elif func_name == 'segmentation':
+        call_segmentation()
     elif func_name == 'exmatcher':
         call_run_exmatcher()
     elif func_name == "train_extraction":
