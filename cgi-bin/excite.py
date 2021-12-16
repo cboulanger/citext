@@ -16,6 +16,9 @@ pdf_dir      = data_dir + "/1-pdfs/"
 layout_dir   = data_dir + "/2-layouts/"
 refs_dir     = data_dir + "/3-refs/"
 refs_seg_dir = data_dir + "/3-refs_seg/"
+refs_dict_dir = data_dir + "/3-refs_seg_dict/"
+refs_prob_dir = data_dir + "/3-refs_seg_prob/"
+refs_bibtex_dir = data_dir + "/3-refs_seg_bibtex/"
 result_path = ""
 
 result = {}
@@ -41,17 +44,23 @@ try:
     elif command == "exparser":
         result_path = refs_dir + filename + ".csv"
         cleanup.append(result_path)
+        cleanup.append(refs_dict_dir + filename + ".csv")
+        cleanup.append(refs_prob_dir + filename + ".csv")
+        cleanup.append(refs_bibtex_dir + filename + ".csv")
 
     elif command == "segmentation":
         try:
             source = tempfile.gettempdir() + "/" + filename + ".csv"
             target = refs_dir + filename + ".csv"
             shutil.move(source, target)
-            cleanup.append(target)
+            #cleanup.append(target)
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
         result_path = refs_seg_dir + filename + ".xml"
-        cleanup.append(result_path)
+        #cleanup.append(result_path)
+        cleanup.append(refs_dict_dir + filename + ".csv")
+        cleanup.append(refs_prob_dir + filename + ".csv")
+        cleanup.append(refs_bibtex_dir + filename + ".csv")
 
     elif command == "train_extraction":
         result_path = None
@@ -108,7 +117,10 @@ finally:
 
     # clean up temporary files
     for filepath in cleanup:
-        os.remove(filepath)
+        try:
+            os.remove(filepath)
+        except OSError:
+            pass
 
 
 

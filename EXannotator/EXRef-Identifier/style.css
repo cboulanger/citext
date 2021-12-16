@@ -118,6 +118,82 @@ nav {
     display: none;
 }
 
+/* tags */
+[data-tag] {
+    border: 1px grey dotted;
+}
+
+[data-tag="ref"]:nth-child(7n) {
+    background-color: rgb(255, 255, 153);
+}
+[data-tag="ref"]:nth-child(7n-1) {
+    background-color: rgb(252, 201, 108);
+}
+[data-tag="ref"]:nth-child(7n-2) {
+    background-color: rgb(236, 184, 249);
+}
+[data-tag="ref"]:nth-child(7n-3) {
+    background-color: rgb(152, 230, 249);
+}
+[data-tag="ref"]:nth-child(7n-4) {
+    background-color: rgb(135, 245, 168);
+}
+[data-tag="ref"]:nth-child(7n-5) {
+    background-color: rgb(244, 132, 112);
+}
+[data-tag="ref"]:nth-child(7n-6) {
+    background-color: rgb(111, 252, 226);
+}
+[data-tag="oth"] {
+    background-color: rgb(162, 165, 165);
+}
+
+[data-tag="other"] {
+    background-color: #f4858e;
+}
+[data-tag="other"] {
+    background-color: #f4858e;
+}
+[data-tag="surname"] {
+    background-color: #ffce30;
+}
+[data-tag="given-names"] {
+    background-color: #aabb30;
+}
+[data-tag="year"] {
+    background-color: #bfb1d5;
+}
+[data-tag="title"] {
+    background-color: #adddcf;
+}
+[data-tag="source"] {
+    background-color: #abe1fd;
+}
+[data-tag="editor"] {
+    background-color: #fed88f;
+}
+[data-tag="volume"] {
+    background-color: #ffff66;
+}
+[data-tag="fpage"] {
+    background-color: #ccff66;
+}
+[data-tag="lpage"] {
+    background-color: #ffb3ff;
+}
+[data-tag="publisher"] {
+    background-color: #79d279;
+}
+[data-tag="issue"] {
+    background-color: #659bf2;
+}
+[data-tag="url"] {
+    background-color: #5befdb;
+}
+[data-tag="identifier"] {
+    background-color: #d19bf7;
+}
+
 /* CSS grid, done with https://grid.layoutit.com/?id=d5AowTC */
 .grid-container {
   display: grid;

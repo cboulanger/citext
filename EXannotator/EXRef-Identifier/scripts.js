@@ -28,32 +28,6 @@ const REGEX = {
   LAYOUT: /(\t[^\t]+){6}/
 };
 
-// array for colors definition
-// this really should be done with css selectors!
-const openSpanValues = ['<span data-tag="ref" style="background-color: rgb(255, 255, 153);">', '<span data-tag="ref" style="background-color: rgb(252, 201, 108);">', '<span data-tag="ref" style="background-color: rgb(236, 184, 249);">', '<span data-tag="ref" style="background-color: rgb(152, 230, 249);">', '<span data-tag="ref" style="background-color: rgb(135, 245, 168);">', '<span data-tag="ref" style="background-color: rgb(244, 132, 112);">', '<span data-tag="ref" style="background-color: rgb(111, 252, 226);">'];
-const spanColors = ["#ffff99", "#fcc96c", "#ecb8f9", "#98e6f9", "#87f5a8", "#f48470", "#6ffce2"];
-const otherSpanValue = `<span data-tag="oth" style="background-color: rgb(162, 165, 165);">`
-const otherColor = "#a2a5a5";
-
-// segmentation color map
-// see above
-const colorMap = {
-  "other": "#f4858e", //"author":     "#ff9681",
-  "surname": "#ffce30",
-  "given-names": "#aabb30",
-  "year": "#bfb1d5",
-  "title": "#adddcf",
-  "source": "#abe1fd",
-  "editor": "#fed88f",
-  "volume": "#ffff66",
-  "fpage": "#ccff66",
-  "lpage": "#ffb3ff",
-  "publisher": "#79d279",
-  "issue": "#659bf2",
-  "url": "#5befdb",
-  "identifier": "#d19bf7"
-}
-
 class Actions {
   static upload() {
     colorCounter = 0;
@@ -181,9 +155,7 @@ class Actions {
     let file;
     let filename;
     if (command === "segmentation") {
-      let refs = GUI.getTextToExport()
-        .replace(REGEX.LAYOUT)
-        .replace(REGEX.TAG, "");
+      let refs = GUI.getTextToExport(false).replace(REGEX.TAG, "");
       file = new Blob([refs], {type: "text/plain;charset=utf8"});
       filename = textFileName;
     } else if (pdfFile) {
@@ -304,16 +276,17 @@ class Actions {
   }
 
   static export() {
-    let textToExport = GUI.getTextToExport();
+    let textToExport;
     if (!textToExport || !textFileName) return;
     let filename;
     let filenameNoExt = textFileName.split('.').slice(0, -1).join(".");
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT:
+        textToExport = GUI.getTextToExport();
         filename = filenameNoExt + ".csv";
         break;
       case DISPLAY_MODES.REFERENCES:
-        textToExport = textToExport
+        textToExport = GUI.getTextToExport(false)
           .split("\n")
           .map(line => `<ref>${line}</ref>`)
           .join("\n");
@@ -326,11 +299,12 @@ class Actions {
 
   static async save() {
     if (!textFileName) return;
-    let data = GUI.getTextToExport();
+    let data;
     let filename;
     let type;
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT:
+        data = GUI.getTextToExport();
         localStorage.setItem(LOCAL_STORAGE.MARKED_UP_TEXT, data);
         localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
         if (!data.includes("<ref>")) {
@@ -341,6 +315,7 @@ class Actions {
         type = "layout";
         break;
       case DISPLAY_MODES.REFERENCES:
+        data = GUI.getTextToExport(false);
         if (!data.includes("<author>")) {
           alert("Text contains no markup.");
           return;
@@ -651,15 +626,6 @@ class GUI {
           $("#label-page-number").html("");
           $("#page-navigation").addClass("hidden");
         }
-        while (html.indexOf("<ref>") !== -1) {
-          html = html.replace("</ref>", "</span>");
-          html = html.replace('<ref>', openSpanValues[colorCounter]);
-          colorCounter = ++colorCounter % 6;
-        }
-        while (html.indexOf("<oth>") !== -1) {
-          html = html.replace("</oth>", "</span>");
-          html = html.replace('<oth>', otherSpanValue);
-        }
         break;
       // Display references
       case DISPLAY_MODES.REFERENCES:
@@ -667,19 +633,28 @@ class GUI {
           .replace(/\n/g, "<br>")
           .replace(/<\/?author>/g, "")
           .replace(/<\/?ref>/g, "");
-        for (let [tag_name, colorCode] of Object.entries(colorMap)) {
-          let regex = new RegExp(`<${tag_name}>(.*?)</${tag_name}>`, 'g');
-          let replacement = `<span data-tag="${tag_name}" style="background-color:${colorCode}">$1</span>`;
-          html = html.replace(regex, replacement);
-        }
+
         break;
     }
-
+    // translate tag names to data-tag attributes
+    let tag_names = [];
+    let tag_name;
+    for (let match of html.matchAll(/<([a-z_\-]+)>/g)) {
+      tag_name = match[1];
+      if (!tag_names.includes(tag_name)) {
+        tag_names.push(tag_name);
+      }
+    }
+    for (tag_name of tag_names) {
+      let regex = new RegExp(`<${tag_name}>(.*?)</${tag_name}>`, 'g');
+      let replacement = `<span data-tag="${tag_name}">$1</span>`;
+      html = html.replace(regex, replacement);
+    }
+    // show text
     $("#text-content").html(html);
     $("#text-content").scrollTop(0);
     versions = [html];
     // select page in PDF if available
-
     $("#text-content > .page-marker").on("click", e => {
       if (this.__pdfJsApplication) {
         this.goToPdfPage(parseInt((e.target.dataset.page)))
@@ -714,27 +689,18 @@ class GUI {
     } while (node)
     let parentNode = document.createElement("span");
     parentNode.setAttribute("data-tag", tag_name);
-    let backgroundColor;
-    if (tag_name === 'ref') {
-      backgroundColor = spanColors[colorCounter];
-      colorCounter = ++colorCounter % 6;
-    } else {
-      backgroundColor = otherColor;
-    }
-    parentNode.style.backgroundColor = backgroundColor;
     sel.getRangeAt(0).surroundContents(parentNode);
     GUI.updateMarkedUpText();
   }
 
   static updateMarkedUpText() {
-    let markedUpText = $("#text-content").html()
+    let markedUpText = $("#text-content").html().replace(/\n/g, "");
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT: {
         let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
         let regex2 = /<span data-tag="ref".*?>(.+?)<\/span>/g;
         markedUpText = markedUpText
-          .replace(/<div class="page-marker"[^>]*><\/div>\n/g, "")
-          .replace(regex1, "<oth>$1</oth>") // twice to catch incorrectly nested tags
+          .replace(/<\/?div[^>]*>/g, "")
           .replace(regex1, "<oth>$1</oth>")
           .replace(regex2, "<ref>$1</ref>")
           .replace(regex2, "<ref>$1</ref>");
@@ -827,7 +793,7 @@ class GUI {
     return markedUpText;
   }
 
-  static getTextToExport() {
+  static getTextToExport(withlayoutInfo=true) {
     GUI.updateMarkedUpText();
     let markedUpText = $("#markup-content").html();
     let t1 = markedUpText.split('\n')
@@ -845,13 +811,13 @@ class GUI {
       // textToWrite2 is all layout with numbers
       if (i === t1.length - 1) {
         // no \n for last line
-        if (typeof cols2numbers[i] != 'undefined') {
+        if (typeof cols2numbers[i] != 'undefined' && withlayoutInfo) {
           t2[i] = t1[i] + '\t' + cols2numbers[i];
         } else {
           t2[i] = t1[i] + '\n'
         }
       } else {
-        if (typeof cols2numbers[i] != 'undefined') {
+        if (typeof cols2numbers[i] != 'undefined' && withlayoutInfo) {
           t2[i] = t1[i] + '\t' + cols2numbers[i] + '\n';
         } else {
           t2[i] = t1[i] + '\n'
@@ -891,6 +857,7 @@ class GUI {
     if (nextDisplayMode === displayMode) {
       return;
     }
+    let tmp = GUI.getTextToExport();
     displayMode = nextDisplayMode;
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT:
@@ -904,7 +871,7 @@ class GUI {
         pdfFileName && $("#btn-run-exparser").addClass("ui-state-disabled");
         break;
       case DISPLAY_MODES.REFERENCES:
-        lastDocument = GUI.getTextToExport();
+        lastDocument = tmp;
         GUI.setTextContent(Actions.extractReferences(lastDocument));
         $("#input-view-refs").prop("checked", true);
         $("#btn-run-layout").addClass("ui-state-disabled");
@@ -1003,7 +970,7 @@ class GUI {
       let range = sel.getRangeAt(0);
       range.deleteContents();
       let textNodes = replacementText.split("\n");
-      for (let i = textNodes.length-1, br = false; i >= 0; i--) {
+      for (let i = textNodes.length - 1, br = false; i >= 0; i--) {
         if (br) {
           range.insertNode(document.createElement("br"));
         }
