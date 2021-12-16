@@ -195,27 +195,11 @@ function loadFile(fileToLoad) {
     document.getElementById("txaxml").value = textLines[0];
     document.getElementById("count").innerHTML = 1 + "/" + textLines.length;
     updateHtmlText();
-    updateXmlText();
+    updateMarkedUpText();
     // save current filename
     localStorage.setItem(LOCAL_STORAGE.LAST_FILE_NAME, filename);
   };
   fileReader.readAsText(fileToLoad, "UTF-8");
-}
-
-async function runSegmentation() {
-  showSpinner("Running reference segmentation...");
-  let url = `${SERVER_URL}/excite.py?command=segmentation&file=${filename}`
-  let result = await (await fetch(url)).json();
-  hideSpinner();
-  if (result.error) {
-    return alert(result.error);
-  }
-  if (!result.success) {
-    return alert("Invalid response");
-  }
-  let fileToLoad = new Blob([result.success], {type: 'text/xml'});
-  fileExt="xml";
-  loadFile(fileToLoad);
 }
 
 function exportFile() {
@@ -309,7 +293,7 @@ function updateUI() {
   document.getElementById("txaxml").value = textLines[currentLine];
   document.getElementById("count").innerHTML = (currentLine + 1) + "/" + textLines.length;
   updateHtmlText();
-  updateXmlText();
+  updateMarkedUpText();
 }
 
 document.addEventListener('keydown', function (event) {
@@ -400,10 +384,10 @@ function addTag(sender) {
   parentNode.setAttribute("data-tag", tag_name);
   parentNode.style.backgroundColor = colorMap[tag_name];
   sel.getRangeAt(0).surroundContents(parentNode);
-  updateXmlText();
+  updateMarkedUpText();
 }
 
-function updateXmlText() {
+function updateMarkedUpText() {
   let coloredText = document.getElementById("lblColoredText").innerHTML;
   let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
   let regex2 = /<span data-tag="([^"]+)".*?>(.+?)<\/span>/g;
@@ -426,14 +410,14 @@ function updateHtmlText() {
   document.getElementById("lblColoredText").innerHTML = tmp;
 }
 
-function addAuthorTag(xml) {
+function addAuthorTag(markedUpText) {
   let startTag = "<author>";
   let endTag = "</author>";
   let firstStartTagMatch = null;
   let secondStartTagMatch = null;
   let lastEndTagMatch = null;
   let offset = 0;
-  let matches = xml.matchAll(/<\/?([^>]+)>/g);
+  let matches = markedUpText.matchAll(/<\/?([^>]+)>/g);
   let pos;
   for (let match of matches) {
     let [tag, tagName] = match;
@@ -444,7 +428,7 @@ function addAuthorTag(xml) {
           // insert <author> before opening first surname or given-names
           firstStartTagMatch = match;
           pos = match.index + offset;
-          xml = xml.substr(0, pos) + startTag + xml.substr(pos);
+          markedUpText = markedUpText.substr(0, pos) + startTag + markedUpText.substr(pos);
           offset += startTag.length;
           continue;
         }
@@ -465,12 +449,12 @@ function addAuthorTag(xml) {
       }
       // insert </author> after the last closing tag
       pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
-      xml = xml.substr(0, pos) + endTag + xml.substr(pos);
+      markedUpText = markedUpText.substr(0, pos) + endTag + markedUpText.substr(pos);
       offset += endTag.length;
       if (!tag.startsWith("</")) {
         // insert new opening tag
         pos = match.index + offset;
-        xml = xml.substr(0, pos) + startTag + xml.substr(pos);
+        markedUpText = markedUpText.substr(0, pos) + startTag + markedUpText.substr(pos);
         offset += startTag.length;
       }
       // reset matches
@@ -482,9 +466,9 @@ function addAuthorTag(xml) {
   if (lastEndTagMatch) {
     // insert missing closing tag
     pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
-    xml = xml.substr(0, pos) + endTag + xml.substr(pos);
+    markedUpText = markedUpText.substr(0, pos) + endTag + markedUpText.substr(pos);
   }
-  return xml;
+  return markedUpText;
 }
 
 function removeTag() {
@@ -497,14 +481,14 @@ function removeTag() {
   }
   if (!el) return;
   $(el).contents().unwrap();
-  updateXmlText();
+  updateMarkedUpText();
 }
 
 function removeAllTags() {
   document.getElementById("lblColoredText").innerHTML =
     document.getElementById("lblColoredText").innerHTML
       .replace(/<\/?span[^>]*>/g, "");
-  updateXmlText();
+  updateMarkedUpText();
 }
 
 // from https://stackoverflow.com/a/62125595

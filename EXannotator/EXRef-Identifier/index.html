@@ -33,17 +33,54 @@
                accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
 
         <div class="btn-group">
-            <button id="btn-exparser" type="button" disabled
-                    class="btn btn-primary hidden dropdown-toggle" data-toggle="dropdown"
+            <button id="btn-view" type="button"
+                    class="btn btn-primary dropdown-toggle" disabled data-toggle="dropdown"
                     aria-haspopup="true" aria-expanded="false">
-                <i class="fas fa-search"></i>&nbsp;Analyze PDF <span class="caret"></span>
+                <i class="fas fa-search"></i>&nbsp;View&nbsp;<span class="caret"></span>
             </button>
-            <ul class="dropdown-menu" aria-labelledby="btn-exparser">
-                <li><a class="dropdown-item" href="#" onclick="Actions.run_excite_command('layout');">Layout</a></li>
-                <li><a class="dropdown-item" href="#" onclick="Actions.run_excite_command('exparser');">Reference
-                    identification</a></li>
+            <ul class="dropdown-menu" aria-labelledby="btn-view">
+                <li>
+                    <a class="checkbox dropdown-item">
+                        <label>
+                            <input id="input-view-refs" type="checkbox"
+                                   onchange="GUI.setDisplayMode(this.checked?DISPLAY_MODES.REFERENCES:DISPLAY_MODES.DOCUMENT)">
+                            References
+                        </label>
+                    </a>
+                </li>
+                <li>
+                    <a class="checkbox dropdown-item">
+                        <label>
+                            <input id="input-view-markup" type="checkbox"
+                                   onchange="GUI.toggleMarkedUpView(this.checked)">Markup
+                        </label>
+                    </a>
+                </li>
             </ul>
         </div>
+
+        <div class="btn-group">
+            <button id="btn-excite-tools" type="button"
+                    class="btn btn-primary hidden dropdown-toggle" data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-search"></i>&nbsp;Analyze&nbsp;<span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="btn-exparser">
+                <li><a id="btn-run-layout" class="dropdown-item ui-state-disabled" href="#"
+                       onclick="Actions.run_excite_command('layout');">
+                    Layout</a></li>
+                <li><a id="btn-run-exparser" class="dropdown-item ui-state-disabled" href="#"
+                       onclick="Actions.run_excite_command('exparser');">
+                    Reference identification</a></li>
+                <li><a id="btn-run-segmentation" class="dropdown-item ui-state-disabled" href="#"
+                       onclick="Actions.run_excite_command('segmentation');">
+                    Run segmentation</a></li>
+            </ul>
+        </div>
+        <button id="btn-seganno" disabled class="btn btn-primary" type="button"
+                onclick="Actions.open_in_seganno();">
+            <i class="fas fa-upload"></i>&nbspTo SegAnno
+        </button>
         <button id="btn-save" disabled class="btn btn-primary hidden" type="button"
                 onclick="Actions.save();">
             <i class="fas fa-save"></i>&nbsp;Save
@@ -52,10 +89,7 @@
                 onclick="Actions.export();">
             <i class="fas fa-file-export"></i>&nbsp;Export
         </button>
-        <button id="btn-seganno" disabled class="btn btn-primary" type="button"
-                onclick="Actions.open_in_seganno();">
-            <i class="fas fa-file-upload"></i>&nbsp;Segmentation
-        </button>
+
         <button id="btn-undo" disabled class="btn btn-default" type="button"
                 onclick="Actions.undo();">
             <i class="fas fa-undo"></i>&nbsp;Undo
@@ -65,7 +99,7 @@
         </button>
     </div>
     <!-- logo -->
-    <div class="navbar-brand navbar-right">
+    <div class="navbar-brand navbar-right visible-md-block visible-lg-block">
         <a href="https://excite.informatik.uni-stuttgart.de/" target="_blank">
             <img id="app-logo" height="50px" src="images/exCite_logo_150.png" alt="img">
         </a>
@@ -82,14 +116,18 @@
         <div class="view-text-label">
             <label id="text-label"></label>
         </div>
-        <div class="view-text-buttons">
-            <button id="btnfindPrevRef" onclick="GUI.findNextRef(-1,this)">
-                <i class="fas fa-arrow-up"></i>
-            </button>
-            <button id="btnfindNextRef" onclick="GUI.findNextRef(1, this)">
-                <i class="fas fa-arrow-down"></i>
-            </button>
-            <span id="page-navigation">
+        <div class="view-text-buttons unselectable">
+            <span id="refs-navigation" class="hidden">
+                <i class="fas fa-superscript"></i>&nbsp;
+                <button id="btnfindPrevRef" onclick="GUI.findNextRef(-1,this)">
+                    <i class="fas fa-arrow-up"></i>
+                </button>
+                <button id="btnfindNextRef" onclick="GUI.findNextRef(1, this)">
+                    <i class="fas fa-arrow-down"></i>
+                </button>
+            </span>
+            <span id="page-navigation" class="hidden">
+                <i class="fas fa-book-open"></i>&nbsp;
                 <button id="btn-prev-page" onclick="GUI.goToPrevPage()">
                     <i class="fas fa-arrow-left"></i>
                 </button>
@@ -98,7 +136,6 @@
                     <i class="fas fa-arrow-right"></i>
                 </button>
             </span>
-
             <span style="min-width:10px"></span>
             <button id="btnToggleMarkedUpView" onclick="GUI.toggleMarkedUpView()">
                 <i class="fas fa-file-code"></i>
@@ -118,8 +155,7 @@
             <label id="pdf-label"></label>
         </div>
         <div class="view-pdf-buttons">
-            <button id="btndelpdf"
-                    style="display : none; " onclick="GUI.removePdfFile()">
+            <button id="btn-remove-pdf" onclick="GUI.removePdfFile()">
                 <i class="fas fa-trash"></i>
             </button>
         </div>
@@ -150,6 +186,9 @@
     </a></li>
     <li><a id="btn-remove-tag" class="ui-state-disabled" tabindex="-1" onclick="Actions.removeTag();" href="#">
         Remove Tag
+    </a></li>
+    <li><a id="btn-remove-all-tags" class="ui-state-disabled" tabindex="-1" onclick="Actions.removeAllTags();" href="#">
+        Remove all tags from selection
     </a></li>
     <li class="divider"></li>
     <li><a id="btn-copy" tabindex="-1" onclick="Actions.copy();" href="#">

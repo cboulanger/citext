@@ -71,7 +71,10 @@ nav {
     overflow: hidden;
 }
 
-.view-text-buttons > button, .view-pdf-buttons > button, #page-navigation > button {
+.view-text-buttons > *,
+.view-pdf-buttons > *,
+#refs-navigation > *,
+#page-navigation > * {
     vertical-align: middle;
 }
 
@@ -131,7 +134,7 @@ nav {
 
 .view-text {
   display: grid;
-  grid-template-columns: 1.4fr 0.6fr;
+  grid-template-columns: 1.2fr 0.8fr;
   grid-template-rows: 30px auto;
   grid-auto-rows: 1fr;
   gap: 0px 0px;
@@ -163,14 +166,20 @@ nav {
 
 .view-pdf-display { grid-area: view-pdf-display; }
 
-.view-pdf-label {
+.unselectable {
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
 
+.view-pdf-label {
   grid-area: view-pdf-label;
   height: 30px;
 }
 
 .view-pdf-buttons {
-
   grid-area: view-pdf-buttons;
   height: 30px;
 }

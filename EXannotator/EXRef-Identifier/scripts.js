@@ -1,4 +1,4 @@
-// global vars, ugh
+// global vars, really an anti-pattern, should be moved to config map and persisted in IndexedDB
 let pdfFileName = "";
 let pdfFile = null;
 let textFileName = "";
@@ -9,35 +9,50 @@ let colorCounter = 0;
 let clipboard = "";
 let versionIndex = 0;
 let versions = [];
+let displayMode;
+let lastDocument;
 
 const SERVER_URL = "http://127.0.0.1:8000/cgi-bin/";
 const LOCAL_STORAGE = {
-  MARKED_UP_TEXT: "marked_up_text",
-  TEXT_FILE_NAME: "anno2filename",
-  PDF_IFRAME_SRC: "excite_pdf_iframe_source"
+  MARKED_UP_TEXT: "marked_up_text", TEXT_FILE_NAME: "anno2filename", PDF_IFRAME_SRC: "excite_pdf_iframe_source"
+}
+const DISPLAY_MODES = {
+  DOCUMENT: "document", REFERENCES: "references"
 }
 
+const REGEX = {
+  TAG: /<\/?[^>]+>/g,
+  SPAN: /<\/?span[^>]*>/ig,
+  BR: /<br[^>]*>/ig,
+  PUNCTUATION: /\p{P}/gu,
+  LAYOUT: /(\t[^\t]+){6}/
+};
 
 // array for colors definition
-const openSpanValues = [
-  '<span data-tag="ref" style="background-color: rgb(255, 255, 153);">',
-  '<span data-tag="ref" style="background-color: rgb(252, 201, 108);">',
-  '<span data-tag="ref" style="background-color: rgb(236, 184, 249);">',
-  '<span data-tag="ref" style="background-color: rgb(152, 230, 249);">',
-  '<span data-tag="ref" style="background-color: rgb(135, 245, 168);">',
-  '<span data-tag="ref" style="background-color: rgb(244, 132, 112);">',
-  '<span data-tag="ref" style="background-color: rgb(111, 252, 226);">'];
-const spanColors = [
-  "#ffff99",
-  "#fcc96c",
-  "#ecb8f9",
-  "#98e6f9",
-  "#87f5a8",
-  "#f48470",
-  "#6ffce2"
-];
+// this really should be done with css selectors!
+const openSpanValues = ['<span data-tag="ref" style="background-color: rgb(255, 255, 153);">', '<span data-tag="ref" style="background-color: rgb(252, 201, 108);">', '<span data-tag="ref" style="background-color: rgb(236, 184, 249);">', '<span data-tag="ref" style="background-color: rgb(152, 230, 249);">', '<span data-tag="ref" style="background-color: rgb(135, 245, 168);">', '<span data-tag="ref" style="background-color: rgb(244, 132, 112);">', '<span data-tag="ref" style="background-color: rgb(111, 252, 226);">'];
+const spanColors = ["#ffff99", "#fcc96c", "#ecb8f9", "#98e6f9", "#87f5a8", "#f48470", "#6ffce2"];
 const otherSpanValue = `<span data-tag="oth" style="background-color: rgb(162, 165, 165);">`
 const otherColor = "#a2a5a5";
+
+// segmentation color map
+// see above
+const colorMap = {
+  "other": "#f4858e", //"author":     "#ff9681",
+  "surname": "#ffce30",
+  "given-names": "#aabb30",
+  "year": "#bfb1d5",
+  "title": "#adddcf",
+  "source": "#abe1fd",
+  "editor": "#fed88f",
+  "volume": "#ffff66",
+  "fpage": "#ccff66",
+  "lpage": "#ffb3ff",
+  "publisher": "#79d279",
+  "issue": "#659bf2",
+  "url": "#5befdb",
+  "identifier": "#d19bf7"
+}
 
 class Actions {
   static upload() {
@@ -93,35 +108,7 @@ class Actions {
   }
 
   static addTag(tag_name, wholeLine = false) {
-    GUI.saveState();
-    let sel = window.getSelection();
-    if (sel.toString() === "") return;
-    if (wholeLine) {
-      sel.setBaseAndExtent(sel.anchorNode, 0, sel.focusNode, sel.focusNode.length);
-    }
-    // prevent nesting of tags except <oth> in <ref>
-    let node = sel.focusNode;
-    do {
-      if (node && node.dataset) {
-        let tag = node.dataset.tag;
-        if (tag && !(tag_name === "oth" && tag === "ref")) {
-          return;
-        }
-      }
-      node = node.parentNode;
-    } while (node)
-    let parentNode = document.createElement("span");
-    parentNode.setAttribute("data-tag", tag_name);
-    let backgroundColor;
-    if (tag_name === 'ref') {
-      backgroundColor = spanColors[colorCounter];
-      colorCounter = ++colorCounter % 6;
-    } else {
-      backgroundColor = otherColor;
-    }
-    parentNode.style.backgroundColor = backgroundColor;
-    sel.getRangeAt(0).surroundContents(parentNode);
-    GUI.updateMarkedUpText()
+    GUI.addTag(tag_name, wholeLine);
   }
 
   static removeTag() {
@@ -134,6 +121,22 @@ class Actions {
     }
     if (!el) return;
     $(el).contents().unwrap();
+    GUI.updateMarkedUpText();
+  }
+
+  static removeAllTags() {
+    let sel = window.getSelection();
+    if (!sel) return;
+    if (sel.rangeCount) {
+      let container = document.createElement("div");
+      for (let i = 0, len = sel.rangeCount; i < len; ++i) {
+        container.appendChild(sel.getRangeAt(i).cloneContents());
+      }
+      let replacementText = container.innerHTML
+        .replace(REGEX.BR, "\n")
+        .replace(REGEX.TAG, "");
+      GUI.replaceSelection(replacementText);
+    }
     GUI.updateMarkedUpText();
   }
 
@@ -154,10 +157,17 @@ class Actions {
     let confirmMsg;
     switch (command) {
       case "layout":
-        confirmMsg = "Do you really want to run layout analysis?";
+        confirmMsg = "Do you want to run layout analysis?";
         break;
       case "exparser":
-        confirmMsg = "Do you really want to run layout analysis and reference extraction?";
+        confirmMsg = "Do you want to run layout analysis and reference extraction?";
+        break;
+      case "segmentation":
+        if (displayMode !== DISPLAY_MODES.REFERENCES) {
+          alert("Segmentation can only be run in references view");
+          return;
+        }
+        confirmMsg = "Do you want to run reference text segmentation?";
         break;
       default:
         alert("Invalid command: " + command);
@@ -167,36 +177,82 @@ class Actions {
     if (!confirm(confirmMsg)) {
       return;
     }
-    // 1. file upload
-    let formData = new FormData();
-    formData.append("file", pdfFile);
-    GUI.showSpinner("Uploading file...");
-    let result = await (await fetch(`${SERVER_URL}/upload.py`, {
-      method: 'post',
-      body: formData
-    })).json();
-    if (!this.checkResult(result)) return;
-    // 2. layout
-    GUI.showSpinner("Analyzing Layout...");
-    let filenameNoExt = pdfFileName.split('.').slice(0, -1).join(".");
-    let url = `${SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}`
-    result = await (await fetch(url)).json();
-    if (!this.checkResult(result)) return;
-    textFileExt = "csv";
-    textFileName = filenameNoExt + ".csv";
-    let layoutDoc = result.success;
+    // file upload
+    let file;
+    let filename;
+    if (command === "segmentation") {
+      let refs = GUI.getTextToExport()
+        .replace(REGEX.LAYOUT)
+        .replace(REGEX.TAG, "");
+      file = new Blob([refs], {type: "text/plain;charset=utf8"});
+      filename = textFileName;
+    } else if (pdfFile) {
+      file = pdfFile;
+      filename = pdfFileName;
+    }
+    let filenameNoExt = filename.split('.').slice(0, -1).join(".");
+    if (file) {
+      let formData = new FormData();
+      formData.append("file", file, filename);
+      GUI.showSpinner("Uploading...");
+      let result = await (await fetch(`${SERVER_URL}/upload.py`, {
+        method: 'post', body: formData
+      })).json();
+      if (!this.checkResult(result)) return;
+    }
+    let result;
+    let url;
+    let textContent;
+
+    // layout
+    if (command === "layout" || command === "exparser") {
+      GUI.showSpinner("Analyzing Layout...");
+      url = `${SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}`
+      result = await (await fetch(url)).json();
+      if (!this.checkResult(result)) return;
+      textFileExt = "csv";
+      textFileName = filenameNoExt + ".csv";
+      textContent = result.success;
+      GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
+      $("#btn-run-exparser").removeClass("ui-state-disabled")
+    }
+    // reference identification
     if (command === "exparser") {
-      // 3. reference identification
       GUI.showSpinner("Identifying references, this will take a while...");
       url = `${SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}`
       result = await (await fetch(url)).json();
       if (!this.checkResult(result)) return;
       let refs = result.success;
-      layoutDoc = this.combineLayoutAndRefs(layoutDoc, refs);
+      textContent = this.combineLayoutAndRefs(textContent, refs);
+      GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
+    }
+    // segmentation
+    if (command === "segmentation") {
+      GUI.showSpinner("Segmenting references...");
+      url = `${SERVER_URL}/excite.py?command=segmentation&file=${filenameNoExt}`;
+      result = await (await fetch(url)).json();
+      if (!this.checkResult(result)) return;
+      textContent = result.success;
+      GUI.setDisplayMode(DISPLAY_MODES.REFERENCES);
     }
     GUI.hideSpinner();
     $("#text-label").text(textFileName);
-    GUI.setTextContent(layoutDoc);
+    GUI.setTextContent(textContent);
+  }
+
+  static extractReferences(markedUpText) {
+    let textLines = markedUpText.split("\n");
+    // remove cermine layout info if exists
+    textLines = textLines.map(line => line.split('\t').shift())
+    let tmp = textLines
+      .map(line => line.trim().replace(/[-]$/, "~~HYPHEN~~"))
+      .join(" ")
+      .replace(/~~HYPHEN~~ /g, "");
+    textLines = [];
+    for (let match of tmp.matchAll(/<ref>(.*?)<\/ref>/g)) {
+      textLines.push(match[1]);
+    }
+    return textLines.join("\n");
   }
 
   static combineLayoutAndRefs(layoutDoc, refs) {
@@ -211,18 +267,23 @@ class Actions {
       for (let index of indices) {
         let i;
         for (i = 1; i < refWords.length; i++) {
-          // compare ref word with punctuation removed ...
-          let refWord = refWords[i].replace(/\p{P}/gu, "").trim();
-          // ... with current word without punctuation and without the layout stuff
-          let currWord = words[index + i]
-            .replace(/\p{P}/gu, "")
-            .replace(/(\t[^\t]+){6}/, "")
+          // compare ref word with tags and punctuation removed ...
+          let refWord = refWords[i]
+            .replace(REGEX.TAG, "")
+            .replace(REGEX.PUNCTUATION, "")
             .trim();
-          // if word contains hyphen, join with next word if exists
+          // ... with current word without tags. punctuation and layout info
+          let currWord = words[index + i]
+            .replace(REGEX.TAG, "")
+            .replace(REGEX.PUNCTUATION, "")
+            .replace(REGEX.LAYOUT, "")
+            .trim();
+          // if word ends with a hyphen, join with next word if exists
           if (currWord.match(/\p{Pd}/gu) && words[index + i + 1]) {
             currWord = currWord + words[index + i + 1]
-              .replace(/\p{P}/gu, "")
-              .replace(/(\t[^\t]+){6}/, "")
+              .replace(REGEX.TAG, "")
+              .replace(REGEX.PUNCTUATION, "")
+              .replace(REGEX.LAYOUT, "")
               .trim();
           }
           if (refWord === currWord) continue;
@@ -236,47 +297,72 @@ class Actions {
         }
       }
     }
-    layoutDoc = words.join(" ").replace(/~~~CR~~~/g, "\n")
+    layoutDoc = words
+      .join(" ")
+      .replace(/~~~CR~~~/g, "\n")
     return layoutDoc
   }
 
   static export() {
-    if (!textFileName) return;
-    Utils.download(GUI.getTextToExport(), textFileName);
+    let textToExport = GUI.getTextToExport();
+    if (!textToExport || !textFileName) return;
+    let filename;
+    let filenameNoExt = textFileName.split('.').slice(0, -1).join(".");
+    switch (displayMode) {
+      case DISPLAY_MODES.DOCUMENT:
+        filename = filenameNoExt + ".csv";
+        break;
+      case DISPLAY_MODES.REFERENCES:
+        textToExport = textToExport
+          .split("\n")
+          .map(line => `<ref>${line}</ref>`)
+          .join("\n");
+        textToExport = `<?xml version="1.0" encoding="utf-8"?>\n<seganno>\n${textToExport}\n</seganno>`
+        filename = filenameNoExt + ".xml";
+        break;
+    }
+    Utils.download(textToExport, filename);
   }
 
   static async save() {
     if (!textFileName) return;
     let data = GUI.getTextToExport();
-    if (!data.includes("<ref>")) {
-      alert("Text contains no markup.");
-      return;
+    let filename;
+    let type;
+    switch (displayMode) {
+      case DISPLAY_MODES.DOCUMENT:
+        localStorage.setItem(LOCAL_STORAGE.MARKED_UP_TEXT, data);
+        localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
+        if (!data.includes("<ref>")) {
+          alert("Text contains no markup.");
+          return;
+        }
+        filename = textFileName;
+        type = "layout";
+        break;
+      case DISPLAY_MODES.REFERENCES:
+        if (!data.includes("<author>")) {
+          alert("Text contains no markup.");
+          return;
+        }
+        type = "ref_xml"
+        break;
     }
-    localStorage.setItem(LOCAL_STORAGE.MARKED_UP_TEXT, data);
-    localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
-    GUI.showSpinner(`Saving ${textFileName} to training data.`);
-    let body = JSON.stringify({
-      filename: textFileName,
-      type: "layout",
-      data
-    }) + "\n\n";
+    GUI.showSpinner(`Saving training data.`);
+    let body = JSON.stringify({filename, type, data}) + "\n\n";
     let result = await (await fetch(`${SERVER_URL}/save.py`, {
-      method: 'post',
-      body
+      method: 'post', body
     })).json();
     GUI.hideSpinner();
     if (result.error) alert(result.error);
   }
 
-  static open_in_seganno() {
-    this.saveToLocalStorage();
-    window.location.href = "../EXRef-Segmentation/index.html";
-  }
-
   static saveToLocalStorage() {
-    let text = GUI.getTextToExport();
+    let text = lastDocument || GUI.getTextToExport();
+    console.warn("Undo this")
     localStorage.setItem(LOCAL_STORAGE.MARKED_UP_TEXT, text);
     localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
+    localStorage.setItem(LOCAL_STORAGE.DISPLAY_MODE, displayMode);
   }
 
   static replaceSelection() {
@@ -309,6 +395,17 @@ class Actions {
     }
   }
 
+  static setDisplayMode(nextDisplayMode) {
+    let confirmMsg = `This will switch the display to ${nextDisplayMode} view and reset the edit history. Do you want to proceed?`;
+    if (confirm(confirmMsg)) {
+      GUI.setDisplayMode(nextDisplayMode);
+    }
+  }
+
+  static open_in_seganno() {
+    this.saveToLocalStorage();
+    window.location.href = "../EXRef-Segmentation/index.html";
+  }
 }
 
 class Utils {
@@ -332,11 +429,12 @@ class Utils {
 class GUI {
 
   static init() {
+    console.log($("#input-view-refs").prop("checked"));
 
     this.__numPages = 0;
     this.__currentPage = 1;
     this.__currentRefNode = null;
-    this.__xmlViewState = true; // will be toggled to off at startup
+    this.__markupViewState = false;
     this.__pdfJsApplication = null;
     this.__fs = null;
 
@@ -353,20 +451,20 @@ class GUI {
         GUI.showPdfView(false);
       }
 
-      // hide optional views
-      GUI.toggleMarkedUpView();
+      // disable checkbox state caching
+      $(":checkbox").attr("autocomplete", "off");
+      $("checkbox").prop("checked", false);
 
-      // disable buttons (on reload)
-      $("#btn-exparser").prop("disabled", true);
-      $("#btn-export").prop("disabled", true);
-      $("#btn-save").prop("disabled", true);
-      $("#btn-seganno").prop("disabled", true);
+      // hide optional views
+      GUI.toggleMarkedUpView(false);
 
       // get text from local storage
       let markedUpText = localStorage.getItem(LOCAL_STORAGE.MARKED_UP_TEXT);
       if (markedUpText) {
         textFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME)
+        textFileExt = textFileName.split(".").pop();
         document.getElementById("text-label").innerHTML = textFileName;
+        GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
         GUI.setTextContent(markedUpText);
       } else {
         $("#modal-help").show();
@@ -424,7 +522,7 @@ class GUI {
         .then(response => response.json())
         .then(result => {
           if (result.success) {
-            $("#btn-exparser").removeClass("hidden");
+            $("#btn-excite-tools").removeClass("hidden");
             $("#btn-save").removeClass("hidden");
           }
         })
@@ -439,7 +537,6 @@ class GUI {
     $("#spinner").removeClass("is-active");
   }
 
-
   static removeTextFile() {
     $("#text-label").html("");
     $("#text-content").html("");
@@ -452,24 +549,29 @@ class GUI {
     localStorage.removeItem(LOCAL_STORAGE.MARKED_UP_TEXT);
     $("#btn-export").prop("disabled", true);
     $("#btn-save").prop("disabled", true);
-    $("#btn-seganno").prop("disabled", true);
+    $("#btn-run-segmentation").addClass("ui-state-disabled");
+    $("#btn-view").prop("disabled", true);
+    this.toggleMarkedUpView(false);
   }
 
   static loadPdfFile(objectURL) {
     const pdfiframe = $("#pdfiframe");
     pdfiframe.on("load", GUI._onPdfIframeLoaded);
     pdfiframe.prop("src", "web/viewer.html?file=" + objectURL);
-    $("#btndelpdf").show();
     GUI.showPdfView(true);
-    $("#btn-exparser").prop("disabled", false)
+    this.setDisplayMode(DISPLAY_MODES.DOCUMENT);
+    $("#btn-run-layout").removeClass("ui-state-disabled");
+    $("#btn-run-exparser").removeClass("ui-state-disabled");
+    $("#page-navigation").removeClass("hidden");
   }
 
   static removePdfFile() {
     $("pdf-label").html("");
-    $("#btndelpdf").hide();
     document.getElementById("pdfiframe").src = 'about:blank';
     pdfFileName = "";
-    $("#btn-exparser").prop("disabled", true);
+    $("#btn-run-layout").addClass("ui-state-disabled");
+    $("#btn-run-exparser").addClass("ui-state-disabled");
+    $("#page-navigation").addClass("hidden");
     GUI.showPdfView(false);
   }
 
@@ -499,59 +601,80 @@ class GUI {
   }
 
   static setTextContent(text) {
-    let text_Lines = text
+
+    text = text
       .replace(/\r/g, "")
       .replace(/\n\n/g, '\n')
       .replace(/\n\n/g, '\n')
-      .split('\n')
-      .map(line => line.trim());
-    let tagged_text = "";
-    let yval = 0;
-    this.__numPages = 0;
-    for (let i = 0; i < text_Lines.length; i++) {
-      if (textFileName.endsWith(".csv") || textFileExt === "csv") {
-        // we have layout info in the file, remove from text to re-add later
-        let line_parts = text_Lines[i].split('\t');
-        if (line_parts.length >= 7) {
-          let layout_info = line_parts.slice(-6);
-          let text_content = line_parts.slice(0, -6).join(' ');
-          cols2numbers[i] = layout_info.join('\t');
-          cols1text[i] = text_content;
-          let lineYval = layout_info[1];
-          if (yval === 0 || yval - lineYval > 300) {
-            this.__numPages++;
-            cols1text[i] = `<div class="page-marker" data-page="${this.__numPages}"></div>\n` + cols1text[i];
+
+    let html = "";
+    switch (displayMode) {
+
+      // Display document contents
+      case DISPLAY_MODES.DOCUMENT:
+        let text_Lines = text
+          .split('\n')
+          .map(line => line.trim());
+        let yval = 0;
+        this.__numPages = 0;
+        for (let i = 0; i < text_Lines.length; i++) {
+          if (textFileName.endsWith(".csv") || textFileExt === "csv") {
+            // we have layout info in the file, remove from text to re-add later
+            let line_parts = text_Lines[i].split('\t');
+            if (line_parts.length >= 7) {
+              let layout_info = line_parts.slice(-6);
+              let text_content = line_parts.slice(0, -6).join(' ');
+              cols2numbers[i] = layout_info.join('\t');
+              cols1text[i] = text_content;
+              let lineYval = layout_info[1];
+              if (yval === 0 || yval - lineYval > 300) {
+                this.__numPages++;
+                cols1text[i] = `<div class="page-marker" data-page="${this.__numPages}"></div>\n` + cols1text[i];
+              }
+              yval = lineYval;
+            } else {
+              cols1text[i] = text_Lines[i];
+            }
+          } else {
+            cols1text[i] = text_Lines[i];
           }
-          yval = lineYval;
-        } else {
-          cols1text[i] = text_Lines[i];
+          if (i === text_Lines.length - 1) {
+            html = html + cols1text[i];
+          } else {
+            html = html + cols1text[i] + '<br>';
+          }
         }
-      } else {
-        cols1text[i] = text_Lines[i];
-      }
-      if (i === text_Lines.length - 1) {
-        tagged_text = tagged_text + cols1text[i];
-      } else {
-        tagged_text = tagged_text + cols1text[i] + '<br>';
-      }
+        if (this.__numPages > 0) {
+          $("#label-page-number").html("1");
+          $("#page-navigation").removeClass("hidden");
+        } else {
+          $("#label-page-number").html("");
+          $("#page-navigation").addClass("hidden");
+        }
+        while (html.indexOf("<ref>") !== -1) {
+          html = html.replace("</ref>", "</span>");
+          html = html.replace('<ref>', openSpanValues[colorCounter]);
+          colorCounter = ++colorCounter % 6;
+        }
+        while (html.indexOf("<oth>") !== -1) {
+          html = html.replace("</oth>", "</span>");
+          html = html.replace('<oth>', otherSpanValue);
+        }
+        break;
+      // Display references
+      case DISPLAY_MODES.REFERENCES:
+        html = text
+          .replace(/\n/g, "<br>")
+          .replace(/<\/?author>/g, "")
+          .replace(/<\/?ref>/g, "");
+        for (let [tag_name, colorCode] of Object.entries(colorMap)) {
+          let regex = new RegExp(`<${tag_name}>(.*?)</${tag_name}>`, 'g');
+          let replacement = `<span data-tag="${tag_name}" style="background-color:${colorCode}">$1</span>`;
+          html = html.replace(regex, replacement);
+        }
+        break;
     }
-    if (this.__numPages > 0) {
-      $("#label-page-number").html("1");
-      $("#page-navigation").show();
-    } else {
-      $("#label-page-number").html("");
-      $("#page-navigation").hide();
-    }
-    let html = tagged_text;
-    while (html.indexOf("<ref>") !== -1) {
-      html = html.replace("</ref>", "</span>");
-      html = html.replace('<ref>', openSpanValues[colorCounter]);
-      colorCounter = ++colorCounter % 6;
-    }
-    while (html.indexOf("<oth>") !== -1) {
-      html = html.replace("</oth>", "</span>");
-      html = html.replace('<oth>', otherSpanValue);
-    }
+
     $("#text-content").html(html);
     $("#text-content").scrollTop(0);
     versions = [html];
@@ -562,26 +685,145 @@ class GUI {
         this.goToPdfPage(parseInt((e.target.dataset.page)))
       }
     });
-
     this.updateMarkedUpText();
     this.__currentRefNode = null;
     // enable buttons
     $(".view-text-buttons").show();
-    $("#btn-seganno").prop("disabled", false);
     $("#btn-save").prop("disabled", false);
     $("#btn-export").prop("disabled", false);
+    $("#btn-view").prop("disabled", false);
+  }
+
+  static addTag(tag_name, wholeLine = false) {
+    GUI.saveState();
+    let sel = window.getSelection();
+    if (sel.toString() === "") return;
+    if (wholeLine) {
+      sel.setBaseAndExtent(sel.anchorNode, 0, sel.focusNode, sel.focusNode.length);
+    }
+    // prevent nesting of tags except <oth> in <ref>
+    let node = sel.focusNode;
+    do {
+      if (node && node.dataset) {
+        let tag = node.dataset.tag;
+        if (tag && !(tag_name === "oth" && tag === "ref")) {
+          return;
+        }
+      }
+      node = node.parentNode;
+    } while (node)
+    let parentNode = document.createElement("span");
+    parentNode.setAttribute("data-tag", tag_name);
+    let backgroundColor;
+    if (tag_name === 'ref') {
+      backgroundColor = spanColors[colorCounter];
+      colorCounter = ++colorCounter % 6;
+    } else {
+      backgroundColor = otherColor;
+    }
+    parentNode.style.backgroundColor = backgroundColor;
+    sel.getRangeAt(0).surroundContents(parentNode);
+    GUI.updateMarkedUpText();
   }
 
   static updateMarkedUpText() {
-    let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
-    let regex2 = /<span data-tag="ref".*?>(.+?)<\/span>/g;
     let markedUpText = $("#text-content").html()
-      .replace(/<div class="page-marker"[^>]*><\/div>\n/g, "")
-      .replace(regex1, "<oth>$1</oth>")
-      .replace(regex2, "<ref>$1</ref>")
-      .replace(/<br>/g, "\n")
-      .replace(/</g, "&lt;");
-    $("#markup-content").html(markedUpText)
+    switch (displayMode) {
+      case DISPLAY_MODES.DOCUMENT: {
+        let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
+        let regex2 = /<span data-tag="ref".*?>(.+?)<\/span>/g;
+        markedUpText = markedUpText
+          .replace(/<div class="page-marker"[^>]*><\/div>\n/g, "")
+          .replace(regex1, "<oth>$1</oth>") // twice to catch incorrectly nested tags
+          .replace(regex1, "<oth>$1</oth>")
+          .replace(regex2, "<ref>$1</ref>")
+          .replace(regex2, "<ref>$1</ref>");
+        if (markedUpText.includes("<ref>")) {
+          $("#btn-run-segmentation").removeClass("ui-state-disabled");
+          $("#refs-navigation").removeClass("hidden");
+        } else {
+          $("#btn-run-segmentation").addClass("ui-state-disabled");
+          $("#refs-navigation").addClass("hidden");
+        }
+        break;
+      }
+      case DISPLAY_MODES.REFERENCES: {
+        let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
+        let regex2 = /<span data-tag="([^"]+)".*?>(.+?)<\/span>/g;
+        markedUpText = markedUpText
+          .replace(regex1, "<other>$1</other>")
+          .replace(regex2, "<$1>$2</$1>")
+        markedUpText = this.addAuthorTag(markedUpText)
+        break;
+      }
+    }
+    let html = markedUpText
+      .replace(/<br[^>]*>/g, "\n")
+      .replace(/</g, "&lt;")
+    $("#markup-content").html(html);
+    // allow transfer to seganno
+    $("#btn-seganno").prop("disabled", !(markedUpText.includes("<author>") || markedUpText.includes("<ref>")));
+    return markedUpText;
+  }
+
+  static addAuthorTag(markedUpText) {
+    let startTag = "<author>";
+    let endTag = "</author>";
+    let firstStartTagMatch = null;
+    let secondStartTagMatch = null;
+    let lastEndTagMatch = null;
+    let offset = 0;
+    let matches = markedUpText.matchAll(/<\/?([^>]+)>/g);
+    let pos;
+    for (let match of matches) {
+      let [tag, tagName] = match;
+      if (["surname", "given-names"].includes(tagName)) {
+        if (!tag.startsWith("</")) {
+          // opening tag
+          if (firstStartTagMatch === null) {
+            // insert <author> before opening first surname or given-names
+            firstStartTagMatch = match;
+            pos = match.index + offset;
+            markedUpText = markedUpText.substr(0, pos) + startTag + markedUpText.substr(pos);
+            offset += startTag.length;
+            continue;
+          }
+          if (secondStartTagMatch === null) {
+            if (tag !== firstStartTagMatch[0]) {
+              // if the second opening tag is not the same as the first, remember it and go on
+              secondStartTagMatch = match;
+              continue;
+            }
+            // tag repeats
+          }
+        } else {
+          // closing tag
+          lastEndTagMatch = match;
+          if (!secondStartTagMatch || tagName !== secondStartTagMatch[1]) {
+            continue;
+          }
+        }
+        // insert </author> after the last closing tag
+        pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
+        markedUpText = markedUpText.substr(0, pos) + endTag + markedUpText.substr(pos);
+        offset += endTag.length;
+        if (!tag.startsWith("</")) {
+          // insert new opening tag
+          pos = match.index + offset;
+          markedUpText = markedUpText.substr(0, pos) + startTag + markedUpText.substr(pos);
+          offset += startTag.length;
+        }
+        // reset matches
+        firstStartTagMatch = null;
+        secondStartTagMatch = null;
+        lastEndTagMatch = null;
+      }
+    }
+    if (lastEndTagMatch) {
+      // insert missing closing tag
+      pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
+      markedUpText = markedUpText.substr(0, pos) + endTag + markedUpText.substr(pos);
+    }
     return markedUpText;
   }
 
@@ -598,10 +840,7 @@ class GUI {
     for (let i = 0; i < t1.length; i++) {
       rowFirstColumn = t1[i];
       // add one space to the end of line if it is multi line ref and doesn't have hyphen or dash at end
-      if (!(rowFirstColumn.substr(-suffix.length) === suffix) || (rowFirstColumn.substr(-other_suffix.length) === other_suffix))
-        if (!(rowFirstColumn.substr(-1) === '-'))
-          if (!(rowFirstColumn.substr(-1) === '.'))
-            rowFirstColumn = rowFirstColumn + ' ';
+      if (!(rowFirstColumn.substr(-suffix.length) === suffix) || (rowFirstColumn.substr(-other_suffix.length) === other_suffix)) if (!(rowFirstColumn.substr(-1) === '-')) if (!(rowFirstColumn.substr(-1) === '.')) rowFirstColumn = rowFirstColumn + ' ';
       allFirstColumns = allFirstColumns + rowFirstColumn;
       // textToWrite2 is all layout with numbers
       if (i === t1.length - 1) {
@@ -632,17 +871,50 @@ class GUI {
     return t2;
   }
 
-  static toggleMarkedUpView() {
-    let state = this.__xmlViewState = !this.__xmlViewState;
+  static toggleMarkedUpView(state) {
+    if (state === undefined) {
+      state = this.__markupViewState = !this.__markupViewState;
+    } else {
+      this.__markupViewState = state;
+    }
     $(".view-markup")[state ? "show" : "hide"]();
-    document.getElementById("main-container")
-      .style.gridTemplateRows = this.__xmlViewState ? "50% 50%" : "100% 0"
+    document.getElementById("main-container").style.gridTemplateRows = state ? "50% 50%" : "100% 0"
+    $("#input-view-markup").prop("checked", state);
   }
 
   static showPdfView(state) {
     $(".view-pdf")[state ? "show" : "hide"]();
-    document.getElementById("main-container")
-      .style.gridTemplateColumns = state ? "50% 50%" : "100% 0"
+    document.getElementById("main-container").style.gridTemplateColumns = state ? "50% 50%" : "100% 0"
+  }
+
+  static setDisplayMode(nextDisplayMode) {
+    if (nextDisplayMode === displayMode) {
+      return;
+    }
+    displayMode = nextDisplayMode;
+    switch (displayMode) {
+      case DISPLAY_MODES.DOCUMENT:
+        if (lastDocument) {
+          GUI.setTextContent(lastDocument);
+          //GUI.setTextContent(Actions.combineLayoutAndRefs(lastDocument, refs))
+        }
+        $("#input-view-refs").prop("checked", false);
+        $("#btn-run-segmentation").addClass("ui-state-disabled");
+        pdfFile && $("#btn-run-layout").addClass("ui-state-disabled");
+        pdfFileName && $("#btn-run-exparser").addClass("ui-state-disabled");
+        break;
+      case DISPLAY_MODES.REFERENCES:
+        lastDocument = GUI.getTextToExport();
+        GUI.setTextContent(Actions.extractReferences(lastDocument));
+        $("#input-view-refs").prop("checked", true);
+        $("#btn-run-layout").addClass("ui-state-disabled");
+        $("#btn-run-exparser").addClass("ui-state-disabled");
+        $("#btn-run-segmentation").removeClass("ui-state-disabled");
+        break;
+      default:
+        throw new Error("Invalid Display mode " + nextDisplayMode);
+    }
+    versions = [];
   }
 
   static _showPopupOnSelect(e) {
@@ -662,6 +934,7 @@ class GUI {
     $("#btn-ref-line").toggleClass("ui-state-disabled", Boolean(tag));
     $("#btn-oth").toggleClass("ui-state-disabled", !Boolean(tag) || tag === "oth" || node === sel.focusNode);
     $("#btn-remove-tag").toggleClass("ui-state-disabled", !Boolean(tag));
+    $("#btn-remove-all-tags").toggleClass("ui-state-disabled", !Boolean(window.getSelection()));
     $("#btn-paste").toggleClass("ui-state-disabled", !Boolean(clipboard.length));
     $("#btn-insert-before").toggleClass("ui-state-disabled", !Boolean(clipboard.length));
     if (!sel.toString().trim()) {
@@ -671,9 +944,7 @@ class GUI {
     contextMenu
       .show()
       .css({
-        position: "absolute",
-        left: e.pageX,
-        top: e.pageY
+        position: "absolute", left: e.pageX, top: e.pageY
       });
   }
 
@@ -681,7 +952,7 @@ class GUI {
     setTimeout(() => {
       GUI.__pdfJsApplication = window.frames[0].PDFViewerApplication;
       GUI.__pdfJsApplication.eventBus.on('pagechanging', GUI._onPdfPageChanging);
-    }, 100)
+    }, 500)
   }
 
   static _onPdfPageChanging(e) {
@@ -725,12 +996,20 @@ class GUI {
   }
 
   static replaceSelection(replacementText) {
+    console.log(replacementText);
     this.saveState();
     let sel = window.getSelection();
     if (sel.rangeCount) {
       let range = sel.getRangeAt(0);
       range.deleteContents();
-      range.insertNode(document.createTextNode(replacementText));
+      let textNodes = replacementText.split("\n");
+      for (let i = textNodes.length-1, br = false; i >= 0; i--) {
+        if (br) {
+          range.insertNode(document.createElement("br"));
+        }
+        range.insertNode(document.createTextNode(textNodes[i]));
+        br = true;
+      }
     }
   }
 

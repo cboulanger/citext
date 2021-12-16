@@ -36,18 +36,21 @@ try:
 
         cleanup.append(pdf_dir + filename + ".pdf")
         result_path = layout_dir + filename + ".csv"
+        cleanup.append(result_path)
 
     elif command == "exparser":
-        # references
         result_path = refs_dir + filename + ".csv"
         cleanup.append(result_path)
 
     elif command == "segmentation":
-        # this command won't be called in the docker instance because
-        # the file at result_path has already been produced in the previous step
+        try:
+            source = tempfile.gettempdir() + "/" + filename + ".csv"
+            target = refs_dir + filename + ".csv"
+            shutil.move(source, target)
+            cleanup.append(target)
+        except FileNotFoundError as err:
+            raise RuntimeError(str(err))
         result_path = refs_seg_dir + filename + ".xml"
-        if not os.path.isfile(result_path):
-            raise RuntimeError("You need to run the 'exparser' command first.")
         cleanup.append(result_path)
 
     elif command == "train_extraction":
