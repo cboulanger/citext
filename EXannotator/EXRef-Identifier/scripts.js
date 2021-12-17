@@ -48,40 +48,56 @@ class Actions {
         alert('Please select less than 3 files.');
         return false;
     }
-    const validExts = ["pdf", "txt", "csv"];
     for (let file of uploadBtn.files) {
-      let filename = file.name;
-      let fileExt = filename.split('.').pop();
-      if (!validExts.includes(fileExt)) {
-        alert(fileExt + " has an invalid type, valid types are [" + validExts.toString() + "].");
-        return;
-      }
-      this.setDisplayMode(DISPLAY_MODES.DOCUMENT);
-      if (fileExt === 'pdf') {
+      this.loadFile(file);
+    }
+  }
+
+  static loadFile(file) {
+    let filename = file.name;
+    let type = file.type;
+    let fileExt;
+    if (filename) {
+      type = fileExt = filename.split('.').pop();
+    } else if (type) {
+      // remove encoding etc.
+      type = type.split(";").shift().trim();
+    } else {
+      alert("Cannot determine file type for " + filename);
+      return;
+    }
+    switch (type) {
+      case "pdf":
+      case "application/pdf":
         $("#pdf-label").html(filename);
         pdfFileName = filename;
         pdfFile = file;
         let objectURL = URL.createObjectURL(file);
         GUI.loadPdfFile(objectURL);
-      } else {
-        const fileReader = new FileReader();
-        fileReader.onload = (e) => {
-          let text = String(e.target.result);
-          textFileName = filename;
-          textFileExt = fileExt;
-          GUI.setTextContent(text);
-        }
-        fileReader.readAsText(file, "UTF-8");
-      }
+        return;
+      case "xml":
+      case "application/xml":
+        GUI.setDisplayMode(DISPLAY_MODES.REFERENCES);
+        break;
+      case "txt":
+      case "text/plain":
+      case "csv":
+      case "text/csv":
+        GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
+        break;
+      default:
+        alert("Invalid file extension: " + fileExt);
+        return;
     }
-
-    if (textFileName && pdfFileName) {
-      let textFileNameWithoutExt = textFileName.split('.').slice(0, -1).join(".");
-      if (textFileNameWithoutExt !== pdfFileName.substr(0, textFileNameWithoutExt.length)) {
-        let message = "Text file and PDF file seem to belong to different documents."
-        alert(message);
-      }
+    const fileReader = new FileReader();
+    fileReader.onload = (e) => {
+      let text = String(e.target.result);
+      textFileName = filename;
+      textFileExt = fileExt;
+      GUI.setTextContent(text);
+      this.saveToLocalStorage();
     }
+    fileReader.readAsText(file, "UTF-8");
   }
 
   static addTag(tag_name, wholeLine = false) {
@@ -448,6 +464,38 @@ class GUI {
     // on page load
     $(document).ready(this._onDocumentReady);
 
+    // load from local storage
+    $(document).ready(() => {
+      // get text from local storage
+      let savedDisplayMode = localStorage.getItem(LOCAL_STORAGE.DISPLAY_MODE);
+      let savedTextFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME);
+      if (savedTextFileName) {
+        textFileName = savedTextFileName;
+        textFileExt = textFileName.split(".").pop();
+      }
+      if (savedDisplayMode) {
+        let text;
+        switch (savedDisplayMode) {
+          case DISPLAY_MODES.DOCUMENT:
+            text = localStorage.getItem(LOCAL_STORAGE.DOCUMENT);
+            break;
+          case DISPLAY_MODES.REFERENCES:
+            text = localStorage.getItem(LOCAL_STORAGE.REFERENCES);
+            break;
+          default:
+            savedDisplayMode = DISPLAY_MODES.DOCUMENT;
+            text = "";
+            break;
+        }
+        GUI.setDisplayMode(savedDisplayMode);
+        if (text) {
+          GUI.setTextContent(text);
+          return;
+        }
+      }
+      $("#modal-help").show();
+    });
+
     // save text before leaving the page
     window.onbeforeunload = Actions.saveToLocalStorage;
 
@@ -513,7 +561,7 @@ class GUI {
     });
     $(document).on('pointerup', function () {
       endTime = new Date().getTime();
-      longpress = (endTime - startTime >= 500);
+      longpress = (endTime - startTime >= 300);
     });
 
     // synchronize scroll positions
@@ -539,49 +587,6 @@ class GUI {
 
     // tooltips
     //$('[data-toggle="tooltip"]').tooltip();
-
-    // get text from local storage
-    let savedDisplayMode = localStorage.getItem(LOCAL_STORAGE.DISPLAY_MODE);
-    let savedTextFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME);
-    if (savedTextFileName) {
-      textFileName = savedTextFileName;
-      textFileExt = textFileName.split(".").pop();
-    }
-    if (savedDisplayMode) {
-      let text;
-      switch (savedDisplayMode) {
-        case DISPLAY_MODES.DOCUMENT:
-          text = localStorage.getItem(LOCAL_STORAGE.DOCUMENT);
-          break;
-        case DISPLAY_MODES.REFERENCES:
-          text = localStorage.getItem(LOCAL_STORAGE.REFERENCES);
-          if (text.includes("<?xml ")) {
-            let textLines = text.split("\n");
-            // if standard-compliant xml from , remove declaration and top node
-            textLines.splice(0, 2);
-            textLines.splice(-1, 1);
-            // remove enclosing <ref> and <author> tags
-            textLines = textLines
-              .map(line => line
-                .replace(/<author>/g, '')
-                .replace(/<\/author>/g, '')
-                .replace(/<ref>/g, '')
-                .replace(/<\/ref>/g, ''));
-            text = textLines.join("\n");
-          }
-          break;
-        default:
-          savedDisplayMode = DISPLAY_MODES.DOCUMENT;
-          text = "";
-          break;
-      }
-      GUI.setDisplayMode(savedDisplayMode);
-      if (text) {
-        GUI.setTextContent(text);
-        return;
-      }
-    }
-    $("#modal-help").show();
   }
 
   static showSpinner(text) {
@@ -655,7 +660,6 @@ class GUI {
   }
 
   static setTextContent(text) {
-
     text = text
       .replace(/\r/g, "")
       .replace(/\n\n/g, '\n')
@@ -663,7 +667,6 @@ class GUI {
 
     let html = "";
     switch (displayMode) {
-
       // Display document contents
       case DISPLAY_MODES.DOCUMENT:
         let text_Lines = text
@@ -709,10 +712,23 @@ class GUI {
         break;
       // Display references
       case DISPLAY_MODES.REFERENCES:
+        if (text.includes("<?xml ")) {
+          let textLines = text.split("\n");
+          // if standard-compliant xml from , remove declaration and top node
+          textLines.splice(0, 2);
+          textLines.splice(-1, 1);
+          // remove enclosing <ref> and <author> tags
+          textLines = textLines
+            .map(line => line
+              .replace(/<author>/g, '')
+              .replace(/<\/author>/g, '')
+              .replace(/<ref>/g, '')
+              .replace(/<\/ref>/g, ''));
+          text = textLines.join("\n");
+        }
         html = text
           .replace(/\n/g, "<br>")
-          .replace(/<\/?author>/g, "")
-          .replace(/<\/?ref>/g, "");
+          .replace(/<\/?author>/g, "");
         $("#text-label").html(textFileName + " (References)");
         break;
     }
@@ -760,7 +776,10 @@ class GUI {
     do {
       if (node && node.dataset) {
         let tag = node.dataset.tag;
-        if (tag && !(tag_name === "oth" && tag === "ref")) {
+        if (tag) {
+          // replace node tag
+          node.dataset.tag = tag_name;
+          GUI.updateMarkedUpText();
           return;
         }
       }
@@ -776,8 +795,8 @@ class GUI {
     let markedUpText = $("#text-content").html().replace(/\n/g, "");
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT: {
-        let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
-        let regex2 = /<span data-tag="ref".*?>(.+?)<\/span>/g;
+        let regex1 = /<span data-tag="oth"[^>]*>([^<]*)<\/span>/g;
+        let regex2 = /<span data-tag="ref"[^>]*>([^<]*)<\/span>/g;
         markedUpText = markedUpText
           .replace(/<\/?div[^>]*>/g, "")
           .replace(regex1, "<oth>$1</oth>")
@@ -793,9 +812,10 @@ class GUI {
         break;
       }
       case DISPLAY_MODES.REFERENCES: {
-        let regex1 = /<span data-tag="other".*?>(.+?)<\/span>/g;
-        let regex2 = /<span data-tag="([^"]+)".*?>(.+?)<\/span>/g;
+        let regex1 = /<span data-tag="other"[^<]*>([^<]*)<\/span>/g;
+        let regex2 = /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/g;
         markedUpText = markedUpText
+          .replace(/<[^>]+><\/[^>]+>/g,"")
           .replace(regex1, "<other>$1</other>")
           .replace(regex2, "<$1>$2</$1>")
         markedUpText = this.addAuthorTag(markedUpText)
@@ -976,8 +996,8 @@ class GUI {
       }
       node = node.parentNode;
     }
-    $(".enabled-when-not-inside-tag").toggleClass("ui-state-disabled", Boolean(tag));
-    $(".enabled-when-inside-tag").toggleClass("ui-state-disabled", !Boolean(tag));
+    //$(".enabled-when-not-inside-tag").toggleClass("ui-state-disabled", Boolean(tag));
+    //$(".enabled-when-inside-tag").toggleClass("ui-state-disabled", !Boolean(tag));
 
     $("#btn-oth").toggleClass("ui-state-disabled", !Boolean(tag) || tag === "oth" || node === sel.focusNode);
     $("#btn-remove-tag").toggleClass("ui-state-disabled", !Boolean(tag));
