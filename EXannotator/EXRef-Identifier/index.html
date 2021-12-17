@@ -54,7 +54,7 @@
         </div>
         <!-- segmentation view -->
         <div class="btn-group">
-            <button id="btn-segmentation" type="button" class="btn btn-primary ui-state-disabled enabled-if-refs"
+            <button id="btn-segmentation" type="button" class="btn btn-primary"
                     onclick="Actions.setDisplayMode(DISPLAY_MODES.REFERENCES)"
                     aria-haspopup="true" aria-expanded="false">
                 <i class="fas fa-search-plus"></i><span class="button-label">Segmentation</span>
@@ -113,7 +113,7 @@
             <label id="text-label"></label>
         </div>
         <div class="view-text-buttons unselectable">
-            <span id="refs-navigation" class="hidden visible-if-refs">
+            <span id="refs-navigation" class="hidden visible-if-refs visible-in-document-mode">
                 <i class="fas fa-address-card"></i>&nbsp;
                 <button id="btnfindPrevRef" onclick="GUI.findNextRef(-1,this)">
                     <i class="fas fa-arrow-up"></i>
@@ -122,7 +122,7 @@
                     <i class="fas fa-arrow-down"></i>
                 </button>
             </span>
-            <span id="page-navigation" class="hidden visible-if-pdf">
+            <span id="page-navigation" class="hidden visible-if-pages visible-in-document-mode">
                 <i class="fas fa-book-open"></i>&nbsp;
                 <button id="btn-prev-page" onclick="GUI.goToPrevPage()">
                     <i class="fas fa-arrow-left"></i>
@@ -201,7 +201,14 @@
            tabindex="-1" onclick="Actions.addTag('title');" href="#">
         Title
     </a></li>
-
+    <li><a id="btn-editor" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('editor');" href="#">
+        Editors
+    </a></li>
+    <li><a id="btn-title" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('title');" href="#">
+        Title
+    </a></li>
 
     <li><a id="btn-remove-tag" class="ui-state-disabled" tabindex="-1" onclick="Actions.removeTag();" href="#">
         Remove Tag

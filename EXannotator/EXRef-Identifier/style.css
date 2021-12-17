@@ -92,6 +92,14 @@ nav {
     border: none;
 }
 
+.document-view {
+    background-color: inherit;
+}
+
+.references-view {
+    background-color: #efe7aa !important;
+}
+
 .page-marker::before {
     content: "Page " attr(data-page);
     font-size: 12px;

@@ -51,6 +51,7 @@ class Actions {
         alert(fileExt + " has an invalid type, valid types are [" + validExts.toString() + "].");
         return;
       }
+      this.setDisplayMode(DISPLAY_MODES.DOCUMENT);
       if (fileExt === 'pdf') {
         $("#pdf-label").html(filename);
         pdfFileName = filename;
@@ -541,6 +542,9 @@ class GUI {
   }
 
   static removeTextFile() {
+    if (!confirm("Do you really want to clear the document?")) {
+      return;
+    }
     $("#text-label").html("");
     $("#text-content").html("");
     $("#markup-content").html("");
@@ -550,6 +554,7 @@ class GUI {
     versions = [];
     localStorage.removeItem(LOCAL_STORAGE.TEXT_FILE_NAME);
     localStorage.removeItem(LOCAL_STORAGE.MARKED_UP_TEXT);
+    GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
     this.toggleMarkedUpView(false);
   }
 
@@ -643,10 +648,10 @@ class GUI {
         }
         if (this.__numPages > 0) {
           $("#label-page-number").html("1");
-          $("#page-navigation").removeClass("hidden");
+          $(".visible-if-pages").removeClass("hidden");
         } else {
           $("#label-page-number").html("");
-          $("#page-navigation").addClass("hidden");
+          $(".visible-if-pages").addClass("hidden");
         }
         break;
       // Display references
@@ -886,18 +891,24 @@ class GUI {
           GUI.setTextContent(lastDocument);
           //GUI.setTextContent(Actions.combineLayoutAndRefs(lastDocument, refs))
         }
-        $(".visible-in-document-mode").show();
-        $(".visible-in-refs-mode").hide();
+        $(".visible-in-document-mode").removeClass("hidden");
+        $(".visible-in-refs-mode").addClass("hidden");
         $("#btn-segmentation").removeClass("active");
         $("#btn-identification").addClass("active");
+        $("#text-label").html(textFileName + " (Document)");
+        $("#text-content").addClass("document-view");
+        $("#text-content").removeClass("references-view");
         break;
       case DISPLAY_MODES.REFERENCES:
         lastDocument = tmp;
         GUI.setTextContent(Actions.extractReferences(lastDocument));
-        $(".visible-in-document-mode").hide();
-        $(".visible-in-refs-mode").show();
+        $(".visible-in-document-mode").addClass("hidden");
+        $(".visible-in-refs-mode").removeClass("hidden");
         $("#btn-segmentation").addClass("active");
         $("#btn-identification").removeClass("active");
+        $("#text-label").html(textFileName + " (References)");
+        $("#text-content").addClass("references-view");
+        $("#text-content").removeClass("document-view");
         break;
       default:
         throw new Error("Invalid Display mode " + nextDisplayMode);
