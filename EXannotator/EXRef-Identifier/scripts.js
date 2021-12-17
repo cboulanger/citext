@@ -277,7 +277,7 @@ class Actions {
 
   static export() {
     let textToExport;
-    if (!textToExport || !textFileName) return;
+    if (!textFileName) return;
     let filename;
     let filenameNoExt = textFileName.split('.').slice(0, -1).join(".");
     switch (displayMode) {
@@ -366,15 +366,22 @@ class Actions {
       GUI.updateMarkedUpText();
     }
     if (!versions.length) {
-      $("#btn-undo").prop("disabled", true)
+      $("#btn-undo").addClass("ui-state-disabled")
     }
   }
 
   static setDisplayMode(nextDisplayMode) {
-    let confirmMsg = `This will switch the display to ${nextDisplayMode} view and reset the edit history. Do you want to proceed?`;
-    if (confirm(confirmMsg)) {
-      GUI.setDisplayMode(nextDisplayMode);
+    if (displayMode === nextDisplayMode) {
+      return;
     }
+    if (displayMode === DISPLAY_MODES.REFERENCES && versions.length > 0) {
+      let confirmMsg = `This will switch the display to ${nextDisplayMode} view and discard any changes. Do you want to proceed?`;
+      if (!confirm(confirmMsg)) {
+        $("#btn-identification").removeClass("active");
+        return;
+      }
+    }
+    GUI.setDisplayMode(nextDisplayMode);
   }
 
   static open_in_seganno() {
@@ -404,8 +411,7 @@ class Utils {
 class GUI {
 
   static init() {
-    console.log($("#input-view-refs").prop("checked"));
-
+    // internal vars
     this.__numPages = 0;
     this.__currentPage = 1;
     this.__currentRefNode = null;
@@ -433,6 +439,9 @@ class GUI {
       // hide optional views
       GUI.toggleMarkedUpView(false);
 
+      // tooltips
+      $('[data-toggle="tooltip"]').tooltip();
+
       // get text from local storage
       let markedUpText = localStorage.getItem(LOCAL_STORAGE.MARKED_UP_TEXT);
       if (markedUpText) {
@@ -445,10 +454,30 @@ class GUI {
         $("#modal-help").show();
       }
 
-      // long-pressing selects span
+
       $(document).ready(() => {
+
+        // remove whitespace from selection after double-click
+        $("#text-content").on("dblclick", e => {
+          // trim leading or trailing spaces
+          let sel = window.getSelection();
+          let text = sel.toString();
+          let range = sel.getRangeAt(0);
+          let startOffset = text.length - text.trimStart().length;
+          let endOffset = text.length - text.trimEnd().length;
+          if (startOffset) {
+            range.setStart(range.startContainer, range.startOffset + startOffset);
+          }
+          if (endOffset) {
+            range.setEnd(range.endContainer, range.endOffset - endOffset);
+          }
+          sel.removeAllRanges();
+          sel.addRange(range);
+        });
+
+        // long-pressing selects span
         let longpress = false;
-        $(document).on('click', e => {
+        $("#text-content").on('click', e => {
           if (!longpress) return;
           let sel = window.getSelection();
           if (sel.toString().length) return; // so that <oth> element can be inserted into selection
@@ -474,7 +503,7 @@ class GUI {
       });
 
       // show popup on select
-      $(document).ready(() => {
+      $("#text-content").ready(() => {
         const contextMenu = $("#contextMenu");
         const contentLabel = $("#text-content");
         contentLabel.on("pointerup", GUI._showPopupOnSelect);
@@ -497,8 +526,7 @@ class GUI {
         .then(response => response.json())
         .then(result => {
           if (result.success) {
-            $("#btn-excite-tools").removeClass("hidden");
-            $("#btn-save").removeClass("hidden");
+            $(".visible-if-backend").removeClass("hidden");
           }
         })
     });
@@ -522,10 +550,6 @@ class GUI {
     versions = [];
     localStorage.removeItem(LOCAL_STORAGE.TEXT_FILE_NAME);
     localStorage.removeItem(LOCAL_STORAGE.MARKED_UP_TEXT);
-    $("#btn-export").prop("disabled", true);
-    $("#btn-save").prop("disabled", true);
-    $("#btn-run-segmentation").addClass("ui-state-disabled");
-    $("#btn-view").prop("disabled", true);
     this.toggleMarkedUpView(false);
   }
 
@@ -535,18 +559,16 @@ class GUI {
     pdfiframe.prop("src", "web/viewer.html?file=" + objectURL);
     GUI.showPdfView(true);
     this.setDisplayMode(DISPLAY_MODES.DOCUMENT);
-    $("#btn-run-layout").removeClass("ui-state-disabled");
-    $("#btn-run-exparser").removeClass("ui-state-disabled");
-    $("#page-navigation").removeClass("hidden");
+    $(".enabled-if-pdf").removeClass("ui-state-disabled");
+    $(".visible-if-pdf").addClass("hidden");
   }
 
   static removePdfFile() {
     $("pdf-label").html("");
     document.getElementById("pdfiframe").src = 'about:blank';
     pdfFileName = "";
-    $("#btn-run-layout").addClass("ui-state-disabled");
-    $("#btn-run-exparser").addClass("ui-state-disabled");
-    $("#page-navigation").addClass("hidden");
+    $(".enabled-if-pdf").addClass("ui-state-disabled");
+    $(".visible-if-pdf").addClass("hidden");
     GUI.showPdfView(false);
   }
 
@@ -664,15 +686,14 @@ class GUI {
     this.__currentRefNode = null;
     // enable buttons
     $(".view-text-buttons").show();
-    $("#btn-save").prop("disabled", false);
-    $("#btn-export").prop("disabled", false);
-    $("#btn-view").prop("disabled", false);
+    $(".enabled-if-text-content").removeClass("ui-state-disabled");
   }
 
   static addTag(tag_name, wholeLine = false) {
     GUI.saveState();
     let sel = window.getSelection();
-    if (sel.toString() === "") return;
+    let text = sel.toString();
+    if (text.trim() === "") return;
     if (wholeLine) {
       sel.setBaseAndExtent(sel.anchorNode, 0, sel.focusNode, sel.focusNode.length);
     }
@@ -727,8 +748,9 @@ class GUI {
       .replace(/<br[^>]*>/g, "\n")
       .replace(/</g, "&lt;")
     $("#markup-content").html(html);
-    // allow transfer to seganno
-    $("#btn-seganno").prop("disabled", !(markedUpText.includes("<author>") || markedUpText.includes("<ref>")));
+    $(".enabled-if-refs").toggleClass("ui-state-disabled",
+      !(markedUpText.match(REGEX.TAG))
+    );
     return markedUpText;
   }
 
@@ -793,7 +815,7 @@ class GUI {
     return markedUpText;
   }
 
-  static getTextToExport(withlayoutInfo=true) {
+  static getTextToExport(withlayoutInfo = true) {
     GUI.updateMarkedUpText();
     let markedUpText = $("#markup-content").html();
     let t1 = markedUpText.split('\n')
@@ -845,7 +867,6 @@ class GUI {
     }
     $(".view-markup")[state ? "show" : "hide"]();
     document.getElementById("main-container").style.gridTemplateRows = state ? "50% 50%" : "100% 0"
-    $("#input-view-markup").prop("checked", state);
   }
 
   static showPdfView(state) {
@@ -865,18 +886,18 @@ class GUI {
           GUI.setTextContent(lastDocument);
           //GUI.setTextContent(Actions.combineLayoutAndRefs(lastDocument, refs))
         }
-        $("#input-view-refs").prop("checked", false);
-        $("#btn-run-segmentation").addClass("ui-state-disabled");
-        pdfFile && $("#btn-run-layout").addClass("ui-state-disabled");
-        pdfFileName && $("#btn-run-exparser").addClass("ui-state-disabled");
+        $(".visible-in-document-mode").show();
+        $(".visible-in-refs-mode").hide();
+        $("#btn-segmentation").removeClass("active");
+        $("#btn-identification").addClass("active");
         break;
       case DISPLAY_MODES.REFERENCES:
         lastDocument = tmp;
         GUI.setTextContent(Actions.extractReferences(lastDocument));
-        $("#input-view-refs").prop("checked", true);
-        $("#btn-run-layout").addClass("ui-state-disabled");
-        $("#btn-run-exparser").addClass("ui-state-disabled");
-        $("#btn-run-segmentation").removeClass("ui-state-disabled");
+        $(".visible-in-document-mode").hide();
+        $(".visible-in-refs-mode").show();
+        $("#btn-segmentation").addClass("active");
+        $("#btn-identification").removeClass("active");
         break;
       default:
         throw new Error("Invalid Display mode " + nextDisplayMode);
@@ -897,8 +918,8 @@ class GUI {
       }
       node = node.parentNode;
     }
-    $("#btn-ref-part").toggleClass("ui-state-disabled", Boolean(tag));
-    $("#btn-ref-line").toggleClass("ui-state-disabled", Boolean(tag));
+    $(".enabled-when-not-inside-tag").toggleClass("ui-state-disabled", Boolean(tag));
+
     $("#btn-oth").toggleClass("ui-state-disabled", !Boolean(tag) || tag === "oth" || node === sel.focusNode);
     $("#btn-remove-tag").toggleClass("ui-state-disabled", !Boolean(tag));
     $("#btn-remove-all-tags").toggleClass("ui-state-disabled", !Boolean(window.getSelection()));
@@ -963,7 +984,6 @@ class GUI {
   }
 
   static replaceSelection(replacementText) {
-    console.log(replacementText);
     this.saveState();
     let sel = window.getSelection();
     if (sel.rangeCount) {
@@ -982,7 +1002,7 @@ class GUI {
 
   static saveState() {
     versions.push($("#text-content").html());
-    $("#btn-undo").prop("disabled", false)
+    $("#btn-undo").removeClass("ui-state-disabled", false)
   }
 
 }

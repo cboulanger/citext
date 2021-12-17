@@ -34,6 +34,14 @@ nav {
     z-index: auto;
 }
 
+.dropdown-toggle {
+    height: 34px;
+}
+
+.button-label {
+    margin-left: 5px;
+}
+
 #app-logo {
     height: 40px;
     margin: 5px;
@@ -121,6 +129,10 @@ nav {
 /* tags */
 [data-tag] {
     border: 1px grey dotted;
+}
+
+[data-tag]:hover {
+    border-style: solid;
 }
 
 [data-tag="ref"]:nth-child(7n) {

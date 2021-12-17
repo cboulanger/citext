@@ -18,84 +18,80 @@
 <nav class="navbar navbar-default">
     <!-- menu -->
     <div id="navbar-buttons" class="navbar-left">
-        <div class="btn-group">
-            <button id="btn-load" type="button"
-                    class="btn btn-primary dropdown-toggle" data-toggle="dropdown"
-                    aria-haspopup="true" aria-expanded="false">
-                <i class="fas fa-file"></i>&nbsp;Load&nbsp;<span class="caret"></span>
+        <!-- load -->
+        <div class="btn-group navbar-btn">
+            <button id="btn-load" type="button" class="btn btn-primary" onclick="$('#btn-upload').click();">
+                <i class="fas fa-file"></i><span class="button-label">Load</span>
             </button>
+            <!--button data-toggle="dropdown" class="btn btn-primary dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+                <span class="caret"></span>
+            </button
             <ul class="dropdown-menu" aria-labelledby="btn-load">
-                <li><a class="dropdown-item" href="#" onclick="$('#btn-upload').click();">New document(s)</a></li>
-            </ul>
+                <li><a class="dropdown-item" href="#" >New document(s)</a></li>
+            </ul-->
         </div>
         <input type="file" id="btn-upload" style="display:none"
                onchange="Actions.upload(); this.value=null; return false;"
                accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
-
+        <!-- document view -->
         <div class="btn-group">
-            <button id="btn-view" type="button"
-                    class="btn btn-primary dropdown-toggle" disabled data-toggle="dropdown"
+            <button id="btn-identification" type="button" class="btn btn-primary"
+                    onclick="Actions.setDisplayMode(DISPLAY_MODES.DOCUMENT)">
+                <i class="fas fa-search"></i><span class="button-label">Identification</span>
+            </button>
+            <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle"
                     aria-haspopup="true" aria-expanded="false">
-                <i class="fas fa-search"></i>&nbsp;View&nbsp;<span class="caret"></span>
+                <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-view">
-                <li>
-                    <a class="checkbox dropdown-item">
-                        <label>
-                            <input id="input-view-refs" type="checkbox"
-                                   onchange="GUI.setDisplayMode(this.checked?DISPLAY_MODES.REFERENCES:DISPLAY_MODES.DOCUMENT)">
-                            References
-                        </label>
-                    </a>
-                </li>
-                <li>
-                    <a class="checkbox dropdown-item">
-                        <label>
-                            <input id="input-view-markup" type="checkbox"
-                                   onchange="GUI.toggleMarkedUpView(this.checked)">Markup
-                        </label>
-                    </a>
-                </li>
+                <li><a id="btn-run-layout" class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                       onclick="Actions.run_excite_command('layout');" href="#">
+                    Extract Text from PDF</a></li>
+                <li><a id="btn-run-exparser" class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                       onclick="Actions.run_excite_command('exparser');" href="#">
+                    Extract references from PDF</a></li>
             </ul>
         </div>
-
+        <!-- segmentation view -->
         <div class="btn-group">
-            <button id="btn-excite-tools" type="button"
-                    class="btn btn-primary hidden dropdown-toggle" data-toggle="dropdown"
+            <button id="btn-segmentation" type="button" class="btn btn-primary ui-state-disabled enabled-if-refs"
+                    onclick="Actions.setDisplayMode(DISPLAY_MODES.REFERENCES)"
                     aria-haspopup="true" aria-expanded="false">
-                <i class="fas fa-search"></i>&nbsp;Analyze&nbsp;<span class="caret"></span>
+                <i class="fas fa-search-plus"></i><span class="button-label">Segmentation</span>
             </button>
-            <ul class="dropdown-menu" aria-labelledby="btn-exparser">
-                <li><a id="btn-run-layout" class="dropdown-item ui-state-disabled" href="#"
-                       onclick="Actions.run_excite_command('layout');">
-                    Layout</a></li>
-                <li><a id="btn-run-exparser" class="dropdown-item ui-state-disabled" href="#"
-                       onclick="Actions.run_excite_command('exparser');">
-                    Reference identification</a></li>
-                <li><a id="btn-run-segmentation" class="dropdown-item ui-state-disabled" href="#"
+            <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
+                <li><a id="btn-run-segmentation" class="dropdown-item hidden visible-if-backend ui-state-disabled" href="#"
                        onclick="Actions.run_excite_command('segmentation');">
-                    Run segmentation</a></li>
+                    Auto-segmentation</a></li>
             </ul>
         </div>
-        <button id="btn-seganno" disabled class="btn btn-primary" type="button"
+        <!-- go to seganno -->
+        <button id="btn-seganno" class="btn btn-primary ui-state-disabled enabled-if-refs" type="button"
                 onclick="Actions.open_in_seganno();">
-            <i class="fas fa-upload"></i>&nbspTo SegAnno
+            <i class="fas fa-upload"></i><span class="button-label">To SegAnno</span>
         </button>
-        <button id="btn-save" disabled class="btn btn-primary hidden" type="button"
+        <!-- save -->
+        <button id="btn-save" class="btn btn-primary enabled-if-refs ui-state-disabled hidden visible-if-backend" type="button"
                 onclick="Actions.save();">
-            <i class="fas fa-save"></i>&nbsp;Save
+            <i class="fas fa-save"></i><span class="button-label">Save</span>
         </button>
-        <button id="btn-export" disabled class="btn btn-primary" type="button"
+        <!-- export -->
+        <button id="btn-export" class="btn btn-primary ui-state-disabled enabled-if-refs" type="button"
                 onclick="Actions.export();">
-            <i class="fas fa-file-export"></i>&nbsp;Export
+            <i class="fas fa-file-export"></i><span class="button-label">Export</span>
         </button>
-
-        <button id="btn-undo" disabled class="btn btn-default" type="button"
+        <!-- undo -->
+        <button id="btn-undo" class="btn btn-default ui-state-disabled" type="button"
                 onclick="Actions.undo();">
-            <i class="fas fa-undo"></i>&nbsp;Undo
+            <i class="fas fa-undo"></i><span class="button-label">Undo</span>
         </button>
+        <!-- help -->
         <button type="button" class="btn btn-info" data-toggle="modal" data-target="#modal-help">
-            <i class="fas fa-question-circle"></i>&nbsp;Help
+            <i class="fas fa-question-circle"></i><span class="button-label">Help</span>
         </button>
     </div>
     <!-- logo -->
@@ -117,8 +113,8 @@
             <label id="text-label"></label>
         </div>
         <div class="view-text-buttons unselectable">
-            <span id="refs-navigation" class="hidden">
-                <i class="fas fa-superscript"></i>&nbsp;
+            <span id="refs-navigation" class="hidden visible-if-refs">
+                <i class="fas fa-address-card"></i>&nbsp;
                 <button id="btnfindPrevRef" onclick="GUI.findNextRef(-1,this)">
                     <i class="fas fa-arrow-up"></i>
                 </button>
@@ -126,7 +122,7 @@
                     <i class="fas fa-arrow-down"></i>
                 </button>
             </span>
-            <span id="page-navigation" class="hidden">
+            <span id="page-navigation" class="hidden visible-if-pdf">
                 <i class="fas fa-book-open"></i>&nbsp;
                 <button id="btn-prev-page" onclick="GUI.goToPrevPage()">
                     <i class="fas fa-arrow-left"></i>
@@ -175,15 +171,38 @@
 <div class="loader loader-default" id="spinner"></div>
 <!-- context menu -->
 <ul id="contextMenu" class="dropdown-menu" role="menu">
-    <li><a id="btn-ref-part" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('ref');" href="#">
+    <!-- document mode -->
+    <li><a id="btn-ref-part" class="visible-in-document-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('ref');" href="#">
         Markup selection as reference
     </a></li>
-    <li><a id="btn-ref-line" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('ref', true);" href="#">
+    <li><a id="btn-ref-line" class="visible-in-document-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('ref', true);" href="#">
         Markup whole lines as reference
     </a></li>
-    <li><a id="btn-oth" class="ui-state-disabled" tabindex="-1" onclick="Actions.addTag('oth');" href="#">
+    <li><a id="btn-oth" class="visible-in-document-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('oth');" href="#">
         Markup as non-reference
     </a></li>
+    <!-- references mode -->
+    <li><a id="btn-surname" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('surname');" href="#">
+        Surname
+    </a></li>
+    <li><a id="btn-given-names" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('given-names');" href="#">
+        Given-names
+    </a></li>
+    <li><a id="btn-year" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('year');" href="#">
+        Year
+    </a></li>
+    <li><a id="btn-title" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('title');" href="#">
+        Title
+    </a></li>
+
+
     <li><a id="btn-remove-tag" class="ui-state-disabled" tabindex="-1" onclick="Actions.removeTag();" href="#">
         Remove Tag
     </a></li>
