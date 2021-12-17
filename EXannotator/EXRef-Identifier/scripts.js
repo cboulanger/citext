@@ -225,7 +225,7 @@ class Actions {
     for (let match of tmp.matchAll(/<ref>(.*?)<\/ref>/g)) {
       textLines.push(match[1]);
     }
-    return textLines.join("\n");
+    return textLines.join("\n").replace(/<oth>.*<\/oth>/,"");
   }
 
   static combineLayoutAndRefs(layoutDoc, refs) {
@@ -914,6 +914,7 @@ class GUI {
         throw new Error("Invalid Display mode " + nextDisplayMode);
     }
     versions = [];
+    $("#btn-undo").addClass("ui-state-disabled");
   }
 
   static _showPopupOnSelect(e) {
@@ -930,6 +931,7 @@ class GUI {
       node = node.parentNode;
     }
     $(".enabled-when-not-inside-tag").toggleClass("ui-state-disabled", Boolean(tag));
+    $(".enabled-when-inside-tag").toggleClass("ui-state-disabled", !Boolean(tag));
 
     $("#btn-oth").toggleClass("ui-state-disabled", !Boolean(tag) || tag === "oth" || node === sel.focusNode);
     $("#btn-remove-tag").toggleClass("ui-state-disabled", !Boolean(tag));

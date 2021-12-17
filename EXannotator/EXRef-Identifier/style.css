@@ -115,7 +115,7 @@ nav {
 }
 
 .view-text-display {
-    font-family: Menlo,Monaco,Consolas,"Courier New",monospace !important;
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace !important;
     font-size: small !important;
     border: 1px solid #779caf;
     cursor: text;
@@ -124,7 +124,7 @@ nav {
     white-space: nowrap !important;
 }
 
-.view-markup-display  {
+.view-markup-display {
     overflow: scroll;
     border: 1px solid #779caf;
     font-size: small !important;
@@ -134,133 +134,185 @@ nav {
     display: none;
 }
 
-/* tags */
+/* tags eye-candy */
 [data-tag] {
     border: 1px grey dotted;
+    position: relative;;
 }
 
 [data-tag]:hover {
     border-style: solid;
 }
 
+.references-view > [data-tag]:before {
+    content: attr(data-tag);
+    position: absolute;
+    left: 0;
+    /* move to top */
+    bottom: 100%;
+    margin-bottom: 5px;
+    /* styling */
+    /*width: 70px;*/
+    padding: 3px;
+    /*border-radius:10px;*/
+    font-size: x-small;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #fff;
+    color: #000;
+    text-align: center;
+    display: none;
+    z-index: 99999;
+}
+
+.references-view > [data-tag]:hover:before {
+    display: block;
+}
+
+/* ref identification */
 [data-tag="ref"]:nth-child(7n) {
     background-color: rgb(255, 255, 153);
 }
+
 [data-tag="ref"]:nth-child(7n-1) {
     background-color: rgb(252, 201, 108);
 }
+
 [data-tag="ref"]:nth-child(7n-2) {
     background-color: rgb(236, 184, 249);
 }
+
 [data-tag="ref"]:nth-child(7n-3) {
     background-color: rgb(152, 230, 249);
 }
+
 [data-tag="ref"]:nth-child(7n-4) {
     background-color: rgb(135, 245, 168);
 }
+
 [data-tag="ref"]:nth-child(7n-5) {
     background-color: rgb(244, 132, 112);
 }
+
 [data-tag="ref"]:nth-child(7n-6) {
     background-color: rgb(111, 252, 226);
 }
+
 [data-tag="oth"] {
     background-color: rgb(162, 165, 165);
 }
 
-[data-tag="other"] {
-    background-color: #f4858e;
-}
-[data-tag="other"] {
-    background-color: #f4858e;
-}
+/* ref segmentation */
 [data-tag="surname"] {
     background-color: #ffce30;
 }
+
 [data-tag="given-names"] {
     background-color: #aabb30;
 }
+
 [data-tag="year"] {
     background-color: #bfb1d5;
 }
+
 [data-tag="title"] {
     background-color: #adddcf;
 }
+
 [data-tag="source"] {
     background-color: #abe1fd;
 }
+
 [data-tag="editor"] {
     background-color: #fed88f;
 }
+
 [data-tag="volume"] {
     background-color: #ffff66;
 }
+
 [data-tag="fpage"] {
     background-color: #ccff66;
 }
+
 [data-tag="lpage"] {
     background-color: #ffb3ff;
 }
+
 [data-tag="publisher"] {
     background-color: #79d279;
 }
+
 [data-tag="issue"] {
     background-color: #659bf2;
 }
+
 [data-tag="url"] {
     background-color: #5befdb;
 }
+
 [data-tag="identifier"] {
     background-color: #d19bf7;
 }
 
+[data-tag="other"] {
+    background-color: rgb(162, 165, 165);
+}
+
 /* CSS grid, done with https://grid.layoutit.com/?id=d5AowTC */
 .grid-container {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  grid-template-rows: 50% 50%;
-  gap: 0px 0px;
-  grid-auto-flow: row;
-  grid-template-areas:
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 50% 50%;
+    gap: 0px 0px;
+    grid-auto-flow: row;
+    grid-template-areas:
     "view-text view-pdf"
     "view-markup view-markup";
-  width: 100%;
-  height: 90%;
+    width: 100%;
+    height: 90%;
 }
 
 .view-text {
-  display: grid;
-  grid-template-columns: 1.2fr 0.8fr;
-  grid-template-rows: 30px auto;
-  grid-auto-rows: 1fr;
-  gap: 0px 0px;
-  grid-auto-flow: column;
-  grid-template-areas:
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    grid-template-rows: 30px auto;
+    grid-auto-rows: 1fr;
+    gap: 0px 0px;
+    grid-auto-flow: column;
+    grid-template-areas:
     "view-text-label view-text-buttons"
     "view-text-display view-text-display";
-  grid-area: view-text;
-  height: 100%;
+    grid-area: view-text;
+    height: 100%;
 }
 
-.view-text-display { grid-area: view-text-display; }
+.view-text-display {
+    grid-area: view-text-display;
+}
 
-.view-text-label { grid-area: view-text-label; }
+.view-text-label {
+    grid-area: view-text-label;
+}
 
-.view-text-buttons { grid-area: view-text-buttons; }
+.view-text-buttons {
+    grid-area: view-text-buttons;
+}
 
 .view-pdf {
-  display: grid;
-  grid-template-columns: 1.4fr 0.6fr;
-  grid-template-rows: 30px auto;
-  gap: 0px 0px;
-  grid-auto-flow: row;
-  grid-template-areas:
+    display: grid;
+    grid-template-columns: 1.4fr 0.6fr;
+    grid-template-rows: 30px auto;
+    gap: 0px 0px;
+    grid-auto-flow: row;
+    grid-template-areas:
     "view-pdf-label view-pdf-buttons"
     "view-pdf-display view-pdf-display";
-  grid-area: view-pdf;
+    grid-area: view-pdf;
 }
 
-.view-pdf-display { grid-area: view-pdf-display; }
+.view-pdf-display {
+    grid-area: view-pdf-display;
+}
 
 .unselectable {
     -moz-user-select: none;
@@ -271,31 +323,37 @@ nav {
 }
 
 .view-pdf-label {
-  grid-area: view-pdf-label;
-  height: 30px;
+    grid-area: view-pdf-label;
+    height: 30px;
 }
 
 .view-pdf-buttons {
-  grid-area: view-pdf-buttons;
-  height: 30px;
+    grid-area: view-pdf-buttons;
+    height: 30px;
 }
 
 .view-markup {
-  display: grid;
-  grid-template-columns: 1.5fr 0.5fr;
-  grid-template-rows: 30px auto;
-  grid-auto-rows: 1fr;
-  gap: 0px 0px;
-  grid-auto-flow: row;
-  grid-template-areas:
+    display: grid;
+    grid-template-columns: 1.5fr 0.5fr;
+    grid-template-rows: 30px auto;
+    grid-auto-rows: 1fr;
+    gap: 0px 0px;
+    grid-auto-flow: row;
+    grid-template-areas:
     "view-markup-label view-markup-buttons"
     "view-markup-display view-markup-display";
-  grid-area: view-markup;
-  height: 100%;
+    grid-area: view-markup;
+    height: 100%;
 }
 
-.view-markup-label { grid-area: view-markup-label; }
+.view-markup-label {
+    grid-area: view-markup-label;
+}
 
-.view-markup-buttons { grid-area: view-markup-buttons; }
+.view-markup-buttons {
+    grid-area: view-markup-buttons;
+}
 
-.view-markup-display { grid-area: view-markup-display; }
+.view-markup-display {
+    grid-area: view-markup-display;
+}

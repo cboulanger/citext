@@ -180,9 +180,9 @@
            tabindex="-1" onclick="Actions.addTag('ref', true);" href="#">
         Markup whole lines as reference
     </a></li>
-    <li><a id="btn-oth" class="visible-in-document-mode enabled-when-not-inside-tag"
+    <li><a id="btn-oth" class="visible-in-document-mode enabled-when-inside-tag"
            tabindex="-1" onclick="Actions.addTag('oth');" href="#">
-        Markup as non-reference
+        Ignore
     </a></li>
     <!-- references mode -->
     <li><a id="btn-surname" class="visible-in-refs-mode enabled-when-not-inside-tag"
@@ -205,11 +205,35 @@
            tabindex="-1" onclick="Actions.addTag('editor');" href="#">
         Editors
     </a></li>
-    <li><a id="btn-title" class="visible-in-refs-mode enabled-when-not-inside-tag"
-           tabindex="-1" onclick="Actions.addTag('title');" href="#">
-        Title
+    <li><a id="btn-publisher" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('publisher');" href="#">
+        Publisher
     </a></li>
-
+    <li><a id="btn-identifier" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('identifier');" href="#">
+        Identifier
+    </a></li>
+    <li><a id="btn-source" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('source');" href="#">
+        Source
+    </a></li>
+    <li><a id="btn-url" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('url');" href="#">
+        URL
+    </a></li>
+        <li><a id="btn-fpage" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('fpage');" href="#">
+        First page
+    </a></li>
+    <li><a id="btn-lpage" class="visible-in-refs-mode enabled-when-not-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('lpage');" href="#">
+        Source
+    </a></li>
+    <li><a id="btn-other" class="visible-in-refs-mode enabled-when-inside-tag"
+           tabindex="-1" onclick="Actions.addTag('other');" href="#">
+        Ignore
+    </a></li>
+    <!-- visible in both modes -->
     <li><a id="btn-remove-tag" class="ui-state-disabled" tabindex="-1" onclick="Actions.removeTag();" href="#">
         Remove Tag
     </a></li>
@@ -233,6 +257,9 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title">EXcite Reference Identification Training</h3>
+                <button type="button" class="btn btn-secondary"
+                        data-dismiss="modal" onclick="$('#modal-help').hide()">Close
+                </button>
             </div>
             <div class="modal-body">
                 <p>With this web app, you can mark up citation data in text extracted from a PDF,
@@ -243,16 +270,15 @@
                     <li>
                         Load a text to mark up. This can be done in several ways:
                         <ul>
-                            <li>Load a PDF and extract text and layout data by clicking the "Analyze" button. This takes
-                                a while.
+                            <li>Load a PDF with the "Load" button. Extract text and references using the "Identification" button.
                             </li>
                             <li>Load a previously processed file (.csv) to continue working on it.</li>
-                            <li>Load a textfile (.txt) containing OCR data, which does not contain layout information.
+                            <li>Load a textfile (.txt) containing OCR data.
                             </li>
                         </ul>
                     </li>
                     <li>
-                        Mark up the text by selecting the parts of the text that contains citation/reference data.
+                        Mark up the text or correct the automatically produced markup by selecting the parts of the text that contains citation/reference data.
                         After selecting text, a menu popup is shown with the available options. You can
                         <ul>
                             <li>Mark up the selected fragment</li>
@@ -267,11 +293,19 @@
                         Long-clicking or tapping on a marked up section of a text will select it.
                     </li>
                     <li>
-                        After you have finished your markup, save the document to the backend. You can also download
+                        After you have finished identifying the references, save the document to the backend. You can also download
                         it to your computer using the "Export" button.
                     </li>
                     <li>
-                        Go to the Reference Segmentation Tool to continue training.
+                        In a second step, you need to segment the references into its constituent parts (author, title, etc.).
+                        For this, switch into segmentation mode by clicking on the "Segmentation" button.
+                    </li>
+                    <li>
+                        Let EXcite do an automatic segmentation by choosing the "Auto-Segmentation" option from the dropdown.
+                    </li>
+                    <li>
+                       You can then correct the markup. When you are finished, click on "Save" or "Export" to save your changes
+                        to the training backend or to your computer. To work on each citation individually, click on the "To SegAnnno" button.
                     </li>
                 </ol>
             </div>
