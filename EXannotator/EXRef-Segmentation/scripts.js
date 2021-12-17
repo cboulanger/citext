@@ -5,10 +5,10 @@ let fileExt;
 
 const SERVER_URL = "http://127.0.0.1:8000/cgi-bin/";
 const LOCAL_STORAGE = {
-  MARKED_UP_TEXT: "marked_up_text",
-  LAST_XML_TEXT: "anno2lastxmltext",
-  TEXT_FILE_NAME: "anno2filename",
-  LAST_FILE_NAME: "anno2lastfilename"
+  DOCUMENT: "excite_document",
+  REFERENCES: "excite_references",
+  TEXT_FILE_NAME: "excite_text_file_name",
+  LAST_FILE_NAME: "excite_last_file_name"
 }
 
 const colorMap = {
@@ -73,8 +73,8 @@ $(document).ready(function () {
 
 //load last saved localstorage
 function loadSession() {
-  let markedUpText = localStorage.getItem(LOCAL_STORAGE.MARKED_UP_TEXT);
-  let lastXmlText = localStorage.getItem(LOCAL_STORAGE.LAST_XML_TEXT);
+  let lastDocument = localStorage.getItem(LOCAL_STORAGE.DOCUMENT);
+  let lastReferences = localStorage.getItem(LOCAL_STORAGE.REFERENCES);
   let textFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME);
   let lastFileName = localStorage.getItem(LOCAL_STORAGE.LAST_FILE_NAME);
   let fileToLoad;
@@ -84,10 +84,10 @@ function loadSession() {
     fileExt = filenparts.pop();
   }
   // saved xml has priority if filename hasn't changed
-  if (lastXmlText && filename === lastFileName) {
-    fileToLoad = new Blob([lastXmlText], {type: 'text/xml'});
-  } else if (markedUpText) {
-    fileToLoad = new Blob([markedUpText], {type: 'text/csv'});
+  if (lastReferences && (filename === lastFileName || !lastFileName)) {
+    fileToLoad = new Blob([lastReferences], {type: 'text/xml'});
+  } else if (lastDocument) {
+    fileToLoad = new Blob([lastDocument], {type: 'text/csv'});
   }
   if (fileToLoad) {
     loadFile(fileToLoad);
@@ -110,7 +110,7 @@ function hideSpinner() {
 function savelocalStorage() {
   let xmlText = getXmlText();
   if (xmlText) {
-    localStorage.setItem(LOCAL_STORAGE.LAST_XML_TEXT, xmlText);
+    localStorage.setItem(LOCAL_STORAGE.REFERENCES, xmlText);
   }
 }
 
@@ -153,20 +153,24 @@ function checkfile() {
 function loadFile(fileToLoad) {
   const fileReader = new FileReader();
   fileReader.onload = function (evt) {
-    textLines = evt.target.result
-      .replace(/<author>/g, '') // replace author tags (will be re-added later)
-      .replace(/<\/author>/g, '')
+    let text = evt.target.result;
+    textLines = text
       .replace(/\r/g, "")
       .split('\n')
       .filter(String); // remove empty lines
-    if (fileExt === "xml") {
+
+    if (fileExt === "xml" || text.includes("<author>")) {
       if (textLines[0].includes("<?xml ")) {
         // if standard-compliant xml, remove declaration and top node
         textLines.splice(0, 2);
         textLines.splice(-1, 1);
         // remove enclosing <ref> tags
         textLines = textLines
-          .map(line => line.replace(/<ref>/g, '').replace(/<\/ref>/g, ''));
+          .map(line => line
+            .replace(/<author>/g, '')
+            .replace(/<\/author>/g, '')
+            .replace(/<ref>/g, '')
+            .replace(/<\/ref>/g, ''));
       }
     } else {
       // csv or txt
@@ -211,7 +215,7 @@ function exportFile() {
 }
 
 function reset() {
-  localStorage.setItem(LOCAL_STORAGE.LAST_XML_TEXT, null);
+  localStorage.setItem(LOCAL_STORAGE.REFERENCES, null);
   emptyParameters();
   loadSession();
 }

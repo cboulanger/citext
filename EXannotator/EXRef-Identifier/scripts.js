@@ -14,10 +14,15 @@ let lastDocument;
 
 const SERVER_URL = "http://127.0.0.1:8000/cgi-bin/";
 const LOCAL_STORAGE = {
-  MARKED_UP_TEXT: "marked_up_text", TEXT_FILE_NAME: "anno2filename", PDF_IFRAME_SRC: "excite_pdf_iframe_source"
+  DOCUMENT: "excite_document",
+  REFERENCES: "excite_references",
+  TEXT_FILE_NAME: "excite_text_file_name",
+  PDF_IFRAME_SRC: "excite_pdf_iframe_source",
+  DISPLAY_MODE: "excite_display_mode"
 }
 const DISPLAY_MODES = {
-  DOCUMENT: "document", REFERENCES: "references"
+  DOCUMENT: "document",
+  REFERENCES: "references"
 }
 
 const REGEX = {
@@ -64,9 +69,6 @@ class Actions {
           let text = String(e.target.result);
           textFileName = filename;
           textFileExt = fileExt;
-          document.getElementById("text-label").innerHTML = textFileName;
-          localStorage.setItem(LOCAL_STORAGE.MARKED_UP_TEXT, text);
-          localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
           GUI.setTextContent(text);
         }
         fileReader.readAsText(file, "UTF-8");
@@ -225,7 +227,7 @@ class Actions {
     for (let match of tmp.matchAll(/<ref>(.*?)<\/ref>/g)) {
       textLines.push(match[1]);
     }
-    return textLines.join("\n").replace(/<oth>.*<\/oth>/,"");
+    return textLines.join("\n").replace(/<oth>.*<\/oth>/, "");
   }
 
   static combineLayoutAndRefs(layoutDoc, refs) {
@@ -303,10 +305,11 @@ class Actions {
     let data;
     let filename;
     let type;
+    let filenameNoExt = textFileName.split('.').slice(0, -1).join(".");
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT:
         data = GUI.getTextToExport();
-        localStorage.setItem(LOCAL_STORAGE.MARKED_UP_TEXT, data);
+        localStorage.setItem(LOCAL_STORAGE.DOCUMENT, data);
         localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
         if (!data.includes("<ref>")) {
           alert("Text contains no markup.");
@@ -317,10 +320,8 @@ class Actions {
         break;
       case DISPLAY_MODES.REFERENCES:
         data = GUI.getTextToExport(false);
-        if (!data.includes("<author>")) {
-          alert("Text contains no markup.");
-          return;
-        }
+        localStorage.setItem(LOCAL_STORAGE.REFERENCES, data);
+        filename = filenameNoExt + ".xml";
         type = "ref_xml"
         break;
     }
@@ -334,9 +335,17 @@ class Actions {
   }
 
   static saveToLocalStorage() {
-    let text = lastDocument || GUI.getTextToExport();
-    console.warn("Undo this")
-    localStorage.setItem(LOCAL_STORAGE.MARKED_UP_TEXT, text);
+    let text;
+    switch (displayMode) {
+      case DISPLAY_MODES.DOCUMENT:
+        text = GUI.getTextToExport();
+        localStorage.setItem(LOCAL_STORAGE.DOCUMENT, text);
+        break;
+      case DISPLAY_MODES.REFERENCES:
+        text = GUI.getTextToExport(false);
+        localStorage.setItem(LOCAL_STORAGE.REFERENCES, text);
+        break;
+    }
     localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
     localStorage.setItem(LOCAL_STORAGE.DISPLAY_MODE, displayMode);
   }
@@ -375,14 +384,30 @@ class Actions {
     if (displayMode === nextDisplayMode) {
       return;
     }
-    if (displayMode === DISPLAY_MODES.REFERENCES && versions.length > 0) {
-      let confirmMsg = `This will switch the display to ${nextDisplayMode} view and discard any changes. Do you want to proceed?`;
-      if (!confirm(confirmMsg)) {
-        $("#btn-identification").removeClass("active");
-        return;
-      }
+    let text
+    switch (displayMode) {
+      case DISPLAY_MODES.DOCUMENT:
+        let document = GUI.getTextToExport();
+        localStorage.setItem(LOCAL_STORAGE.DOCUMENT, document);
+        text = this.extractReferences(document);
+        localStorage.setItem(LOCAL_STORAGE.REFERENCES, text);
+        break;
+      case DISPLAY_MODES.REFERENCES:
+        if (versions.length > 0) {
+          let confirmMsg = `This will switch the display to ${nextDisplayMode} view and discard any changes. Do you want to proceed?`;
+          if (!confirm(confirmMsg)) {
+            $("#btn-identification").removeClass("active");
+            return;
+          }
+        }
+        text = localStorage.getItem(LOCAL_STORAGE.DOCUMENT) || "";
+        break;
     }
     GUI.setDisplayMode(nextDisplayMode);
+    GUI.setTextContent(text);
+    versions = [];
+    $("#btn-undo").addClass("ui-state-disabled");
+
   }
 
   static open_in_seganno() {
@@ -421,116 +446,142 @@ class GUI {
     this.__fs = null;
 
     // on page load
-    $(document).ready(function () {
+    $(document).ready(this._onDocumentReady);
 
-      // force remove PDF because loading saved src doesn't work yet
-      let dataUrl = false; // localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC);
-      if (dataUrl) {
-        fetch(dataUrl)
-          .then(res => res.blob())
-          .then(objectURL => GUI.loadPdfFile(objectURL));
-      } else {
-        GUI.showPdfView(false);
-      }
+    // save text before leaving the page
+    window.onbeforeunload = Actions.saveToLocalStorage;
 
-      // disable checkbox state caching
-      $(":checkbox").attr("autocomplete", "off");
-      $("checkbox").prop("checked", false);
-
-      // hide optional views
-      GUI.toggleMarkedUpView(false);
-
-      // tooltips
-      $('[data-toggle="tooltip"]').tooltip();
-
-      // get text from local storage
-      let markedUpText = localStorage.getItem(LOCAL_STORAGE.MARKED_UP_TEXT);
-      if (markedUpText) {
-        textFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME)
-        textFileExt = textFileName.split(".").pop();
-        document.getElementById("text-label").innerHTML = textFileName;
-        GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
-        GUI.setTextContent(markedUpText);
-      } else {
-        $("#modal-help").show();
-      }
-
-
-      $(document).ready(() => {
-
-        // remove whitespace from selection after double-click
-        $("#text-content").on("dblclick", e => {
-          // trim leading or trailing spaces
-          let sel = window.getSelection();
-          let text = sel.toString();
-          let range = sel.getRangeAt(0);
-          let startOffset = text.length - text.trimStart().length;
-          let endOffset = text.length - text.trimEnd().length;
-          if (startOffset) {
-            range.setStart(range.startContainer, range.startOffset + startOffset);
-          }
-          if (endOffset) {
-            range.setEnd(range.endContainer, range.endOffset - endOffset);
-          }
-          sel.removeAllRanges();
-          sel.addRange(range);
-        });
-
-        // long-pressing selects span
-        let longpress = false;
-        $("#text-content").on('click', e => {
-          if (!longpress) return;
-          let sel = window.getSelection();
-          if (sel.toString().length) return; // so that <oth> element can be inserted into selection
-          if (!sel.focusNode || !sel.focusNode.parentElement) return;
-          let p = sel.focusNode.parentElement;
-          if (e.target !== p) return;
-          if (p.dataset && p.dataset.tag) {
-            sel.removeAllRanges();
-            let range = document.createRange();
-            range.selectNodeContents(p);
-            sel.addRange(range);
-            GUI._showPopupOnSelect(e);
-          }
-        });
-        let startTime, endTime;
-        $(document).on('pointerdown', function () {
-          startTime = new Date().getTime();
-        });
-        $(document).on('pointerup', function () {
-          endTime = new Date().getTime();
-          longpress = (endTime - startTime >= 500);
-        });
+    // check if we have a backend
+    fetch(SERVER_URL + "status.py")
+      .then(response => response.json())
+      .then(result => {
+        if (result.success) {
+          $(".visible-if-backend").removeClass("hidden");
+        }
       });
+  }
 
-      // show popup on select
-      $("#text-content").ready(() => {
-        const contextMenu = $("#contextMenu");
-        const contentLabel = $("#text-content");
-        contentLabel.on("pointerup", GUI._showPopupOnSelect);
-        contextMenu.on("pointerup", () => setTimeout(() => {
-          contextMenu.hide();
-          window.getSelection().removeAllRanges();
-        }, 100));
-      })
+  static _onDocumentReady() {
 
-      // synchronize scroll positions
-      $('#text-content').on('scroll', e => {
-        $('#markup-content-container').scrollTop(e.currentTarget.scrollTop);
-      });
+    // show popup on select
+    const contextMenu = $("#contextMenu");
+    const contentLabel = $("#text-content");
+    contentLabel.on("pointerup", GUI._showPopupOnSelect);
+    contextMenu.on("pointerup", () => setTimeout(() => {
+      contextMenu.hide();
+      window.getSelection().removeAllRanges();
+    }, 100));
 
-      // save text before leaving the page
-      window.onbeforeunload = Actions.saveToLocalStorage;
-
-      // check if we have a backend
-      fetch(SERVER_URL + "status.py")
-        .then(response => response.json())
-        .then(result => {
-          if (result.success) {
-            $(".visible-if-backend").removeClass("hidden");
-          }
-        })
+    // remove whitespace from selection after double-click
+    contentLabel.on("dblclick", e => {
+      // trim leading or trailing spaces
+      let sel = window.getSelection();
+      let text = sel.toString();
+      let range = sel.getRangeAt(0);
+      let startOffset = text.length - text.trimStart().length;
+      let endOffset = text.length - text.trimEnd().length;
+      if (startOffset) {
+        range.setStart(range.startContainer, range.startOffset + startOffset);
+      }
+      if (endOffset) {
+        range.setEnd(range.endContainer, range.endOffset - endOffset);
+      }
+      sel.removeAllRanges();
+      sel.addRange(range);
     });
+
+    // long-pressing selects span
+    let longpress = false;
+    contentLabel.on('click', e => {
+      if (!longpress) return;
+      let sel = window.getSelection();
+      if (sel.toString().length) return; // so that <oth> element can be inserted into selection
+      if (!sel.focusNode || !sel.focusNode.parentElement) return;
+      let p = sel.focusNode.parentElement;
+      if (e.target !== p) return;
+      if (p.dataset && p.dataset.tag) {
+        sel.removeAllRanges();
+        let range = document.createRange();
+        range.selectNodeContents(p);
+        sel.addRange(range);
+        GUI._showPopupOnSelect(e);
+      }
+    });
+    let startTime, endTime;
+    $(document).on('pointerdown', function () {
+      startTime = new Date().getTime();
+    });
+    $(document).on('pointerup', function () {
+      endTime = new Date().getTime();
+      longpress = (endTime - startTime >= 500);
+    });
+
+    // synchronize scroll positions
+    contentLabel.on('scroll', e => {
+      $('#markup-content-container').scrollTop(e.currentTarget.scrollTop);
+    });
+
+    // force remove PDF because loading saved src doesn't work yet
+    let dataUrl = false; // localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC);
+    if (dataUrl) {
+      fetch(dataUrl)
+        .then(res => res.blob())
+        .then(objectURL => GUI.loadPdfFile(objectURL));
+    } else {
+      GUI.showPdfView(false);
+    }
+
+    // disable checkbox state caching
+    $(":checkbox").attr("autocomplete", "off");
+
+    // hide optional views
+    GUI.toggleMarkedUpView(false);
+
+    // tooltips
+    //$('[data-toggle="tooltip"]').tooltip();
+
+    // get text from local storage
+    let savedDisplayMode = localStorage.getItem(LOCAL_STORAGE.DISPLAY_MODE);
+    let savedTextFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME);
+    if (savedTextFileName) {
+      textFileName = savedTextFileName;
+      textFileExt = textFileName.split(".").pop();
+    }
+    if (savedDisplayMode) {
+      let text;
+      switch (savedDisplayMode) {
+        case DISPLAY_MODES.DOCUMENT:
+          text = localStorage.getItem(LOCAL_STORAGE.DOCUMENT);
+          break;
+        case DISPLAY_MODES.REFERENCES:
+          text = localStorage.getItem(LOCAL_STORAGE.REFERENCES);
+          if (text.includes("<?xml ")) {
+            let textLines = text.split("\n");
+            // if standard-compliant xml from , remove declaration and top node
+            textLines.splice(0, 2);
+            textLines.splice(-1, 1);
+            // remove enclosing <ref> and <author> tags
+            textLines = textLines
+              .map(line => line
+                .replace(/<author>/g, '')
+                .replace(/<\/author>/g, '')
+                .replace(/<ref>/g, '')
+                .replace(/<\/ref>/g, ''));
+            text = textLines.join("\n");
+          }
+          break;
+        default:
+          savedDisplayMode = DISPLAY_MODES.DOCUMENT;
+          text = "";
+          break;
+      }
+      GUI.setDisplayMode(savedDisplayMode);
+      if (text) {
+        GUI.setTextContent(text);
+        return;
+      }
+    }
+    $("#modal-help").show();
   }
 
   static showSpinner(text) {
@@ -553,7 +604,8 @@ class GUI {
     cols2numbers = [];
     versions = [];
     localStorage.removeItem(LOCAL_STORAGE.TEXT_FILE_NAME);
-    localStorage.removeItem(LOCAL_STORAGE.MARKED_UP_TEXT);
+    localStorage.removeItem(LOCAL_STORAGE.DOCUMENT);
+    localStorage.removeItem(LOCAL_STORAGE.REFERENCES);
     GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
     this.toggleMarkedUpView(false);
   }
@@ -653,6 +705,7 @@ class GUI {
           $("#label-page-number").html("");
           $(".visible-if-pages").addClass("hidden");
         }
+        $("#text-label").html(textFileName + " (Document)");
         break;
       // Display references
       case DISPLAY_MODES.REFERENCES:
@@ -660,7 +713,7 @@ class GUI {
           .replace(/\n/g, "<br>")
           .replace(/<\/?author>/g, "")
           .replace(/<\/?ref>/g, "");
-
+        $("#text-label").html(textFileName + " (References)");
         break;
     }
     // translate tag names to data-tag attributes
@@ -740,7 +793,7 @@ class GUI {
         break;
       }
       case DISPLAY_MODES.REFERENCES: {
-        let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
+        let regex1 = /<span data-tag="other".*?>(.+?)<\/span>/g;
         let regex2 = /<span data-tag="([^"]+)".*?>(.+?)<\/span>/g;
         markedUpText = markedUpText
           .replace(regex1, "<other>$1</other>")
@@ -748,6 +801,7 @@ class GUI {
         markedUpText = this.addAuthorTag(markedUpText)
         break;
       }
+        console.log(markedUpText)
     }
     let html = markedUpText
       .replace(/<br[^>]*>/g, "\n")
@@ -883,14 +937,9 @@ class GUI {
     if (nextDisplayMode === displayMode) {
       return;
     }
-    let tmp = GUI.getTextToExport();
     displayMode = nextDisplayMode;
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT:
-        if (lastDocument) {
-          GUI.setTextContent(lastDocument);
-          //GUI.setTextContent(Actions.combineLayoutAndRefs(lastDocument, refs))
-        }
         $(".visible-in-document-mode").removeClass("hidden");
         $(".visible-in-refs-mode").addClass("hidden");
         $("#btn-segmentation").removeClass("active");
@@ -900,8 +949,6 @@ class GUI {
         $("#text-content").removeClass("references-view");
         break;
       case DISPLAY_MODES.REFERENCES:
-        lastDocument = tmp;
-        GUI.setTextContent(Actions.extractReferences(lastDocument));
         $(".visible-in-document-mode").addClass("hidden");
         $(".visible-in-refs-mode").removeClass("hidden");
         $("#btn-segmentation").addClass("active");
@@ -911,10 +958,9 @@ class GUI {
         $("#text-content").removeClass("document-view");
         break;
       default:
-        throw new Error("Invalid Display mode " + nextDisplayMode);
+        throw new Error("Invalid display mode " + nextDisplayMode);
     }
-    versions = [];
-    $("#btn-undo").addClass("ui-state-disabled");
+    localStorage.setItem(LOCAL_STORAGE.DISPLAY_MODE, displayMode);
   }
 
   static _showPopupOnSelect(e) {
