@@ -257,6 +257,25 @@ nav {
 [data-tag="other"] {
     background-color: rgb(162, 165, 165);
 }
+/** tag grid in context menu */
+.refs-button-grid {
+    display: grid !important;
+    grid-template-rows: 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.refs-button-grid > li > a {
+    text-align: center;
+    display: block;
+    font-size: small;
+    text-decoration: none;
+padding: 2px;
+}
+
+/* todo: scrollbars aren't really working here */
+#markup-content {
+    overflow: visible;
+}
 
 /* CSS grid, done with https://grid.layoutit.com/?id=d5AowTC */
 .grid-container {
@@ -269,8 +288,10 @@ nav {
     "view-text view-pdf"
     "view-markup view-markup";
     width: 100%;
-    height: 90%;
+    height: 90vh;
 }
+
+
 
 .view-text {
     display: grid;

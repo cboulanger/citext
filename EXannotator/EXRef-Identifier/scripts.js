@@ -368,10 +368,11 @@ class Actions {
 
   static replaceSelection() {
     $("contextMenu").hide();
-    setTimeout(() => {
-      let replacementText = prompt("Please enter text to replace the selected text with:");
-      GUI.replaceSelection(replacementText);
-    }, 100);
+    let defaultText = window.getSelection().toString();
+    if (!defaultText) return;
+    let replacementText = prompt("Please enter text to replace the selected text with:", defaultText);
+    if (!replacementText) return;
+    GUI.replaceSelection(replacementText);
   }
 
   static copy() {
@@ -771,7 +772,7 @@ class GUI {
     if (wholeLine) {
       sel.setBaseAndExtent(sel.anchorNode, 0, sel.focusNode, sel.focusNode.length);
     }
-    // prevent nesting of tags except <oth> in <ref>
+    // prevent nesting of tag inside other tag
     let node = sel.focusNode;
     do {
       if (node && node.dataset) {
@@ -785,9 +786,12 @@ class GUI {
       }
       node = node.parentNode;
     } while (node)
+    // wrap selection in new span
     let parentNode = document.createElement("span");
     parentNode.setAttribute("data-tag", tag_name);
     sel.getRangeAt(0).surroundContents(parentNode);
+    // remove all <span>s from selected text
+    $(parentNode).html($(parentNode).html().replace(REGEX.SPAN, ""));
     GUI.updateMarkedUpText();
   }
 
@@ -815,18 +819,28 @@ class GUI {
         let regex1 = /<span data-tag="other"[^<]*>([^<]*)<\/span>/g;
         let regex2 = /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/g;
         markedUpText = markedUpText
-          .replace(/<[^>]+><\/[^>]+>/g,"")
+          .replace(/<[^>]+><\/[^>]+>/g, "")
           .replace(regex1, "<other>$1</other>")
           .replace(regex2, "<$1>$2</$1>")
         markedUpText = this.addAuthorTag(markedUpText)
         break;
       }
-        console.log(markedUpText)
     }
+    // check if translation removed all <span> tags and abort if not
+    if (markedUpText.match(REGEX.SPAN)) {
+      let errmsg = "Markup is invalid";
+      alert(errmsg);
+      console.log(markedUpText);
+      throw new Error(errmsg);
+    }
+
+    // update <pre> element
     let html = markedUpText
       .replace(/<br[^>]*>/g, "\n")
       .replace(/</g, "&lt;")
     $("#markup-content").html(html);
+
+    // update other parts of the UI
     $(".enabled-if-refs").toggleClass("ui-state-disabled",
       !(markedUpText.match(REGEX.TAG))
     );
@@ -897,45 +911,38 @@ class GUI {
   static getTextToExport(withlayoutInfo = true) {
     GUI.updateMarkedUpText();
     let markedUpText = $("#markup-content").html();
-    let t1 = markedUpText.split('\n')
-    let t2 = [];
-    let rowFirstColumn = '';
-    let allFirstColumns = '';
-    let start = '<ref>'
-    let suffix = '</ref>'
-    let other_suffix = '</oth>'
-    for (let i = 0; i < t1.length; i++) {
-      rowFirstColumn = t1[i];
-      // add one space to the end of line if it is multi line ref and doesn't have hyphen or dash at end
-      if (!(rowFirstColumn.substr(-suffix.length) === suffix) || (rowFirstColumn.substr(-other_suffix.length) === other_suffix)) if (!(rowFirstColumn.substr(-1) === '-')) if (!(rowFirstColumn.substr(-1) === '.')) rowFirstColumn = rowFirstColumn + ' ';
-      allFirstColumns = allFirstColumns + rowFirstColumn;
-      // textToWrite2 is all layout with numbers
-      if (i === t1.length - 1) {
-        // no \n for last line
-        if (typeof cols2numbers[i] != 'undefined' && withlayoutInfo) {
-          t2[i] = t1[i] + '\t' + cols2numbers[i];
+    if (displayMode === DISPLAY_MODES.DOCUMENT && withlayoutInfo) {
+      let t1 = markedUpText.split('\n')
+      let t2 = [];
+      let rowFirstColumn;
+      let allFirstColumns;
+      for (let i = 0; i < t1.length; i++) {
+        rowFirstColumn = t1[i];
+        allFirstColumns = allFirstColumns + rowFirstColumn;
+        if (i === t1.length - 1) {
+          // no \n for last line
+          if (typeof cols2numbers[i] != 'undefined') {
+            t2[i] = t1[i] + '\t' + cols2numbers[i];
+          } else {
+            t2[i] = t1[i] + '\n'
+          }
         } else {
-          t2[i] = t1[i] + '\n'
-        }
-      } else {
-        if (typeof cols2numbers[i] != 'undefined' && withlayoutInfo) {
-          t2[i] = t1[i] + '\t' + cols2numbers[i] + '\n';
-        } else {
-          t2[i] = t1[i] + '\n'
+          if (typeof cols2numbers[i] != 'undefined') {
+            t2[i] = t1[i] + '\t' + cols2numbers[i] + '\n';
+          } else {
+            t2[i] = t1[i] + '\n'
+          }
         }
       }
+      markedUpText = t2.join("");
     }
-    // clean up
-    t2 = t2.join("")
-      .replace(/&amp;/g, "&")
+    return markedUpText.replace(/&amp;/g, "&")
       .replace(/&gt;/g, ">")
       .replace(/&lt;/g, "<")
       .replace(/&quot;/g, '"')
       .replace(/&pos;/g, "'")
       .replace(/&nbsp;/g, " ")
       .trim();
-    // return sanitized text
-    return t2;
   }
 
   static toggleMarkedUpView(state) {
@@ -996,14 +1003,10 @@ class GUI {
       }
       node = node.parentNode;
     }
-    //$(".enabled-when-not-inside-tag").toggleClass("ui-state-disabled", Boolean(tag));
-    //$(".enabled-when-inside-tag").toggleClass("ui-state-disabled", !Boolean(tag));
-
-    $("#btn-oth").toggleClass("ui-state-disabled", !Boolean(tag) || tag === "oth" || node === sel.focusNode);
-    $("#btn-remove-tag").toggleClass("ui-state-disabled", !Boolean(tag));
-    $("#btn-remove-all-tags").toggleClass("ui-state-disabled", !Boolean(window.getSelection()));
-    $("#btn-paste").toggleClass("ui-state-disabled", !Boolean(clipboard.length));
-    $("#btn-insert-before").toggleClass("ui-state-disabled", !Boolean(clipboard.length));
+    $(".enabled-when-not-inside-tag").toggleClass("ui-state-disabled", Boolean(tag));
+    $(".enabled-when-inside-tag").toggleClass("ui-state-disabled", !Boolean(tag));
+    $(".enabled-if-selection").toggleClass("ui-state-disabled", !Boolean(window.getSelection()));
+    $(".enabled-if-clipboard-content").toggleClass("ui-state-disabled", !Boolean(clipboard.length));
     if (!sel.toString().trim()) {
       contextMenu.hide();
       return;

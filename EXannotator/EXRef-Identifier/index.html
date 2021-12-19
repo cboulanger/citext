@@ -44,10 +44,12 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-view">
-                <li><a id="btn-run-layout" class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                <li><a id="btn-run-layout"
+                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.run_excite_command('layout');" href="#">
                     Extract Text from PDF</a></li>
-                <li><a id="btn-run-exparser" class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                <li><a id="btn-run-exparser"
+                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.run_excite_command('exparser');" href="#">
                     Extract references from PDF</a></li>
             </ul>
@@ -64,7 +66,8 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
-                <li><a id="btn-run-segmentation" class="dropdown-item hidden visible-if-backend ui-state-disabled" href="#"
+                <li><a id="btn-run-segmentation" class="dropdown-item hidden visible-if-backend ui-state-disabled"
+                       href="#"
                        onclick="Actions.run_excite_command('segmentation');">
                     Auto-segmentation</a></li>
             </ul>
@@ -75,7 +78,8 @@
             <i class="fas fa-upload"></i><span class="button-label">To SegAnno</span>
         </button>
         <!-- save -->
-        <button id="btn-save" class="btn btn-primary enabled-if-refs ui-state-disabled hidden visible-if-backend" type="button"
+        <button id="btn-save" class="btn btn-primary enabled-if-refs ui-state-disabled hidden visible-if-backend"
+                type="button"
                 onclick="Actions.save();">
             <i class="fas fa-save"></i><span class="button-label">Save</span>
         </button>
@@ -95,7 +99,7 @@
         </button>
     </div>
     <!-- logo -->
-    <div class="navbar-brand navbar-right visible-md-block visible-lg-block">
+    <div class="navbar-brand navbar-right visible-lg-block">
         <a href="https://excite.informatik.uni-stuttgart.de/" target="_blank">
             <img id="app-logo" height="50px" src="images/exCite_logo_150.png" alt="img">
         </a>
@@ -172,84 +176,88 @@
 <!-- context menu -->
 <ul id="contextMenu" class="dropdown-menu" role="menu">
     <!-- document mode -->
-    <li><a id="btn-ref-part" class="visible-in-document-mode enabled-when-not-inside-tag"
+    <li><a id="btn-ref-part" class="visible-in-document-mode enabled-if-selection"
            tabindex="-1" onclick="Actions.addTag('ref');" href="#">
         Markup selection as reference
     </a></li>
-    <li><a id="btn-ref-line" class="visible-in-document-mode enabled-when-not-inside-tag"
+    <li><a id="btn-ref-line" class="visible-in-document-mode enabled-if-selection"
            tabindex="-1" onclick="Actions.addTag('ref', true);" href="#">
         Markup whole lines as reference
     </a></li>
-    <li><a id="btn-oth" class="visible-in-document-mode enabled-when-inside-tag"
+    <li><a id="btn-oth" class="visible-in-document-mode enabled-if-selection"
            tabindex="-1" onclick="Actions.addTag('oth');" href="#">
         Ignore
     </a></li>
     <!-- references mode -->
-    <li><a id="btn-surname" class="visible-in-refs-mode enabled-when-not-inside-tag" data-tag="surname"
-           tabindex="-1" onclick="Actions.addTag('surname');" href="#">
-        Surname
-    </a></li>
-    <li><a id="btn-given-names" class="visible-in-refs-mode enabled-when-not-inside-tag" data-tag="given-names"
-           tabindex="-1" onclick="Actions.addTag('given-names');" href="#">
-        Given-names
-    </a></li>
-    <li><a id="btn-year" class="visible-in-refs-mode enabled-when-not-inside-tag" data-tag="year"
-           tabindex="-1" onclick="Actions.addTag('year');" href="#">
-        Year
-    </a></li>
-    <li><a id="btn-title" class="visible-in-refs-mode enabled-when-not-inside-tag" data-tag="title"
-           tabindex="-1" onclick="Actions.addTag('title');" href="#">
-        Title
-    </a></li>
-    <li><a id="btn-editor" class="visible-in-refs-mode enabled-when-not-inside-tag" data-tag="editor"
-           tabindex="-1" onclick="Actions.addTag('editor');" href="#">
-        Editors
-    </a></li>
-    <li><a id="btn-publisher" class="visible-in-refs-mode enabled-when-not-inside-tag" data-tag="publisher"
-           tabindex="-1" onclick="Actions.addTag('publisher');" href="#">
-        Publisher
-    </a></li>
-    <li><a id="btn-source" class="visible-in-refs-mode enabled-when-not-inside-tag" data-tag="source"
-           tabindex="-1" onclick="Actions.addTag('source');" href="#">
-        Source
-    </a></li>
-    <li><a id="btn-fpage" class="visible-in-refs-mode enabled-when-not-inside-tag" data-tag="fpage"
-           tabindex="-1" onclick="Actions.addTag('fpage');" href="#">
-        First page
-    </a></li>
-    <li><a id="btn-lpage" class="visible-in-refs-mode enabled-when-not-inside-tag" data-tag="lpage"
-           tabindex="-1" onclick="Actions.addTag('lpage');" href="#">
-        Last Page
-    </a></li>
-    <li><a id="btn-identifier" class="visible-in-refs-mode enabled-when-not-inside-tag" data-tag="identifier"
-           tabindex="-1" onclick="Actions.addTag('identifier');" href="#">
-        Identifier
-    </a></li>
-    <li><a id="btn-url" class="visible-in-refs-mode enabled-when-not-inside-tag" data-tag="url"
-           tabindex="-1" onclick="Actions.addTag('url');" href="#">
-        URL
-    </a></li>
-
-    <li><a id="btn-other" class="visible-in-refs-mode enabled-when-inside-tag" data-tag="other"
-           tabindex="-1" onclick="Actions.addTag('other');" href="#">
-        Ignore
-    </a></li>
+    <div class="refs-button-grid">
+        <li><a id="btn-surname" class="visible-in-refs-mode enabled-if-selection" data-tag="surname"
+               tabindex="-1" onclick="Actions.addTag('surname');" href="#">
+            Surname
+        </a></li>
+        <li><a id="btn-given-names" class="visible-in-refs-mode enabled-if-selection" data-tag="given-names"
+               tabindex="-1" onclick="Actions.addTag('given-names');" href="#">
+            Given-names
+        </a></li>
+        <li><a id="btn-year" class="visible-in-refs-mode enabled-if-selection" data-tag="year"
+               tabindex="-1" onclick="Actions.addTag('year');" href="#">
+            Year
+        </a></li>
+        <li><a id="btn-title" class="visible-in-refs-mode enabled-if-selection" data-tag="title"
+               tabindex="-1" onclick="Actions.addTag('title');" href="#">
+            Title
+        </a></li>
+        <li><a id="btn-editor" class="visible-in-refs-mode enabled-if-selection" data-tag="editor"
+               tabindex="-1" onclick="Actions.addTag('editor');" href="#">
+            Editors
+        </a></li>
+        <li><a id="btn-publisher" class="visible-in-refs-mode enabled-if-selection" data-tag="publisher"
+               tabindex="-1" onclick="Actions.addTag('publisher');" href="#">
+            Publisher
+        </a></li>
+        <li><a id="btn-source" class="visible-in-refs-mode enabled-if-selection" data-tag="source"
+               tabindex="-1" onclick="Actions.addTag('source');" href="#">
+            Source
+        </a></li>
+        <li><a id="btn-fpage" class="visible-in-refs-mode enabled-if-selection" data-tag="fpage"
+               tabindex="-1" onclick="Actions.addTag('fpage');" href="#">
+            First page
+        </a></li>
+        <li><a id="btn-lpage" class="visible-in-refs-mode enabled-if-selection" data-tag="lpage"
+               tabindex="-1" onclick="Actions.addTag('lpage');" href="#">
+            Last Page
+        </a></li>
+        <li><a id="btn-identifier" class="visible-in-refs-mode enabled-if-selection" data-tag="identifier"
+               tabindex="-1" onclick="Actions.addTag('identifier');" href="#">
+            Identifier
+        </a></li>
+        <li><a id="btn-url" class="visible-in-refs-mode enabled-if-selection" data-tag="url"
+               tabindex="-1" onclick="Actions.addTag('url');" href="#">
+            URL
+        </a></li>
+        <li><a id="btn-other" class="visible-in-refs-mode enabled-if-selection" data-tag="other"
+               tabindex="-1" onclick="Actions.addTag('other');" href="#">
+            Ignore
+        </a></li>
+    </div>
     <!-- visible in both modes -->
-    <li><a id="btn-remove-tag" class="ui-state-disabled" tabindex="-1" onclick="Actions.removeTag();" href="#">
+    <li><a id="btn-remove-tag" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.removeTag();" href="#">
         Remove Tag
     </a></li>
-    <li><a id="btn-remove-all-tags" class="ui-state-disabled" tabindex="-1" onclick="Actions.removeAllTags();" href="#">
-        Remove all tags from selection
+    <li><a id="btn-remove-all-tags" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.removeAllTags();" href="#">
+        Remove all tags inside selection
     </a></li>
     <li class="divider"></li>
-    <li><a id="btn-copy" tabindex="-1" onclick="Actions.copy();" href="#">
+    <li><a id="btn-copy" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.copy();" href="#">
         Copy
     </a></li>
-    <li><a id="btn-paste" class="ui-state-disabled" tabindex="-1" onclick="Actions.paste();" href="#">
+    <li><a id="btn-paste" class="ui-state-disabled enabled-if-clipboard-content" tabindex="-1" onclick="Actions.paste();" href="#">
         Paste
     </a></li>
-    <li><a id="btn-insert-before" class="ui-state-disabled" tabindex="-1" onclick="Actions.insertBefore();" href="#">
+    <li><a id="btn-insert-before" class="ui-state-disabled enabled-if-clipboard-content" tabindex="-1" onclick="Actions.insertBefore();" href="#">
         Insert before
+    </a></li>
+        <li><a id="btn-correct" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.replaceSelection();" href="#">
+        Correct selected text
     </a></li>
 </ul>
 <!-- help window -->
@@ -271,7 +279,8 @@
                     <li>
                         Load a text to mark up. This can be done in several ways:
                         <ul>
-                            <li>Load a PDF with the "Load" button. Extract text and references using the "Identification" button.
+                            <li>Load a PDF with the "Load" button. Extract text and references using the
+                                "Identification" button.
                             </li>
                             <li>Load a previously processed file (.csv) to continue working on it.</li>
                             <li>Load a textfile (.txt) containing OCR data.
@@ -279,7 +288,8 @@
                         </ul>
                     </li>
                     <li>
-                        Mark up the text or correct the automatically produced markup by selecting the parts of the text that contains citation/reference data.
+                        Mark up the text or correct the automatically produced markup by selecting the parts of the text
+                        that contains citation/reference data.
                         After selecting text, a menu popup is shown with the available options. You can
                         <ul>
                             <li>Mark up the selected fragment</li>
@@ -294,19 +304,24 @@
                         Long-clicking or tapping on a marked up section of a text will select it.
                     </li>
                     <li>
-                        After you have finished identifying the references, save the document to the backend. You can also download
+                        After you have finished identifying the references, save the document to the backend. You can
+                        also download
                         it to your computer using the "Export" button.
                     </li>
                     <li>
-                        In a second step, you need to segment the references into its constituent parts (author, title, etc.).
+                        In a second step, you need to segment the references into its constituent parts (author, title,
+                        etc.).
                         For this, switch into segmentation mode by clicking on the "Segmentation" button.
                     </li>
                     <li>
-                        Let EXcite do an automatic segmentation by choosing the "Auto-Segmentation" option from the dropdown.
+                        Let EXcite do an automatic segmentation by choosing the "Auto-Segmentation" option from the
+                        dropdown.
                     </li>
                     <li>
-                       You can then correct the markup. When you are finished, click on "Save" or "Export" to save your changes
-                        to the training backend or to your computer. To work on each citation individually, click on the "To SegAnnno" button.
+                        You can then correct the markup. When you are finished, click on "Save" or "Export" to save your
+                        changes
+                        to the training backend or to your computer. To work on each citation individually, click on the
+                        "To SegAnnno" button.
                     </li>
                 </ol>
             </div>
