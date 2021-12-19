@@ -30,7 +30,8 @@ const REGEX = {
   SPAN: /<\/?span[^>]*>/ig,
   BR: /<br[^>]*>/ig,
   PUNCTUATION: /\p{P}/gu,
-  LAYOUT: /(\t[^\t]+){6}/
+  LAYOUT: /(\t[^\t]+){6}/g,
+  EMPTY_NODE: /<[^>]+><\/[^>]+>/g
 };
 
 class Actions {
@@ -796,16 +797,14 @@ class GUI {
   }
 
   static updateMarkedUpText() {
-    let markedUpText = $("#text-content").html().replace(/\n/g, "");
+    const regex = /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/g;
+    let markedUpText = $("#text-content").html()
+      .replace(REGEX.BR, "\n")
+      .replace(REGEX.EMPTY_NODE, "")
+      .replace(regex, "<$1>$2</$1>");
+
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT: {
-        let regex1 = /<span data-tag="oth"[^>]*>([^<]*)<\/span>/g;
-        let regex2 = /<span data-tag="ref"[^>]*>([^<]*)<\/span>/g;
-        markedUpText = markedUpText
-          .replace(/<\/?div[^>]*>/g, "")
-          .replace(regex1, "<oth>$1</oth>")
-          .replace(regex2, "<ref>$1</ref>")
-          .replace(regex2, "<ref>$1</ref>");
         if (markedUpText.includes("<ref>")) {
           $("#btn-run-segmentation").removeClass("ui-state-disabled");
           $("#refs-navigation").removeClass("hidden");
@@ -816,22 +815,14 @@ class GUI {
         break;
       }
       case DISPLAY_MODES.REFERENCES: {
-        let regex1 = /<span data-tag="other"[^<]*>([^<]*)<\/span>/g;
-        let regex2 = /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/g;
-        markedUpText = markedUpText
-          .replace(/<[^>]+><\/[^>]+>/g, "")
-          .replace(regex1, "<other>$1</other>")
-          .replace(regex2, "<$1>$2</$1>")
         markedUpText = this.addAuthorTag(markedUpText)
         break;
       }
     }
     // check if translation removed all <span> tags and abort if not
     if (markedUpText.match(REGEX.SPAN)) {
-      let errmsg = "Markup is invalid";
-      alert(errmsg);
-      console.log(markedUpText);
-      throw new Error(errmsg);
+      console.warn("Unhandedled <span> tags in html text!");
+      markedUpText = markedUpText.replace(REGEX.SPAN, "");
     }
 
     // update <pre> element
