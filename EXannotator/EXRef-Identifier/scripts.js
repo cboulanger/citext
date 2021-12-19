@@ -244,7 +244,11 @@ class Actions {
     for (let match of tmp.matchAll(/<ref>(.*?)<\/ref>/g)) {
       textLines.push(match[1]);
     }
-    return textLines.join("\n").replace(/<oth>.*<\/oth>/, "");
+    let text = textLines.join("\n");
+    while (text.match(/\n\n/)) {
+      text = text.replace(/\n\n/g, "\n");
+    }
+    return text;
   }
 
   static combineLayoutAndRefs(layoutDoc, refs) {
@@ -662,10 +666,11 @@ class GUI {
   }
 
   static setTextContent(text) {
-    text = text
-      .replace(/\r/g, "")
-      .replace(/\n\n/g, '\n')
-      .replace(/\n\n/g, '\n')
+    text = text.replace(/\r/g, "")
+
+    while (text.match(/\n\n/)) {
+      text = text.replace(/\n\n/g, "\n");
+    }
 
     let html = "";
     switch (displayMode) {
@@ -819,15 +824,15 @@ class GUI {
         break;
       }
     }
-    // check if translation removed all <span> tags and abort if not
+    // check if translation removed all <span> tags and warn if not
     if (markedUpText.match(REGEX.SPAN)) {
-      console.warn("Unhandedled <span> tags in html text!");
+      console.warn("Removing unhandedled <span> tags in html text!");
       markedUpText = markedUpText.replace(REGEX.SPAN, "");
     }
 
     // update <pre> element
     let html = markedUpText
-      .replace(/<br[^>]*>/g, "\n")
+      .replace(REGEX.BR, "\n")
       .replace(/</g, "&lt;")
     $("#markup-content").html(html);
 
@@ -927,7 +932,8 @@ class GUI {
       }
       markedUpText = t2.join("");
     }
-    return markedUpText.replace(/&amp;/g, "&")
+    return markedUpText
+      .replace(/&amp;/g, "&")
       .replace(/&gt;/g, ">")
       .replace(/&lt;/g, "<")
       .replace(/&quot;/g, '"')
