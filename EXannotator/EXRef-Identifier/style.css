@@ -97,7 +97,7 @@ nav {
 }
 
 .references-view {
-    background-color: #efe7aa !important;
+    background-color: #efefef !important;
 }
 
 .page-marker::before {
@@ -137,11 +137,15 @@ nav {
 /* tags eye-candy */
 [data-tag] {
     border: 1px grey dotted;
-    position: relative;;
+    position: relative;
+    border-radius: 3px;
+    padding-right: 2px;
+    padding-left: 2px;
+    margin: 2px;
 }
 
 [data-tag]:hover {
-    border-style: solid;
+    box-shadow: 0 0 5px rgba(33,33,33,.8);
 }
 
 .references-view > [data-tag]:before {
@@ -203,11 +207,11 @@ nav {
 
 /* ref segmentation */
 [data-tag="surname"] {
-    background-color: #ffce30;
+    background-color: #fabd11;
 }
 
 [data-tag="given-names"] {
-    background-color: #aabb30;
+    background-color: #fdea84;
 }
 
 [data-tag="year"] {
@@ -219,39 +223,39 @@ nav {
 }
 
 [data-tag="source"] {
-    background-color: #abe1fd;
+    background-color: #889cfd;
 }
 
 [data-tag="editor"] {
-    background-color: #fed88f;
+    background-color: #de9150;
 }
 
 [data-tag="volume"] {
-    background-color: #ffff66;
-}
-
-[data-tag="fpage"] {
-    background-color: #ccff66;
-}
-
-[data-tag="lpage"] {
-    background-color: #ffb3ff;
-}
-
-[data-tag="publisher"] {
-    background-color: #79d279;
+    background-color: #4ab74f;
 }
 
 [data-tag="issue"] {
-    background-color: #659bf2;
+    background-color: #138013;
+}
+
+[data-tag="fpage"] {
+    background-color: #b066ff;
+}
+
+[data-tag="lpage"] {
+    background-color: #fdc0fd;
+}
+
+[data-tag="publisher"] {
+    background-color: #b45c5c;
 }
 
 [data-tag="url"] {
-    background-color: #5befdb;
+    background-color: #2187f8;
 }
 
 [data-tag="identifier"] {
-    background-color: #d19bf7;
+    background-color: #8de1ea;
 }
 
 [data-tag="other"] {
@@ -260,16 +264,18 @@ nav {
 /** tag grid in context menu */
 .refs-button-grid {
     display: grid !important;
-    grid-template-rows: 1fr 1fr 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr 1fr 1fr;
     grid-template-columns: 1fr 1fr 1fr;
 }
 
 .refs-button-grid > li > a {
     text-align: center;
+    text-wrap: avoid;
+    color: black;
     display: block;
     font-size: small;
     text-decoration: none;
-padding: 2px;
+    padding: 2px;
 }
 
 /* todo: scrollbars aren't really working here */

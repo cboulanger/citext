@@ -75,15 +75,18 @@ class Actions {
         pdfFile = file;
         let objectURL = URL.createObjectURL(file);
         GUI.loadPdfFile(objectURL);
+        $(".enabled-if-document").removeClass("ui-state-disabled");
         return;
       case "xml":
       case "application/xml":
         GUI.setDisplayMode(DISPLAY_MODES.REFERENCES);
+        $(".enabled-if-document").addClass("ui-state-disabled");
         break;
       case "txt":
       case "text/plain":
       case "csv":
       case "text/csv":
+        $(".enabled-if-document").removeClass("ui-state-disabled");
         GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
         break;
       default:
@@ -177,7 +180,7 @@ class Actions {
     if (command === "segmentation") {
       let refs = GUI.getTextToExport(false).replace(REGEX.TAG, "");
       file = new Blob([refs], {type: "text/plain;charset=utf8"});
-      filename = textFileName;
+      filename = textFileName.split('.').slice(0, -1).join(".") + ".csv";
     } else if (pdfFile) {
       file = pdfFile;
       filename = pdfFileName;
@@ -496,6 +499,7 @@ class GUI {
         GUI.setDisplayMode(savedDisplayMode);
         if (text) {
           GUI.setTextContent(text);
+          $(".enabled-if-document").toggleClass("ui-state-disabled", textFileExt === "xml")
           return;
         }
       }
@@ -811,10 +815,8 @@ class GUI {
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT: {
         if (markedUpText.includes("<ref>")) {
-          $("#btn-run-segmentation").removeClass("ui-state-disabled");
           $("#refs-navigation").removeClass("hidden");
         } else {
-          $("#btn-run-segmentation").addClass("ui-state-disabled");
           $("#refs-navigation").addClass("hidden");
         }
         break;
@@ -1008,12 +1010,39 @@ class GUI {
       contextMenu.hide();
       return;
     }
+
+    // from https://stackoverflow.com/questions/18666601/use-bootstrap-3-dropdown-menu-as-context-menu
+    function getMenuPosition(mouse, direction, scrollDir) {
+      let win = $(window)[direction]();
+      let scroll = $(window)[scrollDir]();
+      let menu = $("#contextMenu");
+      let widthOrHeight = menu[direction]();
+      let position = mouse + scroll;
+      let children = menu.children('li');
+      let justReversed = false;
+      if (mouse + widthOrHeight > win && widthOrHeight < mouse) {
+        position -= widthOrHeight;
+        if (direction === "height") {
+          menu.append(children.get().reverse());
+          menu.__isReversed = true;
+          justReversed = true;
+        }
+      }
+      if (menu.__isReversed === true && !justReversed) {
+        menu.append(children.get().reverse());
+        menu.__isReversed = false;
+      }
+      return position;
+    }
     contextMenu
       .show()
       .css({
-        position: "absolute", left: e.pageX, top: e.pageY
+        position: "absolute",
+        left: getMenuPosition(e.clientX, 'width', 'scrollLeft'),
+        top: getMenuPosition(e.clientY, 'height', 'scrollTop')
       });
   }
+
 
   static _onPdfIframeLoaded() {
     setTimeout(() => {

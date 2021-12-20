@@ -35,11 +35,11 @@
                accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
         <!-- document view -->
         <div class="btn-group">
-            <button id="btn-identification" type="button" class="btn btn-primary"
+            <button id="btn-identification" type="button" class="btn btn-primary enabled-if-document"
                     onclick="Actions.setDisplayMode(DISPLAY_MODES.DOCUMENT)">
                 <i class="fas fa-search"></i><span class="button-label">Identification</span>
             </button>
-            <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle"
+            <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle enabled-if-document"
                     aria-haspopup="true" aria-expanded="false">
                 <span class="caret"></span>
             </button>
@@ -66,7 +66,7 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
-                <li><a id="btn-run-segmentation" class="dropdown-item hidden visible-if-backend ui-state-disabled"
+                <li><a id="btn-run-segmentation" class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.run_excite_command('segmentation');">
                     Auto-segmentation</a></li>
@@ -196,7 +196,7 @@
         </a></li>
         <li><a id="btn-given-names" class="visible-in-refs-mode enabled-if-selection" data-tag="given-names"
                tabindex="-1" onclick="Actions.addTag('given-names');" href="#">
-            Given-names
+            Given&#8209;names
         </a></li>
         <li><a id="btn-year" class="visible-in-refs-mode enabled-if-selection" data-tag="year"
                tabindex="-1" onclick="Actions.addTag('year');" href="#">
@@ -217,6 +217,14 @@
         <li><a id="btn-source" class="visible-in-refs-mode enabled-if-selection" data-tag="source"
                tabindex="-1" onclick="Actions.addTag('source');" href="#">
             Source
+        </a></li>
+        <li><a id="btn-volume" class="visible-in-refs-mode enabled-if-selection" data-tag="volume"
+               tabindex="-1" onclick="Actions.addTag('volume');" href="#">
+            Volume
+        </a></li>
+        <li><a id="btn-issue" class="visible-in-refs-mode enabled-if-selection" data-tag="issue"
+               tabindex="-1" onclick="Actions.addTag('issue');" href="#">
+            Issue
         </a></li>
         <li><a id="btn-fpage" class="visible-in-refs-mode enabled-if-selection" data-tag="fpage"
                tabindex="-1" onclick="Actions.addTag('fpage');" href="#">
