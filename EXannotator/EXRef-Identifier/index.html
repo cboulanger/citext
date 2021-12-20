@@ -249,23 +249,23 @@
     </div>
     <!-- visible in both modes -->
     <li><a id="btn-remove-tag" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.removeTag();" href="#">
-        Remove Tag
+        <i class="fas fa-trash"></i>Remove Tag
     </a></li>
     <li><a id="btn-remove-all-tags" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.removeAllTags();" href="#">
         Remove all tags inside selection
     </a></li>
     <li class="divider"></li>
     <li><a id="btn-copy" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.copy();" href="#">
-        Copy
+        <i class="fas fa-copy"></i>Copy
     </a></li>
     <li><a id="btn-paste" class="ui-state-disabled enabled-if-clipboard-content" tabindex="-1" onclick="Actions.paste();" href="#">
-        Paste
+        <i class="fas fa-paste"></i>Paste
     </a></li>
     <li><a id="btn-insert-before" class="ui-state-disabled enabled-if-clipboard-content" tabindex="-1" onclick="Actions.insertBefore();" href="#">
         Insert before
     </a></li>
         <li><a id="btn-correct" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.replaceSelection();" href="#">
-        Correct selected text
+        <i class="fas fa-strikethrough"></i>Correct selected text
     </a></li>
 </ul>
 <!-- help window -->
@@ -291,44 +291,28 @@
                                 "Identification" button.
                             </li>
                             <li>Load a previously processed file (.csv) to continue working on it.</li>
-                            <li>Load a textfile (.txt) containing OCR data.
-                            </li>
+                            <li>Load a textfile (.txt) containing OCR data. </li>
+                            <li>Load an XML file with segmented references.</li>
                         </ul>
                     </li>
                     <li>
                         Mark up the text or correct the automatically produced markup by selecting the parts of the text
                         that contains citation/reference data.
-                        After selecting text, a menu popup is shown with the available options. You can
-                        <ul>
-                            <li>Mark up the selected fragment</li>
-                            <li>Markup the whole line of all line that are selected</li>
-                            <li>
-                                Remove a section within a previously marked up area which contains non-reference data;
-                                typically these are headers and footers which are inserted into a reference that spans
-                                a page break.
-                            </li>
-                            <li>Remove markup</li>
-                        </ul>
+                        After selecting text, a menu popup is shown with the available options.
                         Long-clicking or tapping on a marked up section of a text will select it.
                     </li>
                     <li>
                         After you have finished identifying the references, save the document to the backend. You can
-                        also download
-                        it to your computer using the "Export" button.
+                        also download it to your computer using the "Export" button.
                     </li>
                     <li>
-                        In a second step, you need to segment the references into its constituent parts (author, title,
-                        etc.).
-                        For this, switch into segmentation mode by clicking on the "Segmentation" button.
-                    </li>
-                    <li>
-                        Let EXcite do an automatic segmentation by choosing the "Auto-Segmentation" option from the
-                        dropdown.
+                        You can automatically segment the references into its constituent parts (author, title,
+                        etc.). For this, switch into segmentation mode by clicking on the "Segmentation" button
+                        and then the "Auto-Segmentation" option from the dropdown.
                     </li>
                     <li>
                         You can then correct the markup. When you are finished, click on "Save" or "Export" to save your
-                        changes
-                        to the training backend or to your computer. To work on each citation individually, click on the
+                        changes to the training backend or to your computer. To work on each citation individually, click on the
                         "To SegAnnno" button.
                     </li>
                 </ol>

@@ -1018,22 +1018,25 @@ class GUI {
       let menu = $("#contextMenu");
       let widthOrHeight = menu[direction]();
       let position = mouse + scroll;
-      let children = menu.children('li');
-      let justReversed = false;
+      let children = menu.children();
+      let menuOnBottom = false;
       if (mouse + widthOrHeight > win && widthOrHeight < mouse) {
         position -= widthOrHeight;
         if (direction === "height") {
-          menu.append(children.get().reverse());
-          menu.__isReversed = true;
-          justReversed = true;
+          menuOnBottom = true;
+          if (!GUI.__menuIsReversed) {
+            menu.append(children.get().reverse());
+            GUI.__menuIsReversed = true;
+          }
         }
       }
-      if (menu.__isReversed === true && !justReversed) {
+      if (GUI.__menuIsReversed === true && !menuOnBottom) {
         menu.append(children.get().reverse());
-        menu.__isReversed = false;
+        GUI.__menuIsReversed = false;
       }
       return position;
     }
+
     contextMenu
       .show()
       .css({
