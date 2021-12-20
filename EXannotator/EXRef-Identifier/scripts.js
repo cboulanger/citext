@@ -470,40 +470,12 @@ class GUI {
     this.__pdfJsApplication = null;
     this.__fs = null;
 
-    // on page load
-    $(document).ready(this._onDocumentReady);
-
-    // load from local storage
     $(document).ready(() => {
-      // get text from local storage
-      let savedDisplayMode = localStorage.getItem(LOCAL_STORAGE.DISPLAY_MODE);
-      let savedTextFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME);
-      if (savedTextFileName) {
-        textFileName = savedTextFileName;
-        textFileExt = textFileName.split(".").pop();
+      this._setupEventListeners();
+      GUI.toggleMarkedUpView(false);
+      if (!this._loadTextFromLocalStorage()) {
+        $("#modal-help").show();
       }
-      if (savedDisplayMode) {
-        let text;
-        switch (savedDisplayMode) {
-          case DISPLAY_MODES.DOCUMENT:
-            text = localStorage.getItem(LOCAL_STORAGE.DOCUMENT);
-            break;
-          case DISPLAY_MODES.REFERENCES:
-            text = localStorage.getItem(LOCAL_STORAGE.REFERENCES);
-            break;
-          default:
-            savedDisplayMode = DISPLAY_MODES.DOCUMENT;
-            text = "";
-            break;
-        }
-        GUI.setDisplayMode(savedDisplayMode);
-        if (text) {
-          GUI.setTextContent(text);
-          $(".enabled-if-document").toggleClass("ui-state-disabled", textFileExt === "xml")
-          return;
-        }
-      }
-      $("#modal-help").show();
     });
 
     // save text before leaving the page
@@ -519,19 +491,25 @@ class GUI {
       });
   }
 
-  static _onDocumentReady() {
-
+  static _setupEventListeners() {
     // show popup on select
     const contextMenu = $("#contextMenu");
-    const contentLabel = $("#text-content");
-    contentLabel.on("pointerup", GUI._showPopupOnSelect);
+    const textContent = $("#text-content");
+    textContent.on("pointerup", GUI._showPopupOnSelect);
     contextMenu.on("pointerup", () => setTimeout(() => {
       contextMenu.hide();
       window.getSelection().removeAllRanges();
     }, 100));
 
+    // prevent context menu
+    textContent.on("contextmenu", e => {
+      e.preventDefault();
+      e.stopPropagation();
+      return false;
+    });
+
     // remove whitespace from selection after double-click
-    contentLabel.on("dblclick", e => {
+    textContent.on("dblclick", e => {
       // trim leading or trailing spaces
       let sel = window.getSelection();
       let text = sel.toString();
@@ -550,7 +528,7 @@ class GUI {
 
     // long-pressing selects span
     let longpress = false;
-    contentLabel.on('click', e => {
+    textContent.on('click', e => {
       if (!longpress) return;
       let sel = window.getSelection();
       if (sel.toString().length) return; // so that <oth> element can be inserted into selection
@@ -575,7 +553,7 @@ class GUI {
     });
 
     // synchronize scroll positions
-    contentLabel.on('scroll', e => {
+    textContent.on('scroll', e => {
       $('#markup-content-container').scrollTop(e.currentTarget.scrollTop);
     });
 
@@ -592,11 +570,39 @@ class GUI {
     // disable checkbox state caching
     $(":checkbox").attr("autocomplete", "off");
 
-    // hide optional views
-    GUI.toggleMarkedUpView(false);
-
     // tooltips
     //$('[data-toggle="tooltip"]').tooltip();
+  }
+
+  static _loadTextFromLocalStorage() {
+    let savedDisplayMode = localStorage.getItem(LOCAL_STORAGE.DISPLAY_MODE);
+    let savedTextFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME);
+    if (savedTextFileName) {
+      textFileName = savedTextFileName;
+      textFileExt = textFileName.split(".").pop();
+    }
+    if (savedDisplayMode) {
+      let text;
+      switch (savedDisplayMode) {
+        case DISPLAY_MODES.DOCUMENT:
+          text = localStorage.getItem(LOCAL_STORAGE.DOCUMENT);
+          break;
+        case DISPLAY_MODES.REFERENCES:
+          text = localStorage.getItem(LOCAL_STORAGE.REFERENCES);
+          break;
+        default:
+          savedDisplayMode = DISPLAY_MODES.DOCUMENT;
+          text = "";
+          break;
+      }
+      GUI.setDisplayMode(savedDisplayMode);
+      if (text) {
+        GUI.setTextContent(text);
+        $(".enabled-if-document").toggleClass("ui-state-disabled", textFileExt === "xml")
+        return true;
+      }
+    }
+    return false;
   }
 
   static showSpinner(text) {
@@ -810,19 +816,18 @@ class GUI {
     let markedUpText = $("#text-content").html()
       .replace(REGEX.BR, "\n")
       .replace(REGEX.EMPTY_NODE, "")
+      .replace(/^\n/g, "")
       .replace(regex, "<$1>$2</$1>");
 
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT: {
-        if (markedUpText.includes("<ref>")) {
-          $("#refs-navigation").removeClass("hidden");
-        } else {
-          $("#refs-navigation").addClass("hidden");
-        }
+        $("#refs-navigation").toggleClass("hidden", !markedUpText.includes("<ref>"));
+        $(".enabled-if-refs").toggleClass("ui-state-disabled",!(markedUpText.match(REGEX.TAG)));
         break;
       }
       case DISPLAY_MODES.REFERENCES: {
-        markedUpText = this.addAuthorTag(markedUpText)
+        markedUpText = this.addAuthorTag(markedUpText);
+        $(".enabled-if-refs").removeClass("ui-state-disabled");
         break;
       }
     }
@@ -834,14 +839,8 @@ class GUI {
 
     // update <pre> element
     let html = markedUpText
-      .replace(REGEX.BR, "\n")
       .replace(/</g, "&lt;")
     $("#markup-content").html(html);
-
-    // update other parts of the UI
-    $(".enabled-if-refs").toggleClass("ui-state-disabled",
-      !(markedUpText.match(REGEX.TAG))
-    );
     return markedUpText;
   }
 

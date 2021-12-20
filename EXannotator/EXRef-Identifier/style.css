@@ -164,7 +164,7 @@ nav {
     /* styling */
     /*width: 70px;*/
     padding: 3px;
-    /*border-radius:10px;*/
+    border-radius:3px;
     font-size: x-small;
     font-family: Arial, Helvetica, sans-serif;
     background: #fff;
@@ -221,7 +221,7 @@ nav {
 }
 
 [data-tag="year"] {
-    background-color: #bfb1d5;
+    background-color: #7b48ea;
 }
 
 [data-tag="title"] {
@@ -245,15 +245,15 @@ nav {
 }
 
 [data-tag="fpage"] {
-    background-color: #b066ff;
+    background-color: #ef3349;
 }
 
 [data-tag="lpage"] {
-    background-color: #fdc0fd;
+    background-color: #ee59ba;
 }
 
 [data-tag="publisher"] {
-    background-color: #b45c5c;
+    background-color: #efcd05;
 }
 
 [data-tag="url"] {
