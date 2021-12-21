@@ -380,7 +380,7 @@ class Actions {
     let defaultText = window.getSelection().toString();
     if (!defaultText) return;
     let replacementText = prompt("Please enter text to replace the selected text with:", defaultText);
-    if (!replacementText===null) return;
+    if (!replacementText === null) return;
     GUI.replaceSelection(replacementText);
     GUI.updateMarkedUpText();
   }
@@ -393,7 +393,7 @@ class Actions {
     GUI.replaceSelection(clipboard);
   }
 
-  static insertBefore(text="") {
+  static insertBefore(text = "") {
     text = (text || clipboard) + window.getSelection().toString();
     GUI.replaceSelection(text);
   }
@@ -818,16 +818,16 @@ class GUI {
     const regex = /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/gm;
     let markedUpText = $("#text-content").html()
       .replace(REGEX.DIV, "")
-      .replace(REGEX.EMPTY_NODE, "")
       .replace(REGEX.BR, "\n")
-      .replace(/\n\n/g,"\n")
+      .replace(/\n\n/g, "\n")
       .replace(/^\n/g, "")
-      .replace(regex, "<$1>$2</$1>");
+      .replace(regex, "<$1>$2</$1>")
+      .replace(REGEX.EMPTY_NODE, "");
 
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT: {
         $("#refs-navigation").toggleClass("hidden", !markedUpText.includes("<ref>"));
-        $(".enabled-if-refs").toggleClass("ui-state-disabled",!(markedUpText.match(REGEX.TAG)));
+        $(".enabled-if-refs").toggleClass("ui-state-disabled", !(markedUpText.match(REGEX.TAG)));
         break;
       }
       case DISPLAY_MODES.REFERENCES: {
