@@ -382,6 +382,7 @@ class Actions {
     let replacementText = prompt("Please enter text to replace the selected text with:", defaultText);
     if (!replacementText===null) return;
     GUI.replaceSelection(replacementText);
+    GUI.updateMarkedUpText();
   }
 
   static copy() {
