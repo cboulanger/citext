@@ -30,16 +30,24 @@ try:
         raise RuntimeError("No filename")
 
     if command == "layout":
+        # remove .gitkeep because cermine cannot deal with it
+        gitkeep_file = pdf_dir + ".gitkeep"
+        try:
+            os.remove(gitkeep_file)
+        except:
+            pass
         try:
             source = tempfile.gettempdir() + "/" + filename + ".pdf"
             target = pdf_dir + filename + ".pdf"
             shutil.move(source, target)
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
+        finally:
+            # restore .gitkeep file
+            open(gitkeep_file, 'a').close()
 
         cleanup.append(pdf_dir + filename + ".pdf")
         result_path = layout_dir + filename + ".csv"
-        cleanup.append(result_path)
 
     elif command == "exparser":
         result_path = refs_dir + filename + ".csv"
@@ -57,7 +65,7 @@ try:
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
         result_path = refs_seg_dir + filename + ".xml"
-        #cleanup.append(result_path)
+        cleanup.append(result_path)
         cleanup.append(refs_dict_dir + filename + ".csv")
         cleanup.append(refs_prob_dir + filename + ".csv")
         cleanup.append(refs_bibtex_dir + filename + ".csv")

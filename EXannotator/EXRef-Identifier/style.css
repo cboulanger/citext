@@ -151,6 +151,11 @@ nav {
 }
 
 [data-tag]:hover {
+    border-style: solid;
+}
+
+.references-view > [data-tag]:hover,
+#refs-button-grid > [data-tag]:hover {
     box-shadow: 0 0 5px rgba(33,33,33,.8);
 }
 
@@ -221,7 +226,7 @@ nav {
 }
 
 [data-tag="year"] {
-    background-color: #7b48ea;
+    background-color: #9a74ea;
 }
 
 [data-tag="title"] {

@@ -28,6 +28,7 @@ const DISPLAY_MODES = {
 const REGEX = {
   TAG: /<\/?[^>]+>/g,
   SPAN: /<\/?span[^>]*>/ig,
+  DIV: /<\/?div[^>]*>/ig,
   BR: /<br[^>]*>/ig,
   PUNCTUATION: /\p{P}/gu,
   LAYOUT: /(\t[^\t]+){6}/g,
@@ -178,7 +179,7 @@ class Actions {
     let file;
     let filename;
     if (command === "segmentation") {
-      let refs = GUI.getTextToExport(false).replace(REGEX.TAG, "");
+      let refs = GUI.getTextToExport().replace(REGEX.TAG, "");
       file = new Blob([refs], {type: "text/plain;charset=utf8"});
       filename = textFileName.split('.').slice(0, -1).join(".") + ".csv";
     } else if (pdfFile) {
@@ -391,8 +392,9 @@ class Actions {
     GUI.replaceSelection(clipboard);
   }
 
-  static insertBefore() {
-    GUI.replaceSelection(clipboard + window.getSelection().toString());
+  static insertBefore(text="") {
+    text = (text || clipboard) + window.getSelection().toString();
+    GUI.replaceSelection(text);
   }
 
   static undo() {
@@ -812,10 +814,12 @@ class GUI {
   }
 
   static updateMarkedUpText() {
-    const regex = /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/g;
+    const regex = /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/gm;
     let markedUpText = $("#text-content").html()
-      .replace(REGEX.BR, "\n")
+      .replace(REGEX.DIV, "")
       .replace(REGEX.EMPTY_NODE, "")
+      .replace(REGEX.BR, "\n")
+      .replace(/\n\n/g,"\n")
       .replace(/^\n/g, "")
       .replace(regex, "<$1>$2</$1>");
 

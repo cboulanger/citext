@@ -66,7 +66,8 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
-                <li><a id="btn-run-segmentation" class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
+                <li><a id="btn-run-segmentation"
+                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.run_excite_command('segmentation');">
                     Auto-segmentation</a></li>
@@ -246,25 +247,35 @@
                tabindex="-1" onclick="Actions.addTag('other');" href="#">
             Ignore
         </a></li>
+        <li><a id="btn-insert-linebreak" class="visible-in-refs-mode enabled-if-selection"
+               tabindex="-1" onclick="Actions.insertBefore('\n');" href="#">
+            Linebreak
+        </a></li>
     </div>
     <!-- visible in both modes -->
-    <li><a id="btn-remove-tag" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.removeTag();" href="#">
+    <li><a id="btn-remove-tag" class="ui-state-disabled enabled-if-selection" tabindex="-1"
+           onclick="Actions.removeTag();" href="#">
         <i class="fas fa-trash"></i>Remove Tag
     </a></li>
-    <li><a id="btn-remove-all-tags" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.removeAllTags();" href="#">
+    <li><a id="btn-remove-all-tags" class="ui-state-disabled enabled-if-selection" tabindex="-1"
+           onclick="Actions.removeAllTags();" href="#">
         Remove all tags inside selection
     </a></li>
     <li class="divider"></li>
-    <li><a id="btn-copy" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.copy();" href="#">
+    <li><a id="btn-copy" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.copy();"
+           href="#">
         <i class="fas fa-copy"></i>Copy
     </a></li>
-    <li><a id="btn-paste" class="ui-state-disabled enabled-if-clipboard-content" tabindex="-1" onclick="Actions.paste();" href="#">
+    <li><a id="btn-paste" class="ui-state-disabled enabled-if-clipboard-content" tabindex="-1"
+           onclick="Actions.paste();" href="#">
         <i class="fas fa-paste"></i>Paste
     </a></li>
-    <li><a id="btn-insert-before" class="ui-state-disabled enabled-if-clipboard-content" tabindex="-1" onclick="Actions.insertBefore();" href="#">
+    <li><a id="btn-insert-before" class="ui-state-disabled enabled-if-clipboard-content" tabindex="-1"
+           onclick="Actions.insertBefore();" href="#">
         Insert before
     </a></li>
-        <li><a id="btn-correct" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.replaceSelection();" href="#">
+    <li><a id="btn-correct" class="ui-state-disabled enabled-if-selection" tabindex="-1"
+           onclick="Actions.replaceSelection();" href="#">
         <i class="fas fa-strikethrough"></i>Correct selected text
     </a></li>
 </ul>
@@ -291,7 +302,7 @@
                                 "Identification" button.
                             </li>
                             <li>Load a previously processed file (.csv) to continue working on it.</li>
-                            <li>Load a textfile (.txt) containing OCR data. </li>
+                            <li>Load a textfile (.txt) containing OCR data.</li>
                             <li>Load an XML file with segmented references.</li>
                         </ul>
                     </li>
@@ -312,7 +323,8 @@
                     </li>
                     <li>
                         You can then correct the markup. When you are finished, click on "Save" or "Export" to save your
-                        changes to the training backend or to your computer. To work on each citation individually, click on the
+                        changes to the training backend or to your computer. To work on each citation individually,
+                        click on the
                         "To SegAnnno" button.
                     </li>
                 </ol>
