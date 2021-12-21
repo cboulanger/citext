@@ -42,7 +42,11 @@ nav {
     margin-left: 5px;
 }
 
-#contextMenu > li > a > i {
+#context-menu > li, #context-menu > div > li {
+    user-select: none;
+}
+
+#context-menu > li > a > i {
     position: absolute;
     left: 5px;
     padding-top: 2px;

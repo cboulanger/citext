@@ -73,11 +73,6 @@
                     Auto-segmentation</a></li>
             </ul>
         </div>
-        <!-- go to seganno -->
-        <button id="btn-seganno" class="btn btn-primary ui-state-disabled enabled-if-refs" type="button"
-                onclick="Actions.open_in_seganno();">
-            <i class="fas fa-upload"></i><span class="button-label">To SegAnno</span>
-        </button>
         <!-- save -->
         <button id="btn-save" class="btn btn-primary enabled-if-refs ui-state-disabled hidden visible-if-backend"
                 type="button"
@@ -175,7 +170,7 @@
 <!-- spinner -->
 <div class="loader loader-default" id="spinner"></div>
 <!-- context menu -->
-<ul id="contextMenu" class="dropdown-menu" role="menu">
+<ul id="context-menu" class="dropdown-menu" role="menu">
     <!-- document mode -->
     <li><a id="btn-ref-part" class="visible-in-document-mode enabled-if-selection"
            tabindex="-1" onclick="Actions.addTag('ref');" href="#">
@@ -323,9 +318,7 @@
                     </li>
                     <li>
                         You can then correct the markup. When you are finished, click on "Save" or "Export" to save your
-                        changes to the training backend or to your computer. To work on each citation individually,
-                        click on the
-                        "To SegAnnno" button.
+                        changes to the training backend or to your computer.
                     </li>
                 </ol>
             </div>

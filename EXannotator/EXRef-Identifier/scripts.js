@@ -376,7 +376,7 @@ class Actions {
   }
 
   static replaceSelection() {
-    $("contextMenu").hide();
+    $("context-menu").hide();
     let defaultText = window.getSelection().toString();
     if (!defaultText) return;
     let replacementText = prompt("Please enter text to replace the selected text with:", defaultText);
@@ -496,7 +496,7 @@ class GUI {
 
   static _setupEventListeners() {
     // show popup on select
-    const contextMenu = $("#contextMenu");
+    const contextMenu = $("#context-menu");
     const textContent = $("#text-content");
     textContent.on("pointerup", GUI._showPopupOnSelect);
     contextMenu.on("pointerup", () => setTimeout(() => {
@@ -511,19 +511,29 @@ class GUI {
       return false;
     });
 
+    // prevent drag & drop
+    $('body').on('dragstart drop', function (e) {
+      e.preventDefault();
+      return false;
+    });
+
     // remove whitespace from selection after double-click
     textContent.on("dblclick", e => {
       // trim leading or trailing spaces
       let sel = window.getSelection();
       let text = sel.toString();
       let range = sel.getRangeAt(0);
+      let endContainer = range.endContainer;
+      if (!text.includes(endContainer.textContent)) {
+        endContainer = sel.anchorNode;
+      }
       let startOffset = text.length - text.trimStart().length;
       let endOffset = text.length - text.trimEnd().length;
       if (startOffset) {
         range.setStart(range.startContainer, range.startOffset + startOffset);
       }
       if (endOffset) {
-        range.setEnd(range.endContainer, range.endOffset - endOffset);
+        range.setEnd(endContainer, Math.max(range.endOffset - endOffset, 0));
       }
       sel.removeAllRanges();
       sel.addRange(range);
@@ -994,7 +1004,7 @@ class GUI {
   }
 
   static _showPopupOnSelect(e) {
-    const contextMenu = $("#contextMenu");
+    const contextMenu = $("#context-menu");
     const contentLabel = $("#text-content");
     let sel = window.getSelection();
     let node = sel.focusNode;
@@ -1019,7 +1029,7 @@ class GUI {
     function getMenuPosition(mouse, direction, scrollDir) {
       let win = $(window)[direction]();
       let scroll = $(window)[scrollDir]();
-      let menu = $("#contextMenu");
+      let menu = $("#context-menu");
       let widthOrHeight = menu[direction]();
       let position = mouse + scroll;
       let children = menu.children();
