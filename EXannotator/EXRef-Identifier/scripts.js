@@ -380,7 +380,7 @@ class Actions {
     let defaultText = window.getSelection().toString();
     if (!defaultText) return;
     let replacementText = prompt("Please enter text to replace the selected text with:", defaultText);
-    if (!replacementText) return;
+    if (!replacementText===null) return;
     GUI.replaceSelection(replacementText);
   }
 
@@ -438,7 +438,7 @@ class Actions {
   }
 
   static open_in_seganno() {
-    this.saveToLocalStorage();
+    this.save();
     window.location.href = "../EXRef-Segmentation/index.html";
   }
 }
@@ -1103,6 +1103,7 @@ class GUI {
     if (sel.rangeCount) {
       let range = sel.getRangeAt(0);
       range.deleteContents();
+      if (!replacementText) return;
       let textNodes = replacementText.split("\n");
       for (let i = textNodes.length - 1, br = false; i >= 0; i--) {
         if (br) {

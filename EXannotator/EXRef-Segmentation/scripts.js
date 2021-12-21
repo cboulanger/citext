@@ -10,25 +10,15 @@ const LOCAL_STORAGE = {
   TEXT_FILE_NAME: "excite_text_file_name",
   LAST_FILE_NAME: "excite_last_file_name"
 }
-
-const colorMap = {
-  "other": "#f4858e",
-  //"author":     "#ff9681",
-  "surname": "#ffce30",
-  "given-names": "#aabb30",
-  "year": "#bfb1d5",
-  "title": "#adddcf",
-  "source": "#abe1fd",
-  "editor": "#fed88f",
-  "volume": "#ffff66",
-  "fpage": "#ccff66",
-  "lpage": "#ffb3ff",
-  "publisher": "#79d279",
-  "issue": "#659bf2",
-  "url": "#5befdb",
-  "identifier": "#d19bf7"
-}
-
+const REGEX = {
+  TAG: /<\/?[^>]+>/g,
+  SPAN: /<\/?span[^>]*>/ig,
+  DIV: /<\/?div[^>]*>/ig,
+  BR: /<br[^>]*>/ig,
+  PUNCTUATION: /\p{P}/gu,
+  LAYOUT: /(\t[^\t]+){6}/g,
+  EMPTY_NODE: /<[^>]+><\/[^>]+>/g
+};
 
 function emptyParameters() {
   textLines = [];
@@ -369,34 +359,35 @@ function addTag(sender) {
     tag_name = sender.replace("btn", "");
   }
   let sel = window.getSelection();
-  // trim whitespace from selection, not working
-  //let range = sel.getRangeAt(0);
-  //sel.removeAllRanges();
-  //set.addRange(fix_selection(range));
+  let text = sel.toString();
+  if (text.trim() === "") return;
+  // prevent nesting of tag inside other tag
   let node = sel.focusNode;
-  // prevent tag nesting except if <other> tag is part of any other tag except <other>
   do {
-    if (node.getAttribute) {
-      let tag = node.getAttribute("data-tag");
-      if (tag && !(tag_name === "other" && tag !== "other")) {
+    if (node && node.dataset) {
+      let tag = node.dataset.tag;
+      if (tag) {
+        // replace node tag
+        node.dataset.tag = tag_name;
+        updateMarkedUpText();
         return;
       }
     }
     node = node.parentNode;
   } while (node)
+  // wrap selection in new span
   let parentNode = document.createElement("span");
   parentNode.setAttribute("data-tag", tag_name);
-  parentNode.style.backgroundColor = colorMap[tag_name];
   sel.getRangeAt(0).surroundContents(parentNode);
+  // remove all <span>s from selected text
+  $(parentNode).html($(parentNode).html().replace(REGEX.SPAN, ""));
   updateMarkedUpText();
 }
 
 function updateMarkedUpText() {
   let coloredText = document.getElementById("lblColoredText").innerHTML;
-  let regex1 = /<span data-tag="oth".*?>(.+?)<\/span>/g;
   let regex2 = /<span data-tag="([^"]+)".*?>(.+?)<\/span>/g;
   let xmlText = coloredText
-    .replace(regex1, "<other>$1</other>")
     .replace(regex2, "<$1>$2</$1>")
   xmlText = addAuthorTag(xmlText);
   document.getElementById("txaxml").value = xmlText;
@@ -406,9 +397,18 @@ function updateHtmlText() {
   let tmp = document.getElementById("txaxml").value
     .replace(/<author>/g, "")
     .replace(/<\/author>/g, "");
-  for (let [tag_name, colorCode] of Object.entries(colorMap)) {
+  // translate tag names to data-tag attributes
+  let tag_names = [];
+  let tag_name;
+  for (let match of tmp.matchAll(/<([a-z_\-]+)>/g)) {
+    tag_name = match[1];
+    if (!tag_names.includes(tag_name)) {
+      tag_names.push(tag_name);
+    }
+  }
+  for (tag_name of tag_names) {
     let regex = new RegExp(`<${tag_name}>(.*?)</${tag_name}>`, 'g');
-    let replacement = `<span data-tag="${tag_name}" style="background-color:${colorCode}">$1</span>`;
+    let replacement = `<span data-tag="${tag_name}">$1</span>`;
     tmp = tmp.replace(regex, replacement);
   }
   document.getElementById("lblColoredText").innerHTML = tmp;
@@ -497,26 +497,26 @@ function removeAllTags() {
 
 // from https://stackoverflow.com/a/62125595
 function fix_selection(range) {
-    var selection = window.getSelection();
-    var selected = range.toString();
-    range = selection.getRangeAt(0);
-    let start = selection.anchorOffset;
-    let end = selection.focusOffset;
-    if (!selection.isCollapsed) {
-        if (/\s+$/.test(selected)) { // Removes leading spaces
-            if (start > end) {
-                range.setEnd(selection.focusNode, --start);
-            } else {
-                range.setEnd(selection.anchorNode, --end);
-            }
-        }
-        if (/^\s+/.test(selected)) { // Removes trailing spaces
-            if (start > end) {
-                range.setStart(selection.anchorNode, ++end);
-            } else {
-                range.setStart(selection.focusNode, ++start);
-            }
-        }
+  var selection = window.getSelection();
+  var selected = range.toString();
+  range = selection.getRangeAt(0);
+  let start = selection.anchorOffset;
+  let end = selection.focusOffset;
+  if (!selection.isCollapsed) {
+    if (/\s+$/.test(selected)) { // Removes leading spaces
+      if (start > end) {
+        range.setEnd(selection.focusNode, --start);
+      } else {
+        range.setEnd(selection.anchorNode, --end);
+      }
     }
-    return range
+    if (/^\s+/.test(selected)) { // Removes trailing spaces
+      if (start > end) {
+        range.setStart(selection.anchorNode, ++end);
+      } else {
+        range.setStart(selection.focusNode, ++start);
+      }
+    }
+  }
+  return range
 }

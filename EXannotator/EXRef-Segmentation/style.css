@@ -13,6 +13,103 @@ body
 .headerDivider {
      height: 80px;
 }
+
+/* tags eye-candy */
+[data-tag] {
+    border: 1px grey dotted;
+    position: relative;
+    border-radius: 3px;
+    padding-right: 2px;
+    padding-left: 2px;
+    margin: 2px;
+}
+
+[data-tag="surname"] {
+    background-color: #fabd11;
+}
+
+[data-tag="given-names"] {
+    background-color: #fdea84;
+}
+
+[data-tag="year"] {
+    background-color: #9a74ea;
+}
+
+[data-tag="title"] {
+    background-color: #adddcf;
+}
+
+[data-tag="source"] {
+    background-color: #889cfd;
+}
+
+[data-tag="editor"] {
+    background-color: #de9150;
+}
+
+[data-tag="volume"] {
+    background-color: #4ab74f;
+}
+
+[data-tag="issue"] {
+    background-color: #138013;
+}
+
+[data-tag="fpage"] {
+    background-color: #ef3349;
+}
+
+[data-tag="lpage"] {
+    background-color: #ee59ba;
+}
+
+[data-tag="publisher"] {
+    background-color: #efcd05;
+}
+
+[data-tag="url"] {
+    background-color: #2187f8;
+}
+
+[data-tag="identifier"] {
+    background-color: #8de1ea;
+}
+
+[data-tag="other"] {
+    background-color: rgb(162, 165, 165);
+}
+
+#lblColoredText {
+    padding: 20px
+}
+
+#lblColoredText > [data-tag]:before {
+    content: attr(data-tag);
+    position: absolute;
+    left: 0;
+    /* move to top */
+    bottom: 100%;
+    margin-bottom: 2px;
+    /* styling */
+    /*width: 70px;*/
+    padding: 2px;
+    border-radius:3px;
+    font-size: x-small;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #fff;
+    color: #000;
+    text-align: center;
+    display: none;
+    z-index: 99999;
+}
+
+#lblColoredText > [data-tag]:hover:before {
+    display: block;
+}
+
+
+
 /* this block is for the alternative radiobutton design*/
 .radioButtons{
 	-webkit-appearance: none;
