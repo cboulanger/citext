@@ -515,7 +515,6 @@ class GUI {
       let lastLoadUrl = localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL);
       let downloadUrl = hash.startsWith("#load=") && hash.substr(6).trim();
       let textInLocalStorage = this._hasTextInLocalStorage();
-      console.log({lastLoadUrl, downloadUrl, textInLocalStorage})
       if (textInLocalStorage && !(downloadUrl !== lastLoadUrl)) {
         console.log("Loading document from local storage.");
         this._loadTextFromLocalStorage();
