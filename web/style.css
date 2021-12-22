@@ -340,6 +340,8 @@ nav {
 
 .view-text-label {
     grid-area: view-text-label;
+    max-height: 30px;
+    overflow: hidden;
 }
 
 .view-text-buttons {
@@ -364,7 +366,7 @@ nav {
 
 .view-pdf-label {
     grid-area: view-pdf-label;
-    height: 30px;
+    max-height: 30px;
     overflow: hidden;
 }
 

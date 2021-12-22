@@ -18,7 +18,8 @@ const LOCAL_STORAGE = {
   REFERENCES: "excite_references",
   TEXT_FILE_NAME: "excite_text_file_name",
   PDF_IFRAME_SRC: "excite_pdf_iframe_source",
-  DISPLAY_MODE: "excite_display_mode"
+  DISPLAY_MODE: "excite_display_mode",
+  LAST_LOAD_URL: "excite_last_load_url"
 }
 const DISPLAY_MODES = {
   DOCUMENT: "document",
@@ -58,6 +59,7 @@ class Actions {
   static async loadFromUrl(url) {
     url = url || prompt("Please enter a URL from which to load the file:");
     if (url === null) return;
+    localStorage.setItem(LOCAL_STORAGE.LAST_LOAD_URL, url);
     let res = await fetch(`/cgi-bin/load-from-url.py?url=${url}`)
     let blob = await res.blob();
     let filename = url.split("/").pop();
@@ -513,6 +515,11 @@ class GUI {
           return;
         }
       }
+      let lastLoadUrl = localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL);
+      if (lastLoadUrl) {
+        Actions.loadFromUrl(lastLoadUrl);
+        return;
+      }
       if (!this._loadTextFromLocalStorage()) {
         $("#modal-help").show();
       }
@@ -697,6 +704,7 @@ class GUI {
     pdfFileName = "";
     $(".enabled-if-pdf").addClass("ui-state-disabled");
     $(".visible-if-pdf").addClass("hidden");
+    localStorage.removeItem(LOCAL_STORAGE.LAST_LOAD_URL);
     GUI.showPdfView(false);
   }
 
