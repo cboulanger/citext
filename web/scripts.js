@@ -513,18 +513,21 @@ class GUI {
       GUI.toggleMarkedUpView(false);
       let hash = (new URL(document.URL)).hash;
       let lastLoadUrl = localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL);
-      if (this._loadTextFromLocalStorage()) {
+      let downloadUrl = hash.startsWith("#load=") && hash.substr(6).trim();
+      let textInLocalStorage = this._hasTextInLocalStorage();
+      console.log({lastLoadUrl, downloadUrl, textInLocalStorage})
+      if (textInLocalStorage && !(downloadUrl !== lastLoadUrl)) {
+        console.log("Loading document from local storage.");
+        this._loadTextFromLocalStorage();
         return;
-      } else if (lastLoadUrl) {
+      } else if (lastLoadUrl && (!downloadUrl || downloadUrl === lastLoadUrl)) {
+        console.log("Loading document from stored URL: " + lastLoadUrl)
         Actions.loadFromUrl(lastLoadUrl);
         return;
-      } else if (hash.startsWith("#load=")) {
-        let downloadUrl = hash.substr(6).trim();
-        if (downloadUrl) {
-          console.log("Loading document from " + downloadUrl)
-          Actions.loadFromUrl(downloadUrl);
-          return;
-        }
+      } else if  (downloadUrl) {
+        console.log("Loading document from URL hash: " + downloadUrl)
+        Actions.loadFromUrl(downloadUrl);
+        return;
       }
       $("#modal-help").show();
     });
@@ -635,6 +638,12 @@ class GUI {
     //$('[data-toggle="tooltip"]').tooltip();
   }
 
+  static _hasTextInLocalStorage() {
+    return Boolean(localStorage.getItem(LOCAL_STORAGE.DISPLAY_MODE)) &&
+      (Boolean(localStorage.getItem(LOCAL_STORAGE.DOCUMENT)) ||
+        Boolean(localStorage.getItem(LOCAL_STORAGE.REFERENCES)));
+  }
+
   static _loadTextFromLocalStorage() {
     let savedDisplayMode = localStorage.getItem(LOCAL_STORAGE.DISPLAY_MODE);
     let savedTextFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME);
@@ -689,6 +698,7 @@ class GUI {
     localStorage.removeItem(LOCAL_STORAGE.DOCUMENT);
     localStorage.removeItem(LOCAL_STORAGE.REFERENCES);
     localStorage.removeItem(LOCAL_STORAGE.LAST_LOAD_URL);
+    document.location.href = document.URL.replace(/#.*$/,"#");
     GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
     this.toggleMarkedUpView(false);
   }
@@ -710,6 +720,7 @@ class GUI {
     $(".enabled-if-pdf").addClass("ui-state-disabled");
     $(".visible-if-pdf").addClass("hidden");
     localStorage.removeItem(LOCAL_STORAGE.LAST_LOAD_URL);
+    document.location.href = document.URL.replace(/#.*$/,"#");
     GUI.showPdfView(false);
   }
 
