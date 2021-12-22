@@ -57,7 +57,9 @@ class Actions {
   }
 
   static async loadFromUrl(url) {
-    url = url || prompt("Please enter a URL from which to load the file:");
+    url = url || prompt(
+      "Please enter a URL from which to load the file:",
+      localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL, url) || "");
     if (url === null) return;
     localStorage.setItem(LOCAL_STORAGE.LAST_LOAD_URL, url);
     let here = new URL(document.URL);
@@ -513,6 +515,7 @@ class GUI {
       let hash = urlObj.hash;
       if (hash.startsWith("#load=")) {
         let downloadUrl = hash.substr(6);
+        console.warn(downloadUrl)
         if (downloadUrl.trim().length) {
           Actions.loadFromUrl(downloadUrl)
             .then(() => {
