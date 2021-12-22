@@ -516,13 +516,14 @@ class GUI {
         }
       }
       let lastLoadUrl = localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL);
-      if (lastLoadUrl) {
+
+      if (this._loadTextFromLocalStorage()) {
+        return;
+      } else if (lastLoadUrl) {
         Actions.loadFromUrl(lastLoadUrl);
         return;
       }
-      if (!this._loadTextFromLocalStorage()) {
-        $("#modal-help").show();
-      }
+      $("#modal-help").show();
     });
 
     // save text before leaving the page
@@ -684,6 +685,7 @@ class GUI {
     localStorage.removeItem(LOCAL_STORAGE.TEXT_FILE_NAME);
     localStorage.removeItem(LOCAL_STORAGE.DOCUMENT);
     localStorage.removeItem(LOCAL_STORAGE.REFERENCES);
+    localStorage.removeItem(LOCAL_STORAGE.LAST_LOAD_URL);
     GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
     this.toggleMarkedUpView(false);
   }
