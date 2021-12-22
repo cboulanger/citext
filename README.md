@@ -1,4 +1,4 @@
-# EXParser Docker Image & web frontend
+# EXParser Docker image & web frontend
 
 This is a docker image of a collection of [tools](https://excite.informatik.uni-stuttgart.de/#software) 
 from the [EXcite project](https://excite.informatik.uni-stuttgart.de/)
@@ -9,8 +9,8 @@ particular corpora of scholarly literatur where the current algorith does not pe
 The code has been forked from https://git.gesis.org/hosseiam/excite-docker, but has been
 in many parts completely rewritten. 
 
-A demo of the web frontend  is available 
-[here](https://cboulanger.github.io/excite-docker/web/index.html)  (no backend functionality):
+A demo of the web frontend (without backend functionality) is available 
+[here](https://cboulanger.github.io/excite-docker/web/index.html).
 
 ## Installation
 

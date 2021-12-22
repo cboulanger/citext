@@ -36,7 +36,7 @@ const REGEX = {
 };
 
 class Actions {
-  static upload() {
+  static load() {
     colorCounter = 0;
     const uploadBtn = document.getElementById("btn-upload");
     switch (uploadBtn.files.length) {
@@ -53,6 +53,16 @@ class Actions {
     for (let file of uploadBtn.files) {
       this.loadFile(file);
     }
+  }
+
+  static async loadFromUrl(url) {
+    url = url || prompt("Please enter a URL from which to load the file:");
+    if (url === null) return;
+    let res = await fetch(`/cgi-bin/load-from-url.py?url=${url}`)
+    let blob = await res.blob();
+    let filename = url.split("/").pop();
+    let file = new File([blob], filename, {lastModified: 1534584790000});
+    this.loadFile(file);
   }
 
   static loadFile(file) {
@@ -234,6 +244,20 @@ class Actions {
     GUI.hideSpinner();
     $("#text-label").text(textFileName);
     GUI.setTextContent(textContent);
+  }
+
+  static addRefTagWithRegex() {
+    if (displayMode !== DISPLAY_MODES.DOCUMENT) {
+      console.warn("addRefTagWithRegex can only be used in document mode.");
+      return;
+    }
+    let regexStr = prompt("Enter regular expression to identify references");
+    if (regexStr === null) return;
+    try {
+      GUI.addTagWithRegex("ref", regexStr);
+    } catch (e) {
+      alert(e.message);
+    }
   }
 
   static extractReferences(markedUpText) {
@@ -476,6 +500,19 @@ class GUI {
     $(document).ready(() => {
       this._setupEventListeners();
       GUI.toggleMarkedUpView(false);
+      let urlObj = new URL(document.URL);
+      let hash = urlObj.hash;
+      if (hash.startsWith("#load=")) {
+        let downloadUrl = hash.substr(6);
+        if (downloadUrl.trim().length) {
+          Actions.loadFromUrl(downloadUrl)
+            .then(() => {
+              urlObj.hash = "#";
+              document.location.href = urlObj.href;
+            });
+          return;
+        }
+      }
       if (!this._loadTextFromLocalStorage()) {
         $("#modal-help").show();
       }
@@ -822,6 +859,21 @@ class GUI {
     // remove all <span>s from selected text
     $(parentNode).html($(parentNode).html().replace(REGEX.SPAN, ""));
     GUI.updateMarkedUpText();
+  }
+
+  static addTagWithRegex(tagName, regexStr) {
+    let regex;
+    try {
+      regex = new RegExp(`(${regexStr})`, "g");
+    } catch (e) {
+      throw new Error("Invalid regular expression: " + e.message);
+    }
+    let text = this.getTextToExport();
+    text = text
+      .replace(regex, `<${tagName}>$1</${tagName}>`)
+      .replace(new RegExp(`<${tagName}><${tagName}>`, "g"), `<${tagName}>`)
+      .replace(new RegExp(`</${tagName}></${tagName}>`, "g"), `</${tagName}>`)
+    this.setTextContent(text);
   }
 
   static updateMarkedUpText() {

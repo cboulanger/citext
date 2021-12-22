@@ -23,15 +23,17 @@
             <button id="btn-load" type="button" class="btn btn-primary" onclick="$('#btn-upload').click();">
                 <i class="fas fa-file"></i><span class="button-label">Load</span>
             </button>
-            <!--button data-toggle="dropdown" class="btn btn-primary dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+            <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle" aria-haspopup="true" aria-expanded="false">
                 <span class="caret"></span>
-            </button
+            </button>
             <ul class="dropdown-menu" aria-labelledby="btn-load">
-                <li><a class="dropdown-item" href="#" >New document(s)</a></li>
-            </ul-->
+                <li><a class="dropdown-item" onclick="Actions.loadFromUrl()" href="#" >
+                    Load from URL
+                </a></li>
+            </ul>
         </div>
         <input type="file" id="btn-upload" style="display:none"
-               onchange="Actions.upload(); this.value=null; return false;"
+               onchange="Actions.load(); this.value=null; return false;"
                accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
         <!-- document view -->
         <div class="btn-group">
@@ -52,6 +54,10 @@
                        class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.run_excite_command('exparser');" href="#">
                     Extract references from PDF</a></li>
+                <li><a id="btn-identify-with-regex"
+                       class="enabled-if-document"
+                       onclick="Actions.addRefTagWithRegex();" href="#">
+                    Identify with RegExpr</a></li>
             </ul>
         </div>
         <!-- segmentation view -->
@@ -295,7 +301,8 @@
                         <ul style="list-style-type: lower-alpha;">
                             <li>Load a PDF with the "Load" button and extract text and references using the
                                 "Identification" button. If your model is good, you can choose the "Extract references
-                                from PDF" option. This will try to automatically identify the references in the document.
+                                from PDF" option. This will try to automatically identify the references in the
+                                document.
                                 In case the model does not yet recognize the references correctly, choose "Extract text
                                 from PDF" to do the mark up manually.
                             </li>

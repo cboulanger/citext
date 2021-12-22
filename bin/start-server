@@ -17,7 +17,7 @@ _term() {
 trap _term TERM INT
 
 # start webserver
-python3 -m http.server --cgi $PORT &
+./bin/server.py $PORT &
 
 SERVER_PID=$!
 
