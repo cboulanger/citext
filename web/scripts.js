@@ -60,7 +60,14 @@ class Actions {
     url = url || prompt("Please enter a URL from which to load the file:");
     if (url === null) return;
     localStorage.setItem(LOCAL_STORAGE.LAST_LOAD_URL, url);
-    let res = await fetch(`/cgi-bin/load-from-url.py?url=${url}`)
+    let here = new URL(document.URL);
+    let there = new URL(url);
+    let res;
+    if (here.host === there.host) {
+      res = await fetch(url);
+    } else {
+      res = await fetch(`/cgi-bin/load-from-url.py?url=${url}`)
+    }
     let blob = await res.blob();
     let filename = url.split("/").pop();
     let file = new File([blob], filename, {lastModified: 1534584790000});
