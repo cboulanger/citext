@@ -511,27 +511,20 @@ class GUI {
     $(document).ready(() => {
       this._setupEventListeners();
       GUI.toggleMarkedUpView(false);
-      let urlObj = new URL(document.URL);
-      let hash = urlObj.hash;
-      if (hash.startsWith("#load=")) {
-        let downloadUrl = hash.substr(6);
-        console.warn(downloadUrl)
-        if (downloadUrl.trim().length) {
-          Actions.loadFromUrl(downloadUrl)
-            .then(() => {
-              urlObj.hash = "#";
-              document.location.href = urlObj.href;
-            });
-          return;
-        }
-      }
+      let hash = (new URL(document.URL)).hash;
       let lastLoadUrl = localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL);
-
       if (this._loadTextFromLocalStorage()) {
         return;
       } else if (lastLoadUrl) {
         Actions.loadFromUrl(lastLoadUrl);
         return;
+      } else if (hash.startsWith("#load=")) {
+        let downloadUrl = hash.substr(6).trim();
+        if (downloadUrl) {
+          console.log("Loading document from " + downloadUrl)
+          Actions.loadFromUrl(downloadUrl);
+          return;
+        }
       }
       $("#modal-help").show();
     });
