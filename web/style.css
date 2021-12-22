@@ -399,3 +399,8 @@ nav {
 .view-markup-display {
     grid-area: view-markup-display;
 }
+
+.modal-dialog {
+    width: 80% !important;
+    font-size: small;
+}

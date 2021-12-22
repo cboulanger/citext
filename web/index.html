@@ -47,7 +47,7 @@
                 <li><a id="btn-run-layout"
                        class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.run_excite_command('layout');" href="#">
-                    Extract Text from PDF</a></li>
+                    Extract text from PDF</a></li>
                 <li><a id="btn-run-exparser"
                        class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.run_excite_command('exparser');" href="#">
@@ -293,8 +293,11 @@
                     <li>
                         Load a text to mark up. This can be done in several ways:
                         <ul>
-                            <li>Load a PDF with the "Load" button. Extract text and references using the
-                                "Identification" button.
+                            <li>Load a PDF with the "Load" button and extract text and references using the
+                                "Identification" button. If your model is good, you can choose the "Extract references
+                                from PDF" option. This will try to automatically identify the references in the document.
+                                In case the model does not yet recognize the references correctly, choose "Extract text
+                                from PDF" to do the mark up manually.
                             </li>
                             <li>Load a previously processed file (.csv) to continue working on it.</li>
                             <li>Load a textfile (.txt) containing OCR data.</li>
@@ -304,20 +307,41 @@
                     <li>
                         Mark up the text or correct the automatically produced markup by selecting the parts of the text
                         that contains citation/reference data.
-                        After selecting text, a menu popup is shown with the available options.
-                        Long-clicking or tapping on a marked up section of a text will select it.
+                        <ul>
+                            <li>After selecting text, a menu popup is shown with the available options.</li>
+                            <li>Long-clicking or tapping on a marked up section of a text will select it.</li>
+                            <li>
+                                To see the resulting markup, click on the <i class="fas fa-file-code"></i> button.
+                                For details,
+                                see the <a href="https://exparser.readthedocs.io/en/latest/ReferenceExtraction/">
+                                information on training the reference extraction model</a>.
+                            </li>
+                        </ul>
                     </li>
                     <li>
-                        After you have finished identifying the references, save the document to the backend. You can
-                        also download it to your computer using the "Export" button.
+                        After you have finished identifying the references, save the training document to the backend.
+                        You can also download it to your computer using the "Export" button.
                     </li>
                     <li>
-                        You can automatically segment the references into its constituent parts (author, title,
-                        etc.). For this, switch into segmentation mode by clicking on the "Segmentation" button
-                        and then the "Auto-Segmentation" option from the dropdown.
+                        Switch to segmentation mode by clicking the "Segmentation" button.
+                        <ul>
+                            <li>
+                                To automatically segment the references, click on the
+                                "Auto-Segmentation" option from the "Segmentation" dropdown.
+                            </li>
+                            <li>
+                                Correct the segmentation or mark up the individual segments of the citations.
+                            </li>
+                            <li>
+                                To see the resulting markup, click on the <i class="fas fa-file-code"></i> button.
+                                For details,
+                                see the <a href="https://exparser.readthedocs.io/en/latest/ReferenceParsing/">
+                                information on training the reference parsing model</a>.
+                            </li>
+                        </ul>
                     </li>
                     <li>
-                        You can then correct the markup. When you are finished, click on "Save" or "Export" to save your
+                        When you are finished, click on "Save" or "Export" to save your
                         changes to the training backend or to your computer.
                     </li>
                 </ol>
