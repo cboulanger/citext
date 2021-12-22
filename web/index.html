@@ -1,0 +1,334 @@
+<html>
+<head>
+    <title>Excite Reference String Extraction Tool</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.1/css/all.css" crossorigin="anonymous">
+    <link href="css/bootstrap.min.css" rel="stylesheet">
+    <link href="css/jquery-ui.min.css" rel="stylesheet">
+    <link href="css/css-loader.css" rel="stylesheet">
+    <script src="js/jquery-3.2.1.min.js"></script>
+    <script src="scripts.js"></script>
+    <script src="js/bootstrap.min.js"></script>
+</head>
+
+<body>
+<!-- navigation bar -->
+<nav class="navbar navbar-default">
+    <!-- menu -->
+    <div id="navbar-buttons" class="navbar-left">
+        <!-- load -->
+        <div class="btn-group navbar-btn">
+            <button id="btn-load" type="button" class="btn btn-primary" onclick="$('#btn-upload').click();">
+                <i class="fas fa-file"></i><span class="button-label">Load</span>
+            </button>
+            <!--button data-toggle="dropdown" class="btn btn-primary dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+                <span class="caret"></span>
+            </button
+            <ul class="dropdown-menu" aria-labelledby="btn-load">
+                <li><a class="dropdown-item" href="#" >New document(s)</a></li>
+            </ul-->
+        </div>
+        <input type="file" id="btn-upload" style="display:none"
+               onchange="Actions.upload(); this.value=null; return false;"
+               accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
+        <!-- document view -->
+        <div class="btn-group">
+            <button id="btn-identification" type="button" class="btn btn-primary enabled-if-document"
+                    onclick="Actions.setDisplayMode(DISPLAY_MODES.DOCUMENT)">
+                <i class="fas fa-search"></i><span class="button-label">Identification</span>
+            </button>
+            <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle enabled-if-document"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="btn-view">
+                <li><a id="btn-run-layout"
+                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                       onclick="Actions.run_excite_command('layout');" href="#">
+                    Extract Text from PDF</a></li>
+                <li><a id="btn-run-exparser"
+                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                       onclick="Actions.run_excite_command('exparser');" href="#">
+                    Extract references from PDF</a></li>
+            </ul>
+        </div>
+        <!-- segmentation view -->
+        <div class="btn-group">
+            <button id="btn-segmentation" type="button" class="btn btn-primary"
+                    onclick="Actions.setDisplayMode(DISPLAY_MODES.REFERENCES)"
+                    aria-haspopup="true" aria-expanded="false">
+                <i class="fas fa-search-plus"></i><span class="button-label">Segmentation</span>
+            </button>
+            <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
+                <li><a id="btn-run-segmentation"
+                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
+                       href="#"
+                       onclick="Actions.run_excite_command('segmentation');">
+                    Auto-segmentation</a></li>
+            </ul>
+        </div>
+        <!-- save -->
+        <button id="btn-save" class="btn btn-primary enabled-if-refs ui-state-disabled hidden visible-if-backend"
+                type="button"
+                onclick="Actions.save();">
+            <i class="fas fa-save"></i><span class="button-label">Save</span>
+        </button>
+        <!-- export -->
+        <button id="btn-export" class="btn btn-primary ui-state-disabled enabled-if-refs" type="button"
+                onclick="Actions.export();">
+            <i class="fas fa-file-export"></i><span class="button-label">Export</span>
+        </button>
+        <!-- undo -->
+        <button id="btn-undo" class="btn btn-default ui-state-disabled" type="button"
+                onclick="Actions.undo();">
+            <i class="fas fa-undo"></i><span class="button-label">Undo</span>
+        </button>
+        <!-- help -->
+        <button type="button" class="btn btn-info" data-toggle="modal" data-target="#modal-help">
+            <i class="fas fa-question-circle"></i><span class="button-label">Help</span>
+        </button>
+    </div>
+    <!-- logo -->
+    <div class="navbar-brand navbar-right visible-lg-block">
+        <a href="https://excite.informatik.uni-stuttgart.de/" target="_blank">
+            <img id="app-logo" height="50px" src="images/exCite_logo_150.png" alt="img">
+        </a>
+        <span id="app-title">
+            EXRef-Identifier
+        </span>
+    </div>
+</nav>
+<div id="main-container" class="grid-container">
+    <!-- text to mark up -->
+    <div class="view-text">
+        <div class="view-text-display" id="text-content">
+        </div>
+        <div class="view-text-label">
+            <label id="text-label"></label>
+        </div>
+        <div class="view-text-buttons unselectable">
+            <span id="refs-navigation" class="hidden visible-if-refs visible-in-document-mode">
+                <i class="fas fa-address-card"></i>&nbsp;
+                <button id="btnfindPrevRef" onclick="GUI.findNextRef(-1,this)">
+                    <i class="fas fa-arrow-up"></i>
+                </button>
+                <button id="btnfindNextRef" onclick="GUI.findNextRef(1, this)">
+                    <i class="fas fa-arrow-down"></i>
+                </button>
+            </span>
+            <span id="page-navigation" class="hidden visible-if-pages visible-in-document-mode">
+                <i class="fas fa-book-open"></i>&nbsp;
+                <button id="btn-prev-page" onclick="GUI.goToPrevPage()">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
+                <span id="label-page-number"></span>
+                <button id="btn-next-page" onclick="GUI.goToNextPage()">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+            </span>
+            <span style="min-width:10px"></span>
+            <button id="btnToggleMarkedUpView" onclick="GUI.toggleMarkedUpView()">
+                <i class="fas fa-file-code"></i>
+            </button>
+            <button id="btndeltxt" onclick="GUI.removeTextFile()">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+
+    </div>
+    <!-- pdf view -->
+    <div class="view-pdf">
+        <div class="view-pdf-display">
+            <iframe id="pdfiframe" class="iframecss" src=""></iframe>
+        </div>
+        <div class="view-pdf-label">
+            <label id="pdf-label"></label>
+        </div>
+        <div class="view-pdf-buttons">
+            <button id="btn-remove-pdf" onclick="GUI.removePdfFile()">
+                <i class="fas fa-trash"></i>
+            </button>
+        </div>
+    </div>
+    <!-- marked-up text -->
+    <div class="view-markup">
+        <div class="view-markup-display" id="markup-content-container">
+            <pre id="markup-content"></pre>
+        </div>
+        <div class="view-markup-label">
+            <label>Preview tagged text</label>
+        </div>
+        <div class="view-markup-buttons"></div>
+    </div>
+</div>
+<!-- spinner -->
+<div class="loader loader-default" id="spinner"></div>
+<!-- context menu -->
+<ul id="context-menu" class="dropdown-menu" role="menu">
+    <!-- document mode -->
+    <li><a id="btn-ref-part" class="visible-in-document-mode enabled-if-selection"
+           tabindex="-1" onclick="Actions.addTag('ref');" href="#">
+        <i class="fas fa-sticky-note"></i>Markup selection as reference
+    </a></li>
+    <li><a id="btn-ref-line" class="visible-in-document-mode enabled-if-selection"
+           tabindex="-1" onclick="Actions.addTag('ref', true);" href="#">
+        Markup whole lines as reference
+    </a></li>
+    <li><a id="btn-oth" class="visible-in-document-mode enabled-if-selection"
+           tabindex="-1" onclick="Actions.addTag('oth');" href="#">
+        Ignore
+    </a></li>
+    <!-- references mode -->
+    <div class="refs-button-grid">
+        <li><a id="btn-surname" class="visible-in-refs-mode enabled-if-selection" data-tag="surname"
+               tabindex="-1" onclick="Actions.addTag('surname');" href="#">
+            Surname
+        </a></li>
+        <li><a id="btn-given-names" class="visible-in-refs-mode enabled-if-selection" data-tag="given-names"
+               tabindex="-1" onclick="Actions.addTag('given-names');" href="#">
+            Given&#8209;names
+        </a></li>
+        <li><a id="btn-year" class="visible-in-refs-mode enabled-if-selection" data-tag="year"
+               tabindex="-1" onclick="Actions.addTag('year');" href="#">
+            Year
+        </a></li>
+        <li><a id="btn-title" class="visible-in-refs-mode enabled-if-selection" data-tag="title"
+               tabindex="-1" onclick="Actions.addTag('title');" href="#">
+            Title
+        </a></li>
+        <li><a id="btn-editor" class="visible-in-refs-mode enabled-if-selection" data-tag="editor"
+               tabindex="-1" onclick="Actions.addTag('editor');" href="#">
+            Editors
+        </a></li>
+        <li><a id="btn-publisher" class="visible-in-refs-mode enabled-if-selection" data-tag="publisher"
+               tabindex="-1" onclick="Actions.addTag('publisher');" href="#">
+            Publisher
+        </a></li>
+        <li><a id="btn-source" class="visible-in-refs-mode enabled-if-selection" data-tag="source"
+               tabindex="-1" onclick="Actions.addTag('source');" href="#">
+            Source
+        </a></li>
+        <li><a id="btn-volume" class="visible-in-refs-mode enabled-if-selection" data-tag="volume"
+               tabindex="-1" onclick="Actions.addTag('volume');" href="#">
+            Volume
+        </a></li>
+        <li><a id="btn-issue" class="visible-in-refs-mode enabled-if-selection" data-tag="issue"
+               tabindex="-1" onclick="Actions.addTag('issue');" href="#">
+            Issue
+        </a></li>
+        <li><a id="btn-fpage" class="visible-in-refs-mode enabled-if-selection" data-tag="fpage"
+               tabindex="-1" onclick="Actions.addTag('fpage');" href="#">
+            First page
+        </a></li>
+        <li><a id="btn-lpage" class="visible-in-refs-mode enabled-if-selection" data-tag="lpage"
+               tabindex="-1" onclick="Actions.addTag('lpage');" href="#">
+            Last Page
+        </a></li>
+        <li><a id="btn-identifier" class="visible-in-refs-mode enabled-if-selection" data-tag="identifier"
+               tabindex="-1" onclick="Actions.addTag('identifier');" href="#">
+            Identifier
+        </a></li>
+        <li><a id="btn-url" class="visible-in-refs-mode enabled-if-selection" data-tag="url"
+               tabindex="-1" onclick="Actions.addTag('url');" href="#">
+            URL
+        </a></li>
+        <li><a id="btn-other" class="visible-in-refs-mode enabled-if-selection" data-tag="other"
+               tabindex="-1" onclick="Actions.addTag('other');" href="#">
+            Ignore
+        </a></li>
+        <li><a id="btn-insert-linebreak" class="visible-in-refs-mode enabled-if-selection"
+               tabindex="-1" onclick="Actions.insertBefore('\n');" href="#">
+            Linebreak
+        </a></li>
+    </div>
+    <!-- visible in both modes -->
+    <li><a id="btn-remove-tag" class="ui-state-disabled enabled-if-selection" tabindex="-1"
+           onclick="Actions.removeTag();" href="#">
+        <i class="fas fa-trash"></i>Remove Tag
+    </a></li>
+    <li><a id="btn-remove-all-tags" class="ui-state-disabled enabled-if-selection" tabindex="-1"
+           onclick="Actions.removeAllTags();" href="#">
+        Remove all tags inside selection
+    </a></li>
+    <li class="divider"></li>
+    <li><a id="btn-copy" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.copy();"
+           href="#">
+        <i class="fas fa-copy"></i>Copy
+    </a></li>
+    <li><a id="btn-paste" class="ui-state-disabled enabled-if-clipboard-content" tabindex="-1"
+           onclick="Actions.paste();" href="#">
+        <i class="fas fa-paste"></i>Paste
+    </a></li>
+    <li><a id="btn-insert-before" class="ui-state-disabled enabled-if-clipboard-content" tabindex="-1"
+           onclick="Actions.insertBefore();" href="#">
+        Insert before
+    </a></li>
+    <li><a id="btn-correct" class="ui-state-disabled enabled-if-selection" tabindex="-1"
+           onclick="Actions.replaceSelection();" href="#">
+        <i class="fas fa-strikethrough"></i>Correct selected text
+    </a></li>
+</ul>
+<!-- help window -->
+<div id="modal-help" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title">EXcite Reference Identification Training</h3>
+                <button type="button" class="btn btn-secondary"
+                        data-dismiss="modal" onclick="$('#modal-help').hide()">Close
+                </button>
+            </div>
+            <div class="modal-body">
+                <p>With this web app, you can mark up citation data in text extracted from a PDF,
+                    which then can be used to train the <a href="https://excite.informatik.uni-stuttgart.de/"
+                                                           target="_blank">
+                        EXcite</a> reference extraction model. Please proceed as follows:</p>
+                <ol>
+                    <li>
+                        Load a text to mark up. This can be done in several ways:
+                        <ul>
+                            <li>Load a PDF with the "Load" button. Extract text and references using the
+                                "Identification" button.
+                            </li>
+                            <li>Load a previously processed file (.csv) to continue working on it.</li>
+                            <li>Load a textfile (.txt) containing OCR data.</li>
+                            <li>Load an XML file with segmented references.</li>
+                        </ul>
+                    </li>
+                    <li>
+                        Mark up the text or correct the automatically produced markup by selecting the parts of the text
+                        that contains citation/reference data.
+                        After selecting text, a menu popup is shown with the available options.
+                        Long-clicking or tapping on a marked up section of a text will select it.
+                    </li>
+                    <li>
+                        After you have finished identifying the references, save the document to the backend. You can
+                        also download it to your computer using the "Export" button.
+                    </li>
+                    <li>
+                        You can automatically segment the references into its constituent parts (author, title,
+                        etc.). For this, switch into segmentation mode by clicking on the "Segmentation" button
+                        and then the "Auto-Segmentation" option from the dropdown.
+                    </li>
+                    <li>
+                        You can then correct the markup. When you are finished, click on "Save" or "Export" to save your
+                        changes to the training backend or to your computer.
+                    </li>
+                </ol>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-dismiss="modal" onclick="$('#modal-help').hide()">Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+</body>
+</html>
