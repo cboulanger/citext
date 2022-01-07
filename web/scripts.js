@@ -12,7 +12,11 @@ let versions = [];
 let displayMode;
 let lastDocument;
 
+/* The url of the exparser backend */
 const SERVER_URL = "http://127.0.0.1:8000/cgi-bin/";
+/* The url of the local zotero connector server */
+const ZOTERO_CONNECTOR_URL = "http://127.0.0.1:23119";
+
 const LOCAL_STORAGE = {
   DOCUMENT: "excite_document",
   REFERENCES: "excite_references",
@@ -360,6 +364,10 @@ class Actions {
     Utils.download(textToExport, filename);
   }
 
+  static exportToZotero() {
+    alert("Hello world");
+  }
+
   static async save() {
     if (!textFileName) return;
     let data;
@@ -542,6 +550,16 @@ class GUI {
           $(".visible-if-backend").removeClass("hidden");
         }
       });
+
+    // check if Zotero is running
+    fetch(ZOTERO_CONNECTOR_URL +"/connector/ping")
+      .then(response => response.text())
+      .then(result => {
+        if (result.includes("Zotero Connector Server is Available")) {
+          $(".visible-if-zotero-connection").removeClass("hidden");
+        }
+      });
+
   }
 
   static _setupEventListeners() {

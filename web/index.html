@@ -23,11 +23,12 @@
             <button id="btn-load" type="button" class="btn btn-primary" onclick="$('#btn-upload').click();">
                 <i class="fas fa-file"></i><span class="button-label">Load</span>
             </button>
-            <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle" aria-haspopup="true" aria-expanded="false">
+            <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle" aria-haspopup="true"
+                    aria-expanded="false">
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-load">
-                <li><a class="dropdown-item" onclick="Actions.loadFromUrl()" href="#" >
+                <li><a class="dropdown-item" onclick="Actions.loadFromUrl()" href="#">
                     Load from URL
                 </a></li>
             </ul>
@@ -86,10 +87,26 @@
             <i class="fas fa-save"></i><span class="button-label">Save</span>
         </button>
         <!-- export -->
-        <button id="btn-export" class="btn btn-primary ui-state-disabled enabled-if-refs" type="button"
-                onclick="Actions.export();">
-            <i class="fas fa-file-export"></i><span class="button-label">Export</span>
-        </button>
+        <div class="btn-group">
+            <button class="btn btn-primary ui-state-disabled enabled-if-refs" type="button"
+                    aria-haspopup="true" aria-expanded="false"
+                    onclick="Actions.export();">
+                <i class="fas fa-file-export"></i><span class="button-label">Export</span>
+            </button>
+            <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle ui-state-disabled enabled-if-refs"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
+                <li><a id="btn-export-to-zotero"
+                       class="dropdown-item hidden visible-if-zotero-connection"
+                       href="#"
+                       onclick="Actions.exportToZotero();">
+                    Export annotated file</a></li>
+            </ul>
+
+        </div>
+
         <!-- undo -->
         <button id="btn-undo" class="btn btn-default ui-state-disabled" type="button"
                 onclick="Actions.undo();">
