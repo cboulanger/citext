@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import json, os, cgi, shutil, subprocess, io, sys, tempfile
 

@@ -14,9 +14,11 @@ A demo of the web frontend (without backend functionality) is available
 
 ## Installation
 
-1. Install prerequisites: [Docker](https://docs.docker.com/install) and [Python v3](https://www.python.org/downloads/)
+1. Install prerequisites: [Docker](https://docs.docker.com/install) and [Python v3](https://www.python.org/downloads/) 
+   with the `requests` module
 2. Clone this repo: `git clone https://github.com/cboulanger/excite-docker.git && cd excite-docker`
 3. Build docker image: `./bin/build`
+4. Make all needed scripts executable `chmod +x ./bin/* && chmod +x ./cgi-bin/*`
 
 ## Use of the web frontend
 

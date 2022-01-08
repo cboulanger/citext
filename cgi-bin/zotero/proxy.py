@@ -1,10 +1,11 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # This script works around the CORS restrictions of the zotero server on localhost
 
-import sys, os, json, requests, socket
+import sys, os, requests
 
 request_method = os.environ.get('REQUEST_METHOD')
 content_length = os.environ.get('CONTENT_LENGTH')
+content_type = os.environ.get('CONTENT_TYPE')
 endpoint = os.environ.get('QUERY_STRING')
 
 zotero_connector_url = "http://127.0.0.1:23119/"
@@ -14,14 +15,14 @@ os.environ['no_proxy'] = '127.0.0.1,localhost'
 
 try:
     if request_method == "GET":
-        response = requests.get(endpoint_url )
-
+        response = requests.get(endpoint_url)
     elif request_method == "POST":
-        # get post data
-        payload = ""
-        if content_length != "" and int(content_length) > 0:
-            payload = sys.stdin.readline()
-        response = requests.post(url=endpoint_url, data=payload)
+        if content_length == "" or int(content_length) == 0:
+            raise RuntimeError("No data received")
+        payload = sys.stdin.read(int(content_length))
+        response = requests.post(url=endpoint_url, data=payload, headers={
+            "Content-type": content_type
+        })
     else:
         print("Status: 405 Method Not Allowed")
         print()
@@ -33,14 +34,7 @@ try:
     print()
     print(response.text)
 
-except requests.exceptions.ConnectionError as err:
-    print("Content-Type: text/plain")
-    print()
-    print("No connection at " + endpoint_url + ": " + str(err))
-    hostname = socket.gethostname()
-    local_ip = socket.gethostbyname(hostname)
-    print(local_ip)
 except BaseException as err:
-    print("Content-Type: text/plain")
+    print("Status: 500 Internal Server Error")
     print()
     print(str(err))

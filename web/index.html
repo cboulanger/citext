@@ -88,21 +88,23 @@
         </button>
         <!-- export -->
         <div class="btn-group">
-            <button class="btn btn-primary ui-state-disabled enabled-if-refs" type="button"
+            <button type="button"
+                    class="btn btn-primary ui-state-disabled enabled-if-refs"
                     aria-haspopup="true" aria-expanded="false"
                     onclick="Actions.export();">
                 <i class="fas fa-file-export"></i><span class="button-label">Export</span>
             </button>
-            <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle ui-state-disabled enabled-if-refs"
+            <button data-toggle="dropdown"
+                    class="btn btn-primary dropdown-toggle ui-state-disabled enabled-if-refs"
                     aria-haspopup="true" aria-expanded="false">
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
                 <li><a id="btn-export-to-zotero"
-                       class="dropdown-item hidden visible-if-zotero-connection"
+                       class="dropdown-item hidden visible-if-zotero-connection enabled-if-segmented"
                        href="#"
                        onclick="Actions.exportToZotero();">
-                    Export annotated file</a></li>
+                    Export references to currently selected Zotero item</a></li>
             </ul>
 
         </div>

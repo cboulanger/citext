@@ -14,8 +14,6 @@ let lastDocument;
 
 /* The url of the exparser backend */
 const SERVER_URL = "http://127.0.0.1:8000/cgi-bin/";
-/* The url of the local zotero connector server */
-const ZOTERO_CONNECTOR_URL = "http://127.0.0.1:23119";
 
 const LOCAL_STORAGE = {
   DOCUMENT: "excite_document",
@@ -552,7 +550,7 @@ class GUI {
       });
 
     // check if Zotero is running
-    fetch(ZOTERO_CONNECTOR_URL +"/connector/ping")
+    fetch(SERVER_URL +"zotero/proxy.py?connector/ping")
       .then(response => response.text())
       .then(result => {
         if (result.includes("Zotero Connector Server is Available")) {
@@ -936,6 +934,7 @@ class GUI {
       case DISPLAY_MODES.REFERENCES: {
         markedUpText = this.addAuthorTag(markedUpText);
         $(".enabled-if-refs").removeClass("ui-state-disabled");
+        $(".enabled-if-segmented").toggleClass("ui-state-disabled", !(markedUpText.match(REGEX.TAG)));
         break;
       }
     }
