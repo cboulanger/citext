@@ -1,6 +1,8 @@
 /**
  * Code to copy & pase into the Zotero Developer "Run Javascript" Console,
- * to be integrated to the "Cita" Zotero Add-in
+ * to be integrated to the "Cita" Zotero add-in
+ *
+ * All requests have to be made as POST requests and include the "Content-Type: application/json" header
  */
 
 /*global Zotero */
@@ -43,9 +45,9 @@ function validatePostData(args, argsValidatorMap, msg = "") {
  * ]
  * ```
  */
-Zotero.Server.Endpoints["/zotero-cita/getLibraryData"] = function () {
+Zotero.Server.Endpoints["/zotero-cita/libraries"] = function () {
     return {
-        supportedMethods: ["GET"],
+        supportedMethods: ["POST"],
         init: function (data, sendResponseCallback) {
             try {
                 let libraryData = Zotero.Libraries.getAll().map(l => ({
@@ -63,13 +65,96 @@ Zotero.Server.Endpoints["/zotero-cita/getLibraryData"] = function () {
 }
 
 /**
- * Create or more items in the given library which can later be linked. JSON POST data
- * must contain the following top-level fields:
- * `libraryID` (int)
- * `collectionID` (string|null) If not null, the collection key which will be added to each newly created
- * entry
- * `items` (array) Either an array of zotero json item data or a string containing one or more items in
- * a format that can be recognized and translated by Zotero.
+ * Returns information on the current selection in Zotero, to allow to control the state of,
+ * and input data for, external programs that interact with cita data.
+ * Returns a map `{collection: {}, selectedItems: {}[]}, childItems: {}[]}` containing the item data of
+ * the selected collection and the contained child items, and/or the individually selected
+ * items. `collection` might be null if no collection is selebted in the UI.
+ */
+Zotero.Server.Endpoints["/zotero-cita/selection"] = function () {
+    return {
+        supportedMethods: ["POST"],
+        init: function (data, sendResponseCallback) {
+            try {
+                let selectedItems = ZoteroPane.getSelectedItems();
+                let collection = ZoteroPane.getSelectedCollection() || null;
+                let childItems = collection? collection.getChildItems() : [];
+                let result = {
+                    selectedItems,
+                    collection,
+                    childItems
+                }
+                sendResponseCallback(200, "application/json", JSON.stringify(result));
+            } catch (error) {
+                sendResponseCallback(404, "text/plain", `Error occurred:\n${error}`);
+            }
+        }
+    }
+}
+
+/**
+ * Searches a given library with a set of given conditions (see
+ * https://www.zotero.org/support/dev/client_coding/javascript_api#executing_the_search) so that
+ * an external program can check wether citing or cited references exist or need to be created.
+ * Expect POST data containing a JSON object with properties `libraryID`, `query`, and `resultType`.
+ * Depending on `resultType` return either an array of "items" matching the query,
+ * an array of item "keys" or the number of "hits".
+ * Example POST data:
+ * ```
+ * {
+ * 	    "libraryID": 1,
+ * 	    "query": {
+ * 		    "date": ["is", "2019"],
+ * 		    "title": ["contains", "zotero"]
+ * 	    },
+ * 	    "resultType": "items"
+ * }
+ * ```
+ */
+Zotero.Server.Endpoints["/zotero-cita/search"] = function () {
+    return {
+        supportedMethods: ["POST"],
+        init: async function (postData, sendResponseCallback) {
+            try {
+                validatePostData(postData, {
+                    libraryID: val => typeof val == "number" && parseInt(val, 10) === val,
+                    query: val => val && typeof val === "object" && Object.entries(val).length > 0,
+                    resultType: val => ["items", "keys", "hits"].includes(val)
+                }, "libraryID (int), query (object), resultType ('items|keys|hits')");
+                let {libraryID, query, resultType} = postData;
+                let s = new Zotero.Search();
+                s.libraryID = libraryID;
+                for (let [field, conditions] of Object.entries(query)) {
+                    if (!Array.isArray(conditions)) {
+                        conditions = [conditions];
+                    }
+                    conditions.unshift(field);
+                    s.addCondition.apply(s, conditions);
+                }
+                let results = await s.search();
+                if (resultType === "hits") {
+                    sendResponseCallback(200, "application/json", String(results.length));
+                    return;
+                }
+                let items = await Zotero.Items.getAsync(results);
+                if (resultType === "keys") {
+                    items = items.map(item => item.key);
+                }
+                sendResponseCallback(200, "application/json", JSON.stringify(items));
+            } catch (error) {
+                sendResponseCallback(404, "text/plain", `Error occurred:\n${error}`);
+            }
+        }
+    }
+}
+
+/**
+ * Create or more items in the given library which can later be linked.
+ * Expects JSON POST data containing an object with the following properties:
+ * `libraryID`: the integer id of the library; `collections`: null if no collectio,
+ * or an array of collection keys which will be added to each newly created
+ * entry; `items`: Either an array of zotero json item data or a string containing one
+ * or more items in a format that can be recognized and translated by Zotero.
  * Returns the keys of the created items
  */
 Zotero.Server.Endpoints["/zotero-cita/create"] = function () {
@@ -153,51 +238,38 @@ Zotero.Server.Endpoints["/zotero-cita/create"] = function () {
 }
 
 /**
- * Given a `libraryID` and a `query`, depending on the `resultType`,
- * return either an array of "items" matching the query,
- * an array of item "keys" or the number of "hits".
- * Example POST data:
- * ```
- * {
- * 	    "libraryID": 1,
- * 	    "query": {
- * 		    "date": ["is", "2019"],
- * 		    "title": ["contains", "zotero"]
- * 	    },
- * 	    "resultType": "items"
- * }
- * ```
+ * Return the item data of the attachments of items identified by their key, with the
+ * absolute path to the stored attachment files added, so that citation-mining software can extract
+ * reference data from them.
+ * Expects POST data containing an object with properties `libraryID` and `keys`. Returns  a map of
+ * keys and attachment item data.
  */
-Zotero.Server.Endpoints["/zotero-cita/search"] = function () {
+Zotero.Server.Endpoints["/zotero-cita/attachments"] = function () {
     return {
         supportedMethods: ["POST"],
         init: async function (postData, sendResponseCallback) {
             try {
                 validatePostData(postData, {
                     libraryID: val => typeof val == "number" && parseInt(val, 10) === val,
-                    query: val => val && typeof val === "object" && Object.entries(val).length > 0,
-                    resultType: val => ["items", "keys", "hits"].includes(val)
-                }, "libraryID (int), query (object), resultType ('items|keys|hits')");
-                let {libraryID, query, resultType} = postData;
-                let s = new Zotero.Search();
-                s.libraryID = libraryID;
-                for (let [field, conditions] of Object.entries(query)) {
-                    if (!Array.isArray(conditions)) {
-                        conditions = [conditions];
+                    keys: val => Array.isArray(val) && val.length > 0
+                }, "libraryID: int, keys: string[]");
+                let {libraryID, keys} = postData;
+                let attachments = {};
+                for (let key of keys) {
+                    let item = Zotero.Items.getByLibraryAndKey(libraryID, key);
+                    if (!item) {
+                        throw new Error(`No item with key ${key} exists.`);
                     }
-                    conditions.unshift(field);
-                    s.addCondition.apply(s, conditions);
+                    attachments[key] = item.getAttachments().map(id => {
+                        let attachment = Zotero.Items.get(id);
+                        let result = attachment.toJSON();
+                        if (attachment.isFileAttachment()) {
+                            result.filepath = attachment.getFilePath();
+                        }
+                        return result;
+                    });
                 }
-                let results = await s.search();
-                if (resultType === "hits") {
-                    sendResponseCallback(200, "application/json", String(results.length));
-                    return;
-                }
-                let items = await Zotero.Items.getAsync(results);
-                if (resultType === "keys") {
-                    items = items.map(item => item.key);
-                }
-                sendResponseCallback(200, "application/json", JSON.stringify(items));
+                sendResponseCallback(200, "application/json", JSON.stringify(attachments));
             } catch (error) {
                 sendResponseCallback(404, "text/plain", `Error occurred:\n${error}`);
             }
