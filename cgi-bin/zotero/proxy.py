@@ -17,9 +17,9 @@ try:
     if request_method == "GET":
         response = requests.get(endpoint_url)
     elif request_method == "POST":
-        if content_length == "" or int(content_length) == 0:
-            raise RuntimeError("No data received")
-        payload = sys.stdin.read(int(content_length))
+        payload = ""
+        if content_length != "" and int(content_length) > 0:
+            payload = sys.stdin.read(int(content_length))
         response = requests.post(url=endpoint_url, data=payload, headers={
             "Content-type": content_type
         })

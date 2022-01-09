@@ -2,18 +2,22 @@
 import json, cgi, shutil,  sys, tempfile, urllib.request, os
 
 form = cgi.FieldStorage()
-url  = form.getvalue("url")
+url = form.getvalue("url")
 
 try:
 
     if not url:
         raise RuntimeError("No URL given")
 
-    tmpdir = tempfile.gettempdir()
     filename = url.rsplit('/', 1)[1]
-    filepath = tmpdir + "/" + filename
-    # download
-    urllib.request.urlretrieve(url, filepath)
+
+    if url.startswith("file:/"):
+        filepath = url[6:]
+    else:
+        tmpdir = tempfile.gettempdir()
+        filepath = tmpdir + "/" + filename
+        # download
+        urllib.request.urlretrieve(url, filepath)
 
     print("Content-type: application/octet-stream")
     print("Content-Disposition: attachment; filename=%s" % filename)
@@ -23,7 +27,8 @@ try:
     with open(filepath, 'rb') as file:
         shutil.copyfileobj(file, sys.stdout.buffer)
 
-    os.remove(filepath)
+    if not url.startswith("file:/"):
+        os.remove(filepath)
 
 except BaseException as err:
     import traceback

@@ -31,6 +31,9 @@
                 <li><a class="dropdown-item" onclick="Actions.loadFromUrl()" href="#">
                     Load from URL
                 </a></li>
+               <li><a class="dropdown-item visible-if-zotero-connection" onclick="Actions.loadFromZotero()" href="#">
+                    Load from currently selected Zotero item
+                </a></li>
             </ul>
         </div>
         <input type="file" id="btn-upload" style="display:none"

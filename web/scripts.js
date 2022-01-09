@@ -14,6 +14,8 @@ let lastDocument;
 
 /* The url of the exparser backend */
 const SERVER_URL = "http://127.0.0.1:8000/cgi-bin/";
+/* The url of the server endpoint that proxies the zotero connection server */
+const ZOTERO_PROXY_URL = SERVER_URL + "zotero/proxy.py";
 
 const LOCAL_STORAGE = {
   DOCUMENT: "excite_document",
@@ -76,6 +78,53 @@ class Actions {
     let filename = url.split("/").pop();
     let file = new File([blob], filename, {lastModified: 1534584790000});
     this.loadFile(file);
+  }
+
+  static async postToZoterConnector(endpoint, postData) {
+    let response = await fetch(ZOTERO_PROXY_URL + "?" + endpoint, {
+      method: 'POST',
+      cache: 'no-cache',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(postData)
+    });
+    return await response.json();
+  }
+
+  static async loadFromZotero() {
+    try {
+      GUI.showSpinner("Loading PDF of first selected Zotero item...");
+      let {libraryID, selectedItems} = await this.postToZoterConnector("zotero-cita/selection");
+      if (selectedItems.length === 0) {
+        throw new Error("No item selected in Zotero");
+        return;
+      }
+      // if attachment is selected, use this, otherwise retrieve attachment
+      let firstSelectedItem = selectedItems[0];
+      let attachment;
+      if (firstSelectedItem.itemType === "attachment") {
+        attachment = firstSelectedItem;
+      } else {
+        let key = firstSelectedItem.key;
+        let attachments = await this.postToZoterConnector("zotero-cita/attachments", {
+          libraryID, keys: [key]
+        });
+        if (attachments[key].length === 0) {
+          throw new Error(`The item titled "${firstSelectedItem.title}" has no attachments`);
+        }
+        attachment = attachments[key][0];
+      }
+      if (attachment.filepath === undefined) {
+        throw new Error(`Attachment ${attachment.title} has not been downloaded or you need to select the parent item`);
+      }
+      await this.loadFromUrl("file:/" + attachment.filepath)
+    } catch (e) {
+      alert(e.message);
+    } finally {
+      GUI.hideSpinner()
+    }
+
   }
 
   static loadFile(file) {
@@ -529,7 +578,7 @@ class GUI {
         console.log("Loading document from stored URL: " + lastLoadUrl)
         Actions.loadFromUrl(lastLoadUrl);
         return;
-      } else if  (downloadUrl) {
+      } else if (downloadUrl) {
         console.log("Loading document from URL hash: " + downloadUrl)
         Actions.loadFromUrl(downloadUrl);
         return;
@@ -543,21 +592,13 @@ class GUI {
     // check if we have a backend
     fetch(SERVER_URL + "status.py")
       .then(response => response.json())
-      .then(result => {
-        if (result.success) {
-          $(".visible-if-backend").removeClass("hidden");
-        }
-      });
+      .then(result => $(".visible-if-backend").toggleClass("hidden", !Boolean(result.success)));
 
     // check if Zotero is running
-    fetch(SERVER_URL +"zotero/proxy.py?connector/ping")
+    fetch(SERVER_URL + "zotero/proxy.py?connector/ping")
       .then(response => response.text())
-      .then(result => {
-        if (result.includes("Zotero Connector Server is Available")) {
-          $(".visible-if-zotero-connection").removeClass("hidden");
-        }
-      });
-
+      .then(result => $(".visible-if-zotero-connection")
+        .toggleClass("hidden", !result.includes("Zotero Connector Server is Available")));
   }
 
   static _setupEventListeners() {
@@ -713,7 +754,7 @@ class GUI {
     localStorage.removeItem(LOCAL_STORAGE.DOCUMENT);
     localStorage.removeItem(LOCAL_STORAGE.REFERENCES);
     localStorage.removeItem(LOCAL_STORAGE.LAST_LOAD_URL);
-    document.location.href = document.URL.replace(/#.*$/,"#");
+    document.location.href = document.URL.replace(/#.*$/, "#");
     GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
     this.toggleMarkedUpView(false);
   }
@@ -735,7 +776,7 @@ class GUI {
     $(".enabled-if-pdf").addClass("ui-state-disabled");
     $(".visible-if-pdf").addClass("hidden");
     localStorage.removeItem(LOCAL_STORAGE.LAST_LOAD_URL);
-    document.location.href = document.URL.replace(/#.*$/,"#");
+    document.location.href = document.URL.replace(/#.*$/, "#");
     GUI.showPdfView(false);
   }
 

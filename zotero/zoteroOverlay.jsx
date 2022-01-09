@@ -67,9 +67,9 @@ Zotero.Server.Endpoints["/zotero-cita/libraries"] = function () {
 /**
  * Returns information on the current selection in Zotero, to allow to control the state of,
  * and input data for, external programs that interact with cita data.
- * Returns a map `{collection: {}, selectedItems: {}[]}, childItems: {}[]}` containing the item data of
- * the selected collection and the contained child items, and/or the individually selected
- * items. `collection` might be null if no collection is selebted in the UI.
+ * Returns a map `{libraryID:int|null, collection: {}|null, selectedItems: {}[]}, childItems: {}[]}`
+ * containing the libraryID, the item data of the selected collection and the contained
+ * child items, and/or the individually selected items.
  */
 Zotero.Server.Endpoints["/zotero-cita/selection"] = function () {
     return {
@@ -79,7 +79,15 @@ Zotero.Server.Endpoints["/zotero-cita/selection"] = function () {
                 let selectedItems = ZoteroPane.getSelectedItems();
                 let collection = ZoteroPane.getSelectedCollection() || null;
                 let childItems = collection? collection.getChildItems() : [];
+                // How can I get the id independently of the selected collection/items?
+                let libraryID = null;
+                if (selectedItems.length) {
+                    libraryID = selectedItems[0].library.id;
+                } else if (collection) {
+                    libraryID = collection.library.id;
+                }
                 let result = {
+                    libraryID,
                     selectedItems,
                     collection,
                     childItems
@@ -256,7 +264,7 @@ Zotero.Server.Endpoints["/zotero-cita/attachments"] = function () {
                 let {libraryID, keys} = postData;
                 let attachments = {};
                 for (let key of keys) {
-                    let item = Zotero.Items.getByLibraryAndKey(libraryID, key);
+                    let item = await Zotero.Items.getByLibraryAndKeyAsync(libraryID, key);
                     if (!item) {
                         throw new Error(`No item with key ${key} exists.`);
                     }
