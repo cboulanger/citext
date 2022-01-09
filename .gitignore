@@ -2,3 +2,5 @@ Thumbs.db
 *.log
 *.pyc
 logfile.log
+# python virtual environment
+/venv/
