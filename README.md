@@ -19,12 +19,21 @@ A demo of the web frontend (without backend functionality) is available
 2. Clone this repo: `git clone https://github.com/cboulanger/excite-docker.git && cd excite-docker`
 3. Build docker image: `./bin/build`
 4. Make all needed scripts executable `chmod +x ./bin/* && chmod +x ./cgi-bin/*`
+5. If you want to connect the web app with a locally running Zotero instance, install the following Zotero Add-ons:
+   1. https://github.com/diegodlh/zotero-cita/raw/bc59a5f86285b74e6c23d75f557295ea492da1ae/cita.xpi
+   2. https://github.com/Dominic-DallOsto/zotero-api-endpoint/releases/download/v0.0.1/zotero-api-endpoint-0.0.1.xpi
 
 ## Use of the web frontend
 
 1. Run server: `./bin/start-server`
 2. Open frontend at http://127.0.0.1:8000/web/index.html
 3. Click on "Help" for instructions
+
+## Zotero support
+
+If a [Zotero](https://zotero.org) with the appropriate add-ins (see above) is running, the webapp will enable
+additional commands that let you retrieve the PDF attachment(s) of the currently selected item/collection,
+extract references from them and store them with the citing item. 
 
 ## Run extraction via CLI
 

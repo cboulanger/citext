@@ -16,6 +16,7 @@ let lastDocument;
 const SERVER_URL = "http://127.0.0.1:8000/cgi-bin/";
 /* The url of the server endpoint that proxies the zotero connection server */
 const ZOTERO_PROXY_URL = SERVER_URL + "zotero/proxy.py";
+const ZOTERO_API_ENDPOINT = "zotero-api-endpoint";
 
 const LOCAL_STORAGE = {
   DOCUMENT: "excite_document",
@@ -80,25 +81,45 @@ class Actions {
     this.loadFile(file);
   }
 
-  static async postToZoterConnector(endpoint, postData) {
+  static async callZoteroEndpoint(endpoint, postData=null) {
+    const controller = new AbortController();
+    const id = setTimeout(() => controller.abort(), 5000);
     let response = await fetch(ZOTERO_PROXY_URL + "?" + endpoint, {
-      method: 'POST',
+      method: postData ? "POST" : "GET",
       cache: 'no-cache',
+      signal: controller.signal,
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify(postData)
+      body: postData ? JSON.stringify(postData) : null
     });
-    return await response.json();
+    let result;
+    try {
+      result = await response.text();
+      if (result.includes("Endpoint")) {
+        throw new Error(result.replace("Endpoint", "Endpoint " + endpoint));
+      }
+      result = JSON.parse(result);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      return result;
+    } catch (e) {
+      if (e.name === "AbortError") {
+        e = new Error(`Timeout trying to reach ${endpoint} does not exist. Is Zotero running with the cita and zotero-api-endpoint plugins?`);
+      }
+      throw e;
+    } finally {
+      clearTimeout(id);
+    }
   }
 
   static async loadFromZotero() {
     try {
       GUI.showSpinner("Loading PDF of first selected Zotero item...");
-      let {libraryID, selectedItems} = await this.postToZoterConnector("zotero-cita/selection");
+      let {libraryID, selectedItems} = await this.callZoteroEndpoint("zotero-api-endpoint/get-selection");
       if (selectedItems.length === 0) {
         throw new Error("No item selected in Zotero");
-        return;
       }
       // if attachment is selected, use this, otherwise retrieve attachment
       let firstSelectedItem = selectedItems[0];
@@ -107,7 +128,7 @@ class Actions {
         attachment = firstSelectedItem;
       } else {
         let key = firstSelectedItem.key;
-        let attachments = await this.postToZoterConnector("zotero-cita/attachments", {
+        let attachments = await this.callZoteroEndpoint("zotero-api-endpoint/get-item-attachments", {
           libraryID, keys: [key]
         });
         if (attachments[key].length === 0) {
@@ -124,7 +145,6 @@ class Actions {
     } finally {
       GUI.hideSpinner()
     }
-
   }
 
   static loadFile(file) {
