@@ -61,7 +61,7 @@ try:
             except FileNotFoundError as err:
                 raise RuntimeError(str(err))
 
-        #cleanup.append(pdfs_dir + filename + ".pdf")
+        cleanup.append(pdfs_dir + filename + ".pdf")
         result_path = layout_dir + filename + ".csv"
 
     elif command == "exparser":
