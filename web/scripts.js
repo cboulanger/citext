@@ -13,7 +13,7 @@ let displayMode;
 let lastDocument;
 
 /* The url of the exparser backend */
-const SERVER_URL = "http://127.0.0.1:8000/cgi-bin/";
+const SERVER_URL = "/cgi-bin/";
 /* The url of the server endpoint that proxies the zotero connection server */
 const ZOTERO_PROXY_URL = SERVER_URL + "zotero/proxy.py";
 const ZOTERO_API_ENDPOINT = "zotero-api-endpoint";
@@ -117,7 +117,7 @@ class Actions {
   static async loadFromZotero() {
     try {
       GUI.showSpinner("Loading PDF of first selected Zotero item...");
-      let {libraryID, selectedItems} = await this.callZoteroEndpoint("zotero-api-endpoint/get-selection");
+      let {libraryID, selectedItems} = await this.callZoteroEndpoint( ZOTERO_API_ENDPOINT + "/get-selection");
       if (selectedItems.length === 0) {
         throw new Error("No item selected in Zotero");
       }
@@ -128,7 +128,7 @@ class Actions {
         attachment = firstSelectedItem;
       } else {
         let key = firstSelectedItem.key;
-        let attachments = await this.callZoteroEndpoint("zotero-api-endpoint/get-item-attachments", {
+        let attachments = await this.callZoteroEndpoint(ZOTERO_API_ENDPOINT + "/get-item-attachments", {
           libraryID, keys: [key]
         });
         if (attachments[key].length === 0) {
@@ -232,20 +232,20 @@ class Actions {
 
   static checkResult(result) {
     if (result.error) {
-      GUI.hideSpinner();
-      alert("Error: " + result.error);
-      return false;
+      throw new Error(result.error);
     }
-    if (!result.success) {
-      alert("Invalid response.")
-      return false;
+    if (result.success === undefined) {
+      throw new Error("Invalid response.");
     }
-    return result
+    return result;
   }
 
   static async run_excite_command(command) {
     let confirmMsg;
     switch (command) {
+      case "ocr":
+        confirmMsg = "Are you sure you want to run OCR, and then layout analysis?";
+        break;
       case "layout":
         confirmMsg = "Do you want to run layout analysis?";
         break;
@@ -267,6 +267,7 @@ class Actions {
     if (!confirm(confirmMsg)) {
       return;
     }
+
     // file upload
     let file;
     let filename;
@@ -283,33 +284,68 @@ class Actions {
       let formData = new FormData();
       formData.append("file", file, filename);
       GUI.showSpinner("Uploading...");
-      let result = await (await fetch(`${SERVER_URL}/upload.py`, {
-        method: 'post', body: formData
-      })).json();
-      if (!this.checkResult(result)) return;
+      try {
+        this.checkResult(await (await fetch(`${SERVER_URL}/upload.py`, {
+          method: 'post', body: formData
+        })).json());
+      } catch (e) {
+        return alert(e.message);
+      } finally {
+        GUI.hideSpinner();
+      }
     }
     let result;
     let url;
     let textContent;
 
+    // OCR
+    if (command === "ocr") {
+      GUI.showSpinner("Running OCR, please be patient...");
+      url = `${SERVER_URL}/excite.py?command=ocr&file=${filenameNoExt}`
+      try{
+        this.checkResult(await (await fetch(url)).json());
+      } catch (e) {
+        return alert(e.message);
+      } finally {
+        GUI.hideSpinner();
+      }
+    }
+
     // layout
-    if (command === "layout" || command === "exparser") {
+    if (command === "layout" || command === "exparser" || command === "ocr") {
       GUI.showSpinner("Analyzing Layout...");
       url = `${SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}`
-      result = await (await fetch(url)).json();
-      if (!this.checkResult(result)) return;
+      try {
+        result = this.checkResult(await (await fetch(url)).json());
+      } catch (e) {
+        return alert(e.message);
+      } finally {
+        GUI.hideSpinner();
+      }
+      if (result.success === "") {
+        if (confirm("No text could be found in document. Run OCR?")) {
+          this.run_excite_command("ocr");
+        }
+        return;
+      }
       textFileExt = "csv";
       textFileName = filenameNoExt + ".csv";
       textContent = result.success;
       GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
       $("#btn-run-exparser").removeClass("ui-state-disabled")
     }
+
     // reference identification
     if (command === "exparser") {
       GUI.showSpinner("Identifying references, this will take a while...");
       url = `${SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}`
-      result = await (await fetch(url)).json();
-      if (!this.checkResult(result)) return;
+      try {
+        result = this.checkResult(await (await fetch(url)).json());
+      } catch (e) {
+        return alert(e.message);
+      } finally {
+        GUI.hideSpinner();
+      }
       let refs = result.success;
       textContent = this.combineLayoutAndRefs(textContent, refs);
       GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
@@ -319,11 +355,11 @@ class Actions {
       GUI.showSpinner("Segmenting references...");
       url = `${SERVER_URL}/excite.py?command=segmentation&file=${filenameNoExt}`;
       result = await (await fetch(url)).json();
+      GUI.hideSpinner();
       if (!this.checkResult(result)) return;
       textContent = result.success;
       GUI.setDisplayMode(DISPLAY_MODES.REFERENCES);
     }
-    GUI.hideSpinner();
     $("#text-label").text(textFileName);
     GUI.setTextContent(textContent);
   }
@@ -1253,7 +1289,7 @@ class GUI {
     let tc = $("#text-content");
     //let tcTop = tc.scrollTop();
     let pageMarker = tc.find(`div[data-page="${page}"]`);
-    if (pageMarker) {
+    if (pageMarker && pageMarker.length) {
       pageMarker[0].scrollIntoView({block: "start"});
     }
   }

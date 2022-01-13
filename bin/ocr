@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+
+docker run --rm \
+  -v $(pwd)/Data/0-pdfs_no_ocr:/input \
+  -v $(pwd)/Data/1-pdfs:/output \
+  -e OCR_LANGUAGES="deu eng" \
+  -e OCR_PROCESS_EXISTING_ON_START=1 \
+  -e OCR_ACTION_ON_SUCCESS=DELETE_INPUT_FILES \
+  cmccambridge/ocrmypdf-auto

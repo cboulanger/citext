@@ -1,27 +1,35 @@
 #!/usr/bin/env python3
 
-import json, os, cgi, shutil, subprocess, io, sys, tempfile
+import json, os, cgi, shutil, subprocess, io, sys, tempfile, time
 
 print("Content-type: application/json")
 print()
 
-data_dir     = os.getcwd() + "/Data"
-
-form     = cgi.FieldStorage()
-command  = form.getvalue("command")
+form = cgi.FieldStorage()
+command = form.getvalue("command")
 filename = form.getvalue("file") # without extension!
 
-cleanup = []
-pdf_dir      = data_dir + "/1-pdfs/"
-layout_dir   = data_dir + "/2-layouts/"
-refs_dir     = data_dir + "/3-refs/"
+data_dir = os.getcwd() + "/Data"
+pdfs_no_ocr_dir = data_dir + "/0-pdfs_no_ocr/"
+pdfs_dir = data_dir + "/1-pdfs/"
+layout_dir = data_dir + "/2-layouts/"
+refs_dir = data_dir + "/3-refs/"
 refs_seg_dir = data_dir + "/3-refs_seg/"
 refs_dict_dir = data_dir + "/3-refs_seg_dict/"
 refs_prob_dir = data_dir + "/3-refs_seg_prob/"
 refs_bibtex_dir = data_dir + "/3-refs_seg_bibtex/"
-result_path = ""
+result_path = None
 
+# remove .gitkeep because cermine cannot deal with it
+gitkeep_file = pdfs_dir + ".gitkeep"
+try:
+    os.remove(gitkeep_file)
+except:
+    pass
+
+cleanup = []
 result = {}
+run_docker_command = True
 
 try:
     if command is None:
@@ -29,24 +37,31 @@ try:
     if filename is None and command != "train_extraction":
         raise RuntimeError("No filename")
 
-    if command == "layout":
-        # remove .gitkeep because cermine cannot deal with it
-        gitkeep_file = pdf_dir + ".gitkeep"
-        try:
-            os.remove(gitkeep_file)
-        except:
-            pass
+    if command == "ocr":
         try:
             source = tempfile.gettempdir() + "/" + filename + ".pdf"
-            target = pdf_dir + filename + ".pdf"
+            target = pdfs_no_ocr_dir + filename + ".pdf"
+            ocr_file = pdfs_dir + filename + ".pdf"
             shutil.move(source, target)
+            run_docker_command = False
+            # wait for OCR to complete
+            while not os.path.isfile(ocr_file):
+                time.sleep(1)
+
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
-        finally:
-            # restore .gitkeep file
-            open(gitkeep_file, 'a').close()
 
-        cleanup.append(pdf_dir + filename + ".pdf")
+    # layout
+    elif command == "layout":
+        target = pdfs_dir + filename + ".pdf"
+        if not os.path.isfile(target):
+            source = tempfile.gettempdir() + "/" + filename + ".pdf"
+            try:
+                shutil.move(source, target)
+            except FileNotFoundError as err:
+                raise RuntimeError(str(err))
+
+        #cleanup.append(pdfs_dir + filename + ".pdf")
         result_path = layout_dir + filename + ".csv"
 
     elif command == "exparser":
@@ -61,7 +76,7 @@ try:
             source = tempfile.gettempdir() + "/" + filename + ".csv"
             target = refs_dir + filename + ".csv"
             shutil.move(source, target)
-            #cleanup.append(target)
+            cleanup.append(target)
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
         result_path = refs_seg_dir + filename + ".xml"
@@ -77,7 +92,7 @@ try:
         raise RuntimeError("Invalid command: " + command)
 
     # only call docker command if file doesn't already exist
-    if result_path is None or not os.path.isfile(result_path):
+    if run_docker_command and (result_path is None or not os.path.isfile(result_path)):
         # run docker command and write output to server output
         args = ['docker', 'run', '--rm', '-v' + os.getcwd() + ':/app', 'excite_toolchain', command]
         sys.stderr.write(" ".join(args) + "\n")
@@ -100,7 +115,6 @@ try:
 
     if result_path is None:
         result["success"] = True
-
     else:
         # return result of excite command
         try:
@@ -123,17 +137,12 @@ finally:
     # return result
     print(json.dumps(result))
 
+    # restore .gitkeep file
+    open(gitkeep_file, 'a').close()
+
     # clean up temporary files
     for filepath in cleanup:
         try:
             os.remove(filepath)
         except OSError:
             pass
-
-
-
-
-
-
-
-

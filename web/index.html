@@ -50,6 +50,10 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-view">
+                <li><a id="btn-run-ocr"
+                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                       onclick="Actions.run_excite_command('ocr');" href="#">
+                    Run OCR on PDF</a></li>
                 <li><a id="btn-run-layout"
                        class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.run_excite_command('layout');" href="#">

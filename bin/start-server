@@ -11,15 +11,19 @@ PORT=8000
 
 # kill webserver process when script has ended
 _term() {
-  echo "Shutting down server..."
+  echo "Shutting down servers..."
   kill -TERM "$SERVER_PID" 2>/dev/null
+  kill -TERM "$OCR_PID" 2>/dev/null
 }
 trap _term TERM INT
 
 # start webserver
 ./bin/server.py $PORT &
-
 SERVER_PID=$!
 
-echo "Started HTTP server. To access EXcite tools, open http://$HOST:$PORT/index.html"
+# start OCR
+./bin/ocr &
+OCR_PID=$!
+
+echo "Started HTTP and OCR server. To access EXcite tools, open http://$HOST:$PORT/index.html"
 wait "$SERVER_PID"
