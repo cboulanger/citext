@@ -81,9 +81,9 @@ class Actions {
     this.loadFile(file);
   }
 
-  static async callZoteroEndpoint(endpoint, postData=null) {
+  static async callZoteroEndpoint(endpoint, postData = null) {
     const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 5000);
+    const id = setTimeout(() => controller.abort(), 60 * 1000); // 60 second timeout
     let response = await fetch(ZOTERO_PROXY_URL + "?" + endpoint, {
       method: postData ? "POST" : "GET",
       cache: 'no-cache',
@@ -136,8 +136,8 @@ class Actions {
         }
         attachment = attachments[key][0];
       }
-      if (attachment.filepath === undefined) {
-        throw new Error(`Attachment ${attachment.title} has not been downloaded or you need to select the parent item`);
+      if (!attachment.filepath) {
+        throw new Error(`Attachment ${attachment.title} has not been downloaded`);
       }
       await this.loadFromUrl("file:/" + attachment.filepath)
     } catch (e) {
@@ -604,6 +604,8 @@ class GUI {
         return;
       }
       $("#modal-help").show();
+
+
     });
 
     // save text before leaving the page
@@ -619,6 +621,13 @@ class GUI {
       .then(response => response.text())
       .then(result => $(".visible-if-zotero-connection")
         .toggleClass("hidden", !result.includes("Zotero Connector Server is Available")));
+
+    /* test sse
+    console.log("Initiating SSE connection")
+    const source = new EventSource("/cgi-bin/sse.py");
+    source.onmessage = function (event) {
+      console.log(event.data);
+    };*/
   }
 
   static _setupEventListeners() {

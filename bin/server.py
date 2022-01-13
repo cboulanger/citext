@@ -1,4 +1,7 @@
 #!/usr/bin/env python3
+
+# todo: make server multi-threaded: https://stackoverflow.com/a/46224191
+
 from http.server import HTTPServer, CGIHTTPRequestHandler, test
 import sys
 
