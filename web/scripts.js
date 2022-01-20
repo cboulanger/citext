@@ -117,7 +117,7 @@ class Actions {
   static async loadFromZotero() {
     try {
       GUI.showSpinner("Loading PDF of first selected Zotero item...");
-      let {libraryID, selectedItems} = await this.callZoteroEndpoint( ZOTERO_API_ENDPOINT + "/get-selection");
+      let {libraryID, selectedItems} = await this.callZoteroEndpoint(ZOTERO_API_ENDPOINT + "/get-selection");
       if (selectedItems.length === 0) {
         throw new Error("No item selected in Zotero");
       }
@@ -302,7 +302,7 @@ class Actions {
     if (command === "ocr") {
       GUI.showSpinner("Running OCR, please be patient...");
       url = `${SERVER_URL}/excite.py?command=ocr&file=${filenameNoExt}`
-      try{
+      try {
         this.checkResult(await (await fetch(url)).json());
       } catch (e) {
         return alert(e.message);
@@ -467,8 +467,73 @@ class Actions {
     Utils.download(textToExport, filename);
   }
 
+  static convertRefsToCslJson(ref) {
+    function extract(tagName, text) {
+      let regexp = new RegExp(`<${tagName}>(.*?)</${tagName}>`, "g");
+      let m;
+      let result = [];
+      while (m = regexp.exec(text)) {
+        result.push(m[1])
+      }
+      return result.length ? result : undefined;
+    }
+
+    let tags = [
+      "author", "title", "container-title",
+      "editor", "year", "volume", "issue",
+      "publisher", "fpage", "lpage", "url", "identifier"
+    ];
+    const r = {};
+    for (let tag of tags) {
+      r[tag] = extract(tag, ref);
+    }
+    return {
+      "author": r.author?.map(author => ({
+        "given": extract("given-names", author),
+        "family": extract("surname", author)
+      })),
+      "title": r.title?.[0],
+      "container-title": r.source?.[0],
+      "editor": r.editor?.map(editor => ({
+        "literal": editor
+      })),
+      "issued": r.year ? ({
+        "date-parts": [[r.year]]
+      }) : undefined,
+      "volume": r.volume?.[0],
+      "issue": r.issue?.[0],
+      "publisher": r.publisher?.[0],
+      "page": r.fpage?.[0] ? (r.fpage?.[0] + (r.lpage?.[0] ? "-" + r.lpage?.[0] : "")) : undefined,
+      "URL": r.url?.[0],
+      "DOI": r.identifier?.[0]?.startsWith("10.") ? r.identifier?.[0] : undefined,
+      "ISBN": r.identifier?.[0]?.startsWith("978") ? r.identifier?.[0] : undefined,
+    };
+  }
+
   static exportToZotero() {
-    alert("Hello world");
+    if (displayMode !== DISPLAY_MODES.REFERENCES) {
+      alert("You must be in segmentation mode to export references");
+      return;
+    }
+    let refs = GUI.getTextToExport(false);
+    if (!refs.match(REGEX.TAG)) {
+      alert("No references to export");
+      return;
+    }
+    let cslJSON = [];
+    for (let ref of refs.split("\n")) {
+      cslJSON.push(this.convertRefsToCslJson(ref));
+    }
+    cslJSON = JSON.stringify(cslJSON);
+    console.log(cslJSON);
+
+    // 1. zotero-api-endpoint/search-library
+    // - main item
+    // - citations
+    // -> keys of existing items
+    // 2. zotero-api-endpoint/create-items
+    // -> keys of newly created items
+    // 3. zotero-cita/add-citations
   }
 
   static async save() {
@@ -623,7 +688,7 @@ class GUI {
       this._setupEventListeners();
       GUI.toggleMarkedUpView(false);
       let hash = (new URL(document.URL)).hash;
-      let lastLoadUrl = localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL);
+      let lastLoadUrl = localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL) || false;
       let downloadUrl = hash.startsWith("#load=") && hash.substr(6).trim();
       let textInLocalStorage = this._hasTextInLocalStorage();
       if (textInLocalStorage && !(downloadUrl !== lastLoadUrl)) {
@@ -1038,7 +1103,7 @@ class GUI {
         break;
       }
       case DISPLAY_MODES.REFERENCES: {
-        markedUpText = this.addAuthorTag(markedUpText);
+        markedUpText = markedUpText.split("\n").map(line => this.addAuthorTag(line)).join("\n");
         $(".enabled-if-refs").removeClass("ui-state-disabled");
         $(".enabled-if-segmented").toggleClass("ui-state-disabled", !(markedUpText.match(REGEX.TAG)));
         break;
@@ -1058,6 +1123,7 @@ class GUI {
   }
 
   static addAuthorTag(markedUpText) {
+    //console.log(markedUpText);
     let startTag = "<author>";
     let endTag = "</author>";
     let firstStartTagMatch = null;
@@ -1077,20 +1143,24 @@ class GUI {
             pos = match.index + offset;
             markedUpText = markedUpText.substr(0, pos) + startTag + markedUpText.substr(pos);
             offset += startTag.length;
+            //console.log({info: "inserting <author> before first tag", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch})
             continue;
           }
           if (secondStartTagMatch === null) {
             if (tag !== firstStartTagMatch[0]) {
               // if the second opening tag is not the same as the first, remember it and go on
               secondStartTagMatch = match;
+              //console.log({info: "second opening tag not the same as the first", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch})
               continue;
             }
             // tag repeats
+            //console.log("tag repeats")
           }
         } else {
           // closing tag
           lastEndTagMatch = match;
           if (!secondStartTagMatch || tagName !== secondStartTagMatch[1]) {
+            //console.log({info: "Closing tag", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch});
             continue;
           }
         }
@@ -1100,6 +1170,7 @@ class GUI {
         offset += endTag.length;
         if (!tag.startsWith("</")) {
           // insert new opening tag
+          //console.log({info:"Insert new opening tag", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch})
           pos = match.index + offset;
           markedUpText = markedUpText.substr(0, pos) + startTag + markedUpText.substr(pos);
           offset += startTag.length;
