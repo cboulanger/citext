@@ -33,6 +33,10 @@ try:
         raise RuntimeError("Invalid type")
 
     data = data.encode("utf8")
+
+    if not os.path.exists(filepath):
+        os.makedirs(filepath)
+
     file = open(filepath + "/" + filename, "wb")
     file.write(data)
     file.close()

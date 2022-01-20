@@ -37,6 +37,7 @@ try:
     if filename is None and command != "train_extraction":
         raise RuntimeError("No filename")
 
+    # OCR
     if command == "ocr":
         try:
             source = tempfile.gettempdir() + "/" + filename + ".pdf"
@@ -44,14 +45,14 @@ try:
             ocr_file = pdfs_dir + filename + ".pdf"
             shutil.move(source, target)
             run_docker_command = False
-            # wait for OCR to complete
+            # wait for OCR to complete, this could better be implemented with a ticket system and polling
             while not os.path.isfile(ocr_file):
                 time.sleep(1)
 
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
 
-    # layout
+    # Extract layout
     elif command == "layout":
         target = pdfs_dir + filename + ".pdf"
         if not os.path.isfile(target):
@@ -64,13 +65,16 @@ try:
         cleanup.append(pdfs_dir + filename + ".pdf")
         result_path = layout_dir + filename + ".csv"
 
+    # Identify citations
     elif command == "exparser":
         result_path = refs_dir + filename + ".csv"
         cleanup.append(result_path)
+        # also clean up segmentation and bibtex data, which we will re-produce in a seprate step
         cleanup.append(refs_dict_dir + filename + ".csv")
         cleanup.append(refs_prob_dir + filename + ".csv")
         cleanup.append(refs_bibtex_dir + filename + ".csv")
 
+    # Segment citations
     elif command == "segmentation":
         try:
             source = tempfile.gettempdir() + "/" + filename + ".csv"
