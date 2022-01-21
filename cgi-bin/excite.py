@@ -45,9 +45,13 @@ try:
             ocr_file = pdfs_dir + filename + ".pdf"
             shutil.move(source, target)
             run_docker_command = False
-            # wait for OCR to complete, this could better be implemented with a ticket system and polling
+            # wait for OCR to complete
+            timer = 0
             while not os.path.isfile(ocr_file):
                 time.sleep(1)
+                timer += 1
+                if timer > 60 * 10:
+                    raise RuntimeError("Waited more than 10 minutes for OCR to finish. Aborting")
 
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
@@ -148,5 +152,6 @@ finally:
     for filepath in cleanup:
         try:
             os.remove(filepath)
+            pass
         except OSError:
             pass

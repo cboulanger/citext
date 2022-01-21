@@ -11,6 +11,7 @@ let versionIndex = 0;
 let versions = [];
 let displayMode;
 let lastDocument;
+let zoteroAttachmentFilepath;
 
 /* The url of the exparser backend */
 const SERVER_URL = "/cgi-bin/";
@@ -139,6 +140,7 @@ class Actions {
       if (!attachment.filepath) {
         throw new Error(`Attachment ${attachment.title} has not been downloaded`);
       }
+      zoteroAttachmentFilepath = attachment.filepath;
       await this.loadFromUrl("file:/" + attachment.filepath)
     } catch (e) {
       alert(e.message);
@@ -586,6 +588,15 @@ class Actions {
     localStorage.setItem(LOCAL_STORAGE.DISPLAY_MODE, displayMode);
   }
 
+  static savePdfToZotero() {
+    if (!pdfFile) {
+      alert ("No PDF file to save");
+      return;
+    }
+
+
+  }
+
   static replaceSelection() {
     $("context-menu").hide();
     let defaultText = window.getSelection().toString();
@@ -902,6 +913,7 @@ class GUI {
   static removePdfFile() {
     $("pdf-label").html("");
     document.getElementById("pdfiframe").src = 'about:blank';
+    zoteroAttachmentFilepath = null;
     pdfFileName = "";
     $(".enabled-if-pdf").addClass("ui-state-disabled");
     $(".visible-if-pdf").addClass("hidden");
