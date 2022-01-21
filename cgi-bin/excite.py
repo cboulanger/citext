@@ -37,6 +37,7 @@ try:
     if filename is None and command != "train_extraction":
         raise RuntimeError("No filename")
 
+    # OCR
     if command == "ocr":
         try:
             source = tempfile.gettempdir() + "/" + filename + ".pdf"
@@ -45,8 +46,12 @@ try:
             shutil.move(source, target)
             run_docker_command = False
             # wait for OCR to complete
+            timer = 0
             while not os.path.isfile(ocr_file):
                 time.sleep(1)
+                timer += 1
+                if timer > 60 * 10:
+                    raise RuntimeError("Waited more than 10 minutes for OCR to finish. Aborting")
 
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
@@ -144,5 +149,6 @@ finally:
     for filepath in cleanup:
         try:
             os.remove(filepath)
+            pass
         except OSError:
             pass

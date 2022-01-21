@@ -20,8 +20,8 @@ A demo of the web frontend (without backend functionality) is available
 3. Build docker image: `./bin/build`
 4. Make all needed scripts executable `chmod +x ./bin/* && chmod +x ./cgi-bin/*`
 5. If you want to connect the web app with a locally running Zotero instance, install the following Zotero Add-ons:
-   1. https://github.com/diegodlh/zotero-cita/raw/bc59a5f86285b74e6c23d75f557295ea492da1ae/cita.xpi
-   2. https://github.com/Dominic-DallOsto/zotero-api-endpoint/releases/download/v0.0.1/zotero-api-endpoint-0.0.1.xpi
+   1. [cita](https://github.com/diegodlh/zotero-cita/raw/bc59a5f86285b74e6c23d75f557295ea492da1ae/cita.xpi)
+   2. [zotero-apt-endpoint](https://github.com/Dominic-DallOsto/zotero-api-endpoint/releases/tag/builds/latest)
 
 ## Use of the web frontend
 

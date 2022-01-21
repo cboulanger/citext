@@ -31,7 +31,7 @@
                 <li><a class="dropdown-item" onclick="Actions.loadFromUrl()" href="#">
                     Load from URL
                 </a></li>
-               <li><a class="dropdown-item visible-if-zotero-connection" onclick="Actions.loadFromZotero()" href="#">
+                <li><a class="dropdown-item visible-if-zotero-connection" onclick="Actions.loadFromZotero()" href="#">
                     Load from currently selected Zotero item
                 </a></li>
             </ul>
@@ -88,11 +88,27 @@
             </ul>
         </div>
         <!-- save -->
-        <button id="btn-save" class="btn btn-primary enabled-if-refs ui-state-disabled hidden visible-if-backend"
-                type="button"
-                onclick="Actions.save();">
-            <i class="fas fa-save"></i><span class="button-label">Save</span>
-        </button>
+        <div class="btn-group">
+            <button id="btn-save" class="btn btn-primary ui-state-disabled enabled-if-refs hidden visible-if-backend"
+                    type="button"
+                    onclick="Actions.save();">
+                <i class="fas fa-save"></i><span class="button-label">Save</span>
+            </button>
+            <button data-toggle="dropdown"
+                    class="btn btn-primary dropdown-toggle hidden visible-if-backend"
+                    aria-haspopup="true" aria-expanded="false">
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
+                <li><a id="btn-save-to-zotero"
+                       class="dropdown-item hidden visible-if-zotero-connection enabled-if-pdf"
+                       href="#"
+                       onclick="Actions.savePdfToZotero();">
+                    Save PDF to currently selected Zotero item</a></li>
+            </ul>
+
+        </div>
+
         <!-- export -->
         <div class="btn-group">
             <button type="button"

@@ -13,7 +13,7 @@ PORT=8000
 _term() {
   echo "Shutting down servers..."
   kill -TERM "$SERVER_PID" 2>/dev/null
-  kill -TERM "$OCR_PID" 2>/dev/null
+  # docker stop ocrmypdf-auto
 }
 trap _term TERM INT
 
@@ -21,9 +21,8 @@ trap _term TERM INT
 ./bin/server.py $PORT &
 SERVER_PID=$!
 
-# start OCR
-./bin/ocr &
-OCR_PID=$!
+# start OCR if not already running
+[ ! "$(docker ps -a | grep 'ocrmypdf-auto')" ] && ./bin/ocr
 
-echo "Started HTTP and OCR server. To access EXcite tools, open http://$HOST:$PORT/index.html"
+echo "To access EXcite tools, open http://$HOST:$PORT/index.html"
 wait "$SERVER_PID"
