@@ -15,7 +15,7 @@ os.environ['no_proxy'] = '127.0.0.1,localhost'
 
 try:
     if request_method == "GET":
-        response = requests.get(endpoint_url)
+        response = requests.get(endpoint_url, timeout=10)
     elif request_method == "POST":
         payload = ""
         if content_length != "" and int(content_length) > 0:

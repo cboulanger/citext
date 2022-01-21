@@ -17,7 +17,6 @@ let zoteroAttachmentFilepath;
 const SERVER_URL = "/cgi-bin/";
 /* The url of the server endpoint that proxies the zotero connection server */
 const ZOTERO_PROXY_URL = SERVER_URL + "zotero/proxy.py";
-const ZOTERO_API_ENDPOINT = "zotero-api-endpoint";
 
 const LOCAL_STORAGE = {
   DOCUMENT: "excite_document",
@@ -41,6 +40,28 @@ const REGEX = {
   LAYOUT: /(\t[^\t]+){6}/g,
   EMPTY_NODE: /<[^>]+><\/[^>]+>/g
 };
+
+const ZOTERO_API_ENDPOINT = "zotero-api-endpoint";
+const ZOTERO_CITA_ENDPOINT = "zotero-cita";
+
+const ZOTERO_API = {
+  SELECTION_GET: ZOTERO_API_ENDPOINT + "/get-selection",
+  ITEM_ATTACHMENT_GET: ZOTERO_API_ENDPOINT + "/get-item-attachments",
+  LIBRARY_SEARCH: ZOTERO_API_ENDPOINT + "/search-library"
+}
+
+const KNOWN_IDENTIFIERS = [
+  {
+    startsWith: "10.",
+    cslJson: "doi",
+    zoteroField: "DOI"
+  },
+  {
+    startsWith: "978",
+    cslJson: "isbn",
+    zoteroField: "ISBN"
+  }
+];
 
 class Actions {
   static load() {
@@ -118,7 +139,7 @@ class Actions {
   static async loadFromZotero() {
     try {
       GUI.showSpinner("Loading PDF of first selected Zotero item...");
-      let {libraryID, selectedItems} = await this.callZoteroEndpoint(ZOTERO_API_ENDPOINT + "/get-selection");
+      let {libraryID, selectedItems} = await this.callZoteroEndpoint(ZOTERO_API.SELECTION_GET);
       if (selectedItems.length === 0) {
         throw new Error("No item selected in Zotero");
       }
@@ -129,7 +150,7 @@ class Actions {
         attachment = firstSelectedItem;
       } else {
         let key = firstSelectedItem.key;
-        let attachments = await this.callZoteroEndpoint(ZOTERO_API_ENDPOINT + "/get-item-attachments", {
+        let attachments = await this.callZoteroEndpoint(ZOTERO_API.ITEM_ATTACHMENT_GET, {
           libraryID, keys: [key]
         });
         if (attachments[key].length === 0) {
@@ -469,7 +490,7 @@ class Actions {
     Utils.download(textToExport, filename);
   }
 
-  static convertRefsToCslJson(ref) {
+  static convertRefsToZoteroJson(ref) {
     function extract(tagName, text) {
       let regexp = new RegExp(`<${tagName}>(.*?)</${tagName}>`, "g");
       let m;
@@ -489,30 +510,63 @@ class Actions {
     for (let tag of tags) {
       r[tag] = extract(tag, ref);
     }
+    let creators = [];
+    if (r.author) {
+      for (let author of r.author) {
+        creators.push({
+          "creatorType": "author",
+          "firstName": extract("given-names", author),
+          "lastName": extract("surname", author)
+        });
+      }
+    }
+    if (r.editor) {
+      for (let editor of r.editor) {
+        creators.push({
+          "creatorType": "editor",
+          "name": editor
+        });
+      }
+    }
     return {
-      "author": r.author?.map(author => ({
-        "given": extract("given-names", author),
-        "family": extract("surname", author)
-      })),
+      creators,
       "title": r.title?.[0],
-      "container-title": r.source?.[0],
-      "editor": r.editor?.map(editor => ({
-        "literal": editor
-      })),
+      "publicationTitle": r.source?.[0],
       "issued": r.year ? ({
         "date-parts": [[r.year]]
       }) : undefined,
       "volume": r.volume?.[0],
       "issue": r.issue?.[0],
       "publisher": r.publisher?.[0],
-      "page": r.fpage?.[0] ? (r.fpage?.[0] + (r.lpage?.[0] ? "-" + r.lpage?.[0] : "")) : undefined,
+      "pages": r.fpage?.[0] ? (r.fpage?.[0] + (r.lpage?.[0] ? "-" + r.lpage?.[0] : "")) : undefined,
       "URL": r.url?.[0],
       "DOI": r.identifier?.[0]?.startsWith("10.") ? r.identifier?.[0] : undefined,
       "ISBN": r.identifier?.[0]?.startsWith("978") ? r.identifier?.[0] : undefined,
     };
   }
 
-  static exportToZotero() {
+  /**
+   * @returns {Promise<{libraryID: number|null, groupID: number|null, selectedItems: object[], collection: string|null, childItems: object[]}>}
+   */
+  static async getZoteroSelection() {
+    return await this.callZoteroEndpoint(ZOTERO_API.SELECTION_GET);
+  }
+
+  /**
+   * @param libraryID
+   * @param query
+   * @returns {Promise<object[]>}
+   */
+  static async searchLibrary(libraryID, query) {
+    return await this.callZoteroEndpoint(ZOTERO_API.LIBRARY_SEARCH, {
+      libraryID,
+      query,
+      resultType: "items"
+    })
+  }
+
+
+  static async exportToZotero() {
     if (displayMode !== DISPLAY_MODES.REFERENCES) {
       alert("You must be in segmentation mode to export references");
       return;
@@ -522,12 +576,56 @@ class Actions {
       alert("No references to export");
       return;
     }
-    let cslJSON = [];
-    for (let ref of refs.split("\n")) {
-      cslJSON.push(this.convertRefsToCslJson(ref));
+    let id = textFileName.split(".").slice(0, -1).join(".");
+
+    let identifier;
+    for (let knownIdentifier of KNOWN_IDENTIFIERS) {
+      if (id.startsWith(knownIdentifier.startsWith)) {
+        identifier = knownIdentifier;
+        break;
+      }
     }
-    cslJSON = JSON.stringify(cslJSON);
-    console.log(cslJSON);
+    // work around DOIs in filenames where the illegal "/" has been replaced by underscore
+    if (identifier && identifier.zoteroField === "DOI" && !id.includes("/") && id.includes("_")) {
+      id = id.replace("_", "/"); // only replaces first occurrence
+    }
+    refs = refs.split("\n");
+    let msg;
+    GUI.showSpinner("Connecting to Zotero...");
+    let zSelection = await this.getZoteroSelection();
+    let libraryID = zSelection.libraryID;
+    let targetItem = zSelection.selectedItems.length ? zSelection.selectedItems[0] : null;
+    GUI.hideSpinner();
+    if (identifier) {
+      if (!libraryID) {
+        alert("Please select a library in Zotero");
+        return;
+      }
+      let query = {};
+      let field = identifier.zoteroField;
+      query[field] = ["is", id];
+      GUI.showSpinner(`Searching Zotero for ${field} ${id}`);
+      let items = await this.searchLibrary(libraryID, query);
+      GUI.hideSpinner();
+      if (items.length === 0) {
+          alert(`Identifier ${identifier.zoteroField} ${id} cannot be found in the library.`);
+          return;
+      } else if (items.length > 1) {
+          alert(`Identifier ${identifier.zoteroField} ${id} exists twice - please merge items manually first.`);
+          return;
+      }
+      targetItem = items[0];
+    } else if (!targetItem) {
+      alert("No identifier or selected item can be determined.");
+      return;
+    }
+    msg = `Do you want to export ${refs.length} references to "${targetItem.title}"?`;
+    if (!confirm(msg)) return;
+    let items = [];
+    for (let ref of refs) {
+      items.push(this.convertRefsToZoteroJson(ref));
+    }
+    console.log(items);
 
     // 1. zotero-api-endpoint/search-library
     // - main item
@@ -590,7 +688,7 @@ class Actions {
 
   static savePdfToZotero() {
     if (!pdfFile) {
-      alert ("No PDF file to save");
+      alert("No PDF file to save");
       return;
     }
 

@@ -31,7 +31,7 @@
                 <li><a class="dropdown-item" onclick="Actions.loadFromUrl()" href="#">
                     Load from URL
                 </a></li>
-                <li><a class="dropdown-item visible-if-zotero-connection" onclick="Actions.loadFromZotero()" href="#">
+                <li><a class="dropdown-item hidden visible-if-zotero-connection" onclick="Actions.loadFromZotero()" href="#">
                     Load from currently selected Zotero item
                 </a></li>
             </ul>
@@ -106,7 +106,6 @@
                        onclick="Actions.savePdfToZotero();">
                     Save PDF to currently selected Zotero item</a></li>
             </ul>
-
         </div>
 
         <!-- export -->
@@ -127,9 +126,8 @@
                        class="dropdown-item hidden visible-if-zotero-connection enabled-if-segmented"
                        href="#"
                        onclick="Actions.exportToZotero();">
-                    Export references to currently selected Zotero item</a></li>
+                    Export references to Zotero item</a></li>
             </ul>
-
         </div>
 
         <!-- undo -->
