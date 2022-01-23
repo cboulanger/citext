@@ -17,12 +17,15 @@ try:
     if request_method == "GET":
         response = requests.get(endpoint_url, timeout=10)
     elif request_method == "POST":
-        payload = ""
         if content_length != "" and int(content_length) > 0:
             payload = sys.stdin.read(int(content_length))
-        response = requests.post(url=endpoint_url, data=payload, headers={
+        else:
+            raise RuntimeError("No data")
+        print("===> " + str(payload), file=sys.stderr)
+        response = requests.post(url=endpoint_url, data=payload.encode('utf-8'), headers={
             "Content-type": content_type
         })
+        print("<=== " + str(response.text), file=sys.stderr)
     else:
         print("Status: 405 Method Not Allowed")
         print()
@@ -38,3 +41,4 @@ except BaseException as err:
     print("Status: 500 Internal Server Error")
     print()
     print(str(err))
+    print("Error: " + str(err), file=sys.stderr)

@@ -1,4 +1,6 @@
-// global vars, really an anti-pattern, should be moved to config map and persisted in IndexedDB
+// global vars should be moved to config map and persisted in IndexedDB
+// noinspection JSJQueryEfficiency
+
 let pdfFileName = "";
 let pdfFile = null;
 let textFileName = "";
@@ -7,7 +9,6 @@ let cols1text = [];
 let cols2numbers = [];
 let colorCounter = 0;
 let clipboard = "";
-let versionIndex = 0;
 let versions = [];
 let displayMode;
 let lastDocument;
@@ -40,15 +41,6 @@ const REGEX = {
   LAYOUT: /(\t[^\t]+){6}/g,
   EMPTY_NODE: /<[^>]+><\/[^>]+>/g
 };
-
-const ZOTERO_API_ENDPOINT = "zotero-api-endpoint";
-const ZOTERO_CITA_ENDPOINT = "zotero-cita";
-
-const ZOTERO_API = {
-  SELECTION_GET: ZOTERO_API_ENDPOINT + "/get-selection",
-  ITEM_ATTACHMENT_GET: ZOTERO_API_ENDPOINT + "/get-item-attachments",
-  LIBRARY_SEARCH: ZOTERO_API_ENDPOINT + "/search-library"
-}
 
 const KNOWN_IDENTIFIERS = [
   {
@@ -86,7 +78,7 @@ class Actions {
   static async loadFromUrl(url) {
     url = url || prompt(
       "Please enter a URL from which to load the file:",
-      localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL, url) || "");
+      localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL) || "");
     if (url === null) return;
     localStorage.setItem(LOCAL_STORAGE.LAST_LOAD_URL, url);
     let here = new URL(document.URL);
@@ -103,54 +95,23 @@ class Actions {
     this.loadFile(file);
   }
 
-  static async callZoteroEndpoint(endpoint, postData = null) {
-    const controller = new AbortController();
-    const id = setTimeout(() => controller.abort(), 60 * 1000); // 60 second timeout
-    let response = await fetch(ZOTERO_PROXY_URL + "?" + endpoint, {
-      method: postData ? "POST" : "GET",
-      cache: 'no-cache',
-      signal: controller.signal,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: postData ? JSON.stringify(postData) : null
-    });
-    let result;
-    try {
-      result = await response.text();
-      if (result.includes("Endpoint")) {
-        throw new Error(result.replace("Endpoint", "Endpoint " + endpoint));
-      }
-      result = JSON.parse(result);
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      return result;
-    } catch (e) {
-      if (e.name === "AbortError") {
-        e = new Error(`Timeout trying to reach ${endpoint} does not exist. Is Zotero running with the cita and zotero-api-endpoint plugins?`);
-      }
-      throw e;
-    } finally {
-      clearTimeout(id);
-    }
-  }
 
   static async loadFromZotero() {
     try {
       GUI.showSpinner("Loading PDF of first selected Zotero item...");
-      let {libraryID, selectedItems} = await this.callZoteroEndpoint(ZOTERO_API.SELECTION_GET);
+      let {libraryID, selectedItems} = await Zotero.getSelection();
       if (selectedItems.length === 0) {
         throw new Error("No item selected in Zotero");
       }
       // if attachment is selected, use this, otherwise retrieve attachment
       let firstSelectedItem = selectedItems[0];
+      /** @type {{filepath, title, editor, fpage, lpage}} **/
       let attachment;
       if (firstSelectedItem.itemType === "attachment") {
         attachment = firstSelectedItem;
       } else {
         let key = firstSelectedItem.key;
-        let attachments = await this.callZoteroEndpoint(ZOTERO_API.ITEM_ATTACHMENT_GET, {
+        let attachments = await Zotero.callEndpoint(Zotero.API.ITEM_ATTACHMENT_GET, {
           libraryID, keys: [key]
         });
         if (attachments[key].length === 0) {
@@ -191,6 +152,7 @@ class Actions {
         pdfFile = file;
         let objectURL = URL.createObjectURL(file);
         GUI.loadPdfFile(objectURL);
+
         $(".enabled-if-document").removeClass("ui-state-disabled");
         return;
       case "xml":
@@ -347,7 +309,7 @@ class Actions {
       }
       if (result.success === "") {
         if (confirm("No text could be found in document. Run OCR?")) {
-          this.run_excite_command("ocr");
+          await this.run_excite_command("ocr");
         }
         return;
       }
@@ -490,82 +452,6 @@ class Actions {
     Utils.download(textToExport, filename);
   }
 
-  static convertRefsToZoteroJson(ref) {
-    function extract(tagName, text) {
-      let regexp = new RegExp(`<${tagName}>(.*?)</${tagName}>`, "g");
-      let m;
-      let result = [];
-      while (m = regexp.exec(text)) {
-        result.push(m[1])
-      }
-      return result.length ? result : undefined;
-    }
-
-    let tags = [
-      "author", "title", "container-title",
-      "editor", "year", "volume", "issue",
-      "publisher", "fpage", "lpage", "url", "identifier"
-    ];
-    const r = {};
-    for (let tag of tags) {
-      r[tag] = extract(tag, ref);
-    }
-    let creators = [];
-    if (r.author) {
-      for (let author of r.author) {
-        creators.push({
-          "creatorType": "author",
-          "firstName": extract("given-names", author),
-          "lastName": extract("surname", author)
-        });
-      }
-    }
-    if (r.editor) {
-      for (let editor of r.editor) {
-        creators.push({
-          "creatorType": "editor",
-          "name": editor
-        });
-      }
-    }
-    return {
-      creators,
-      "title": r.title?.[0],
-      "publicationTitle": r.source?.[0],
-      "issued": r.year ? ({
-        "date-parts": [[r.year]]
-      }) : undefined,
-      "volume": r.volume?.[0],
-      "issue": r.issue?.[0],
-      "publisher": r.publisher?.[0],
-      "pages": r.fpage?.[0] ? (r.fpage?.[0] + (r.lpage?.[0] ? "-" + r.lpage?.[0] : "")) : undefined,
-      "URL": r.url?.[0],
-      "DOI": r.identifier?.[0]?.startsWith("10.") ? r.identifier?.[0] : undefined,
-      "ISBN": r.identifier?.[0]?.startsWith("978") ? r.identifier?.[0] : undefined,
-    };
-  }
-
-  /**
-   * @returns {Promise<{libraryID: number|null, groupID: number|null, selectedItems: object[], collection: string|null, childItems: object[]}>}
-   */
-  static async getZoteroSelection() {
-    return await this.callZoteroEndpoint(ZOTERO_API.SELECTION_GET);
-  }
-
-  /**
-   * @param libraryID
-   * @param query
-   * @returns {Promise<object[]>}
-   */
-  static async searchLibrary(libraryID, query) {
-    return await this.callZoteroEndpoint(ZOTERO_API.LIBRARY_SEARCH, {
-      libraryID,
-      query,
-      resultType: "items"
-    })
-  }
-
-
   static async exportToZotero() {
     if (displayMode !== DISPLAY_MODES.REFERENCES) {
       alert("You must be in segmentation mode to export references");
@@ -577,7 +463,6 @@ class Actions {
       return;
     }
     let id = textFileName.split(".").slice(0, -1).join(".");
-
     let identifier;
     for (let knownIdentifier of KNOWN_IDENTIFIERS) {
       if (id.startsWith(knownIdentifier.startsWith)) {
@@ -591,49 +476,73 @@ class Actions {
     }
     refs = refs.split("\n");
     let msg;
-    GUI.showSpinner("Connecting to Zotero...");
-    let zSelection = await this.getZoteroSelection();
-    let libraryID = zSelection.libraryID;
-    let targetItem = zSelection.selectedItems.length ? zSelection.selectedItems[0] : null;
-    GUI.hideSpinner();
-    if (identifier) {
-      if (!libraryID) {
-        alert("Please select a library in Zotero");
-        return;
+    // abort requests on escape key  press
+    const abortFunc = e => e.key === "Escape" && Zotero.controller.abort();
+    $(document).on('keydown', abortFunc);
+    try {
+      GUI.showSpinner("Connecting to Zotero...");
+      let zSelection = await Zotero.getSelection();
+      let libraryID = zSelection.libraryID;
+      let targetItem = zSelection.selectedItems.length ? zSelection.selectedItems[0] : null;
+      if (identifier) {
+        if (!libraryID) {
+          throw new Error("Please select a library in Zotero");
+        }
+        let query = {};
+        let field = identifier.zoteroField;
+        query[field] = ["is", id];
+        GUI.showSpinner(`Searching Zotero for ${field} ${id}`);
+        let items = await Zotero.search(libraryID, query);
+        if (items.length === 0) {
+          throw new Error(`Identifier ${identifier.zoteroField} ${id} cannot be found in the library.`);
+        } else if (items.length > 1) {
+          throw new Error(`Identifier ${identifier.zoteroField} ${id} exists twice - please merge items manually first.`);
+        }
+        targetItem = items[0];
+      } else if (!targetItem) {
+        throw new Error("No identifier or selected item can be determined.");
       }
-      let query = {};
-      let field = identifier.zoteroField;
-      query[field] = ["is", id];
-      GUI.showSpinner(`Searching Zotero for ${field} ${id}`);
-      let items = await this.searchLibrary(libraryID, query);
+      msg = `Do you want to export ${refs.length} references to "${targetItem.title}"?`;
+      if (!confirm(msg)) return;
+      let total = refs.length;
+      // loop through all the cited references
+      let citations = [];
+      for (let [count, ref] of refs.entries()) {
+        let msg = ` item ${count + 1} of ${total} cited references. Press the Escape key to abort.`;
+        GUI.showSpinner("Identifying " + msg);
+        let item = Zotero.convertRefsToJson(ref);
+        let {creators, title, date} = item;
+        let creator = creators?.[0]?.lastName || "";
+        // search
+        let wc = 0;
+        let titleWords = title
+          ?.split(" ")
+          .filter(w => w.length > 4 && ++wc < 4)
+          .map(w => w.replace(/\p{P}/gu, ""))
+          .join(" ") || title || "";
+        let query = {
+          "quicksearch-titleCreatorYear": ["contains", `${creator} ${titleWords} ${date}`]
+        }
+        let itemKey;
+        let keys = await Zotero.search(libraryID, query, "keys");
+        if (keys.length === 0) {
+          GUI.showSpinner("Creating" + msg);
+          console.log({info:"Creating item"}, item);
+          keys = await Zotero.createItems(libraryID, [item]);
+        }
+        itemKey = keys[0];
+        citations.push(itemKey);
+      }
+      GUI.showSpinner("Adding citations to citing item");
+      let result = await Zotero.addCitations(libraryID, targetItem.key, citations);
+      console.log(result);
+    } catch (e) {
+      console.error(e);
+      alert(e.message);
+    } finally {
+      $(document).off('keypress', abortFunc);
       GUI.hideSpinner();
-      if (items.length === 0) {
-          alert(`Identifier ${identifier.zoteroField} ${id} cannot be found in the library.`);
-          return;
-      } else if (items.length > 1) {
-          alert(`Identifier ${identifier.zoteroField} ${id} exists twice - please merge items manually first.`);
-          return;
-      }
-      targetItem = items[0];
-    } else if (!targetItem) {
-      alert("No identifier or selected item can be determined.");
-      return;
     }
-    msg = `Do you want to export ${refs.length} references to "${targetItem.title}"?`;
-    if (!confirm(msg)) return;
-    let items = [];
-    for (let ref of refs) {
-      items.push(this.convertRefsToZoteroJson(ref));
-    }
-    console.log(items);
-
-    // 1. zotero-api-endpoint/search-library
-    // - main item
-    // - citations
-    // -> keys of existing items
-    // 2. zotero-api-endpoint/create-items
-    // -> keys of newly created items
-    // 3. zotero-cita/add-citations
   }
 
   static async save() {
@@ -687,12 +596,11 @@ class Actions {
   }
 
   static savePdfToZotero() {
-    if (!pdfFile) {
-      alert("No PDF file to save");
-      return;
-    }
-
-
+    alert("Not implemented")
+    // if (!pdfFile) {
+    //   alert("No PDF file to save");
+    //   return;
+    // }
   }
 
   static replaceSelection() {
@@ -700,7 +608,7 @@ class Actions {
     let defaultText = window.getSelection().toString();
     if (!defaultText) return;
     let replacementText = prompt("Please enter text to replace the selected text with:", defaultText);
-    if (!replacementText === null) return;
+    if (replacementText === false) return;
     GUI.replaceSelection(replacementText);
     GUI.updateMarkedUpText();
   }
@@ -757,10 +665,186 @@ class Actions {
     $("#btn-undo").addClass("ui-state-disabled");
 
   }
+}
 
-  static open_in_seganno() {
-    this.save();
-    window.location.href = "../index.html";
+class Zotero {
+
+  /** @type {AbortController} */
+  static controller;
+
+  // timeout 2 minutes
+  static timeout = 2*60*1000;
+
+  static API_ENDPOINT = "zotero-api-endpoint";
+
+  static API = {
+    SELECTION_GET: this.API_ENDPOINT + "/selection/get",
+    ITEM_ATTACHMENT_GET: this.API_ENDPOINT + "/attachment/get",
+    LIBRARY_SEARCH: this.API_ENDPOINT + "/library/search",
+    ITEM_CREATE: this.API_ENDPOINT + "/item/create",
+    CITATION_ADD: "cita/citations/add"
+  }
+
+  static async callEndpoint(endpoint, postData = null) {
+    this.controller = new AbortController();
+    const id = setTimeout(() => this.controller.abort(), this.timeout);
+    let response = await fetch(ZOTERO_PROXY_URL + "?" + endpoint, {
+      method: postData ? "POST" : "GET",
+      cache: 'no-cache',
+      signal: this.controller.signal,
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: postData ? JSON.stringify(postData) : null
+    });
+    let result;
+    try {
+      result = await response.text();
+      if (result.includes("Endpoint")) {
+        throw new Error(result.replace("Endpoint", "Endpoint " + endpoint));
+      }
+      result = JSON.parse(result);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      return result;
+    } catch (e) {
+      if (e.name === "AbortError") {
+        e = new Error(`Timeout trying to reach ${endpoint} does not exist. Is Zotero running with the cita and zotero-api-endpoint plugins?`);
+      }
+      throw e;
+    } finally {
+      clearTimeout(id);
+    }
+  }
+
+  /**
+   * @param {string} ref
+   * @returns {{date: *, volume: *, pages: (*|undefined), issue: *, ISBN: (*|undefined), creators: *[], publisher: *, title: *, publicationTitle: *, URL: *, DOI: (*|undefined)}}
+   */
+  static convertRefsToJson(ref) {
+    function extract(tagName, text) {
+      let regexp = new RegExp(`<${tagName}>(.*?)</${tagName}>`, "g");
+      let m;
+      let result = [];
+      while (m = regexp.exec(text)) {
+        result.push(m[1])
+      }
+      return result.length ? result : undefined;
+    }
+
+    let tags = [
+      "author", "title", "source",
+      "editor", "year", "volume", "issue",
+      "publisher", "fpage", "lpage", "url", "identifier"
+    ];
+    const r = {};
+    for (let tag of tags) {
+      r[tag] = extract(tag, ref);
+    }
+    let creators = [];
+    if (r.author) {
+      for (let author of r.author) {
+        creators.push({
+          "creatorType": "author",
+          "firstName": extract("given-names", author)?.[0],
+          "lastName": extract("surname", author)?.[0]
+        });
+      }
+    }
+    if (r.editor) {
+      for (let editor of r.editor) {
+        creators.push({
+          "creatorType": "editor",
+          "name": editor
+        });
+      }
+    }
+    let item = {
+      itemType: "journalArticle",
+      creators,
+      "title": r.title?.[0],
+      "publicationTitle": r.source?.[0],
+      "date": r.year?.[0],
+      "volume": r.volume?.[0],
+      "issue": r.issue?.[0],
+      "publisher": r.publisher?.[0],
+      "pages": r.fpage?.[0] ? (r.fpage?.[0] + (r.lpage?.[0] ? "-" + r.lpage?.[0] : "")) : undefined,
+      "URL": r.url?.[0],
+      "DOI": r.identifier?.[0]?.startsWith("10.") ? r.identifier?.[0] : undefined,
+      "ISBN": r.identifier?.[0]?.startsWith("978") ? r.identifier?.[0] : undefined,
+    };
+    if (!item.publicationTitle) {
+      item.itemType = "book";
+      delete item.pages;
+      delete item.issue;
+    } else if (item.publisher || !item.volume) {
+      item.itemType = "bookSection";
+    }
+    return item;
+  }
+
+  /**
+   * Returns a map of keys and items
+   * @param {number} libraryID
+   * @param {string[]} keys
+   * @returns {Promise<{}>}
+   */
+  static async getItemAttachments(libraryID, keys) {
+    return await this.callEndpoint(this.API.ITEM_ATTACHMENT_GET, {
+      libraryID, keys
+    });
+  }
+
+  /**
+   * @returns {Promise<{libraryID: number|null, groupID: number|null, selectedItems: object[], collection: string|null, childItems: object[]}>}
+   */
+  static async getSelection() {
+    return await this.callEndpoint(this.API.SELECTION_GET);
+  }
+
+  /**
+   * @param {number} libraryID
+   * @param {object} query
+   * @param {string} resultType
+   * @returns {Promise<object[]>}
+   */
+  static async search(libraryID, query, resultType = "items") {
+    return await this.callEndpoint(this.API.LIBRARY_SEARCH, {
+      libraryID,
+      query,
+      resultType
+    })
+  }
+
+  /**
+   * Create one or more new items in a Zotero library
+   * @param {number} libraryID
+   * @param {object[]} items
+   * @param {string[]|null} collections
+   * @returns {Promise<string[]>}
+   */
+  static async createItems(libraryID, items, collections = null) {
+    return await this.callEndpoint(this.API.ITEM_CREATE, {
+      libraryID,
+      collections,
+      items
+    });
+  }
+
+  /**
+   * Add items in a Zotero library as citations to a source item
+   * @param {number} libraryID  The library ID for the source and cited items
+   * @param {string} sourceItemKey The item key of the source item
+   * @param {string[]} citedItemKeys An array of the item keys for the cited items
+   * @returns {Promise<string>} statusMessage - Result of the operation.
+   */
+  static async addCitations(libraryID, sourceItemKey, citedItemKeys) {
+    return await this.callEndpoint(this.API.CITATION_ADD, {
+      libraryID,
+      sourceItemKey,
+      citedItemKeys
+    });
   }
 }
 
@@ -791,9 +875,8 @@ class GUI {
     this.__currentRefNode = null;
     this.__markupViewState = false;
     this.__pdfJsApplication = null;
-    this.__fs = null;
 
-    $(document).ready(() => {
+    $(() => {
       this._setupEventListeners();
       GUI.toggleMarkedUpView(false);
       let hash = (new URL(document.URL)).hash;
@@ -806,11 +889,11 @@ class GUI {
         return;
       } else if (lastLoadUrl && (!downloadUrl || downloadUrl === lastLoadUrl)) {
         console.log("Loading document from stored URL: " + lastLoadUrl)
-        Actions.loadFromUrl(lastLoadUrl);
+        Actions.loadFromUrl(lastLoadUrl).catch(console.error);
         return;
       } else if (downloadUrl) {
         console.log("Loading document from URL hash: " + downloadUrl)
-        Actions.loadFromUrl(downloadUrl);
+        Actions.loadFromUrl(downloadUrl).catch(console.error);
         return;
       }
       $("#modal-help").show();
@@ -864,7 +947,7 @@ class GUI {
     });
 
     // remove whitespace from selection after double-click
-    textContent.on("dblclick", e => {
+    textContent.on("dblclick", () => {
       // trim leading or trailing spaces
       let sel = window.getSelection();
       let text = sel.toString();
@@ -917,14 +1000,14 @@ class GUI {
     });
 
     // force remove PDF because loading saved src doesn't work yet
-    let dataUrl = false; // localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC);
-    if (dataUrl) {
-      fetch(dataUrl)
-        .then(res => res.blob())
-        .then(objectURL => GUI.loadPdfFile(objectURL));
-    } else {
-      GUI.showPdfView(false);
-    }
+    //let dataUrl = localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC);
+    //if (dataUrl) {
+    //  fetch(dataUrl)
+    //    .then(res => res.blob())
+    //    .then(objectURL => GUI.loadPdfFile(objectURL));
+    //} else {
+    GUI.showPdfView(false);
+    //}
 
     // disable checkbox state caching
     $(":checkbox").attr("autocomplete", "off");
@@ -1156,7 +1239,7 @@ class GUI {
     let text = sel.toString();
     if (text.trim() === "") return;
     if (wholeLine) {
-      sel.setBaseAndExtent(sel.anchorNode, 0, sel.focusNode, sel.focusNode.length);
+      sel.setBaseAndExtent(sel.anchorNode, 0, sel.focusNode, 0);
     }
     // prevent nesting of tag inside other tag
     let node = sel.focusNode;
@@ -1221,7 +1304,7 @@ class GUI {
     }
     // check if translation removed all <span> tags and warn if not
     if (markedUpText.match(REGEX.SPAN)) {
-      console.warn("Removing unhandedled <span> tags in html text!");
+      console.warn("Removing unhandled <span> tags in html text!");
       markedUpText = markedUpText.replace(REGEX.SPAN, "");
     }
 
@@ -1274,10 +1357,12 @@ class GUI {
             continue;
           }
         }
-        // insert </author> after the last closing tag
-        pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
-        markedUpText = markedUpText.substr(0, pos) + endTag + markedUpText.substr(pos);
-        offset += endTag.length;
+        if (lastEndTagMatch) {
+          // insert </author> after the last closing tag
+          pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
+          markedUpText = markedUpText.substr(0, pos) + endTag + markedUpText.substr(pos);
+          offset += endTag.length;
+        }
         if (!tag.startsWith("</")) {
           // insert new opening tag
           //console.log({info:"Insert new opening tag", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch})
@@ -1299,14 +1384,14 @@ class GUI {
     return markedUpText;
   }
 
-  static getTextToExport(withlayoutInfo = true) {
+  static getTextToExport(withLayoutInfo = true) {
     GUI.updateMarkedUpText();
     let markedUpText = $("#markup-content").html();
-    if (displayMode === DISPLAY_MODES.DOCUMENT && withlayoutInfo) {
+    if (displayMode === DISPLAY_MODES.DOCUMENT && withLayoutInfo) {
       let t1 = markedUpText.split('\n')
       let t2 = [];
       let rowFirstColumn;
-      let allFirstColumns;
+      let allFirstColumns = "";
       for (let i = 0; i < t1.length; i++) {
         rowFirstColumn = t1[i];
         allFirstColumns = allFirstColumns + rowFirstColumn;
@@ -1439,7 +1524,6 @@ class GUI {
       });
   }
 
-
   static _onPdfIframeLoaded() {
     setTimeout(() => {
       GUI.__pdfJsApplication = window.frames[0].PDFViewerApplication;
@@ -1507,7 +1591,7 @@ class GUI {
 
   static saveState() {
     versions.push($("#text-content").html());
-    $("#btn-undo").removeClass("ui-state-disabled", false)
+    $("#btn-undo").removeClass("ui-state-disabled")
   }
 
 }
