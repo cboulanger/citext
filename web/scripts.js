@@ -225,6 +225,17 @@ class Actions {
     return result;
   }
 
+  static previewCitationData() {
+    let refs = GUI
+      .getTextToExport(false)
+      .split("\n")
+      .map(line => Zotero.convertRefsToJson(line));
+
+    let html = `<pre>${JSON.stringify(refs, null, 2)}</pre>`;
+    $("#citation-data-preview-body").html(html);
+    $("#modal-citation-data-preview").show();
+  }
+
   static async run_excite_command(command) {
     let confirmMsg;
     switch (command) {
@@ -519,15 +530,15 @@ class Actions {
           ?.split(" ")
           .filter(w => w.length > 4 && ++wc < 4)
           .map(w => w.replace(/\p{P}/gu, ""))
-          .join(" ") || title || "";
+          .join(" ") || title;
         let query = {
-          "quicksearch-titleCreatorYear": ["contains", `${creator} ${titleWords} ${date}`]
+          "quicksearch-titleCreatorYear": ["contains", `${creator || ""} ${titleWords || ""} ${date || ""}`]
         }
         let itemKey;
         let keys = await Zotero.search(libraryID, query, "keys");
         if (keys.length === 0) {
           GUI.showSpinner("Creating" + msg);
-          console.log({info:"Creating item"}, item);
+          console.log({info: "Creating item"}, item);
           keys = await Zotero.createItems(libraryID, [item]);
         }
         itemKey = keys[0];
@@ -673,7 +684,8 @@ class Zotero {
   static controller;
 
   // timeout 2 minutes
-  static timeout = 2*60*1000;
+  static timeout = 2 * 60 * 1000;
+  static isTimeout = false;
 
   static API_ENDPOINT = "zotero-api-endpoint";
 
@@ -685,20 +697,31 @@ class Zotero {
     CITATION_ADD: "cita/citations/add"
   }
 
+  /**
+   * Call the local Zotero server
+   * @param {string} endpoint
+   * @param {any} postData
+   * @returns {Promise<*>}
+   */
   static async callEndpoint(endpoint, postData = null) {
     this.controller = new AbortController();
-    const id = setTimeout(() => this.controller.abort(), this.timeout);
-    let response = await fetch(ZOTERO_PROXY_URL + "?" + endpoint, {
-      method: postData ? "POST" : "GET",
-      cache: 'no-cache',
-      signal: this.controller.signal,
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: postData ? JSON.stringify(postData) : null
-    });
+    this.isTimeout = false;
+    const timeoutFunc = () => {
+      this.isTimeout = true;
+      this.controller.abort();
+    };
+    const id = setTimeout(timeoutFunc, this.timeout);
     let result;
     try {
+      let response = await fetch(ZOTERO_PROXY_URL + "?" + endpoint, {
+        method: postData ? "POST" : "GET",
+        cache: 'no-cache',
+        signal: this.controller.signal,
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: postData ? JSON.stringify(postData) + '\r\n' : null
+      });
       result = await response.text();
       if (result.includes("Endpoint")) {
         throw new Error(result.replace("Endpoint", "Endpoint " + endpoint));
@@ -709,8 +732,8 @@ class Zotero {
       }
       return result;
     } catch (e) {
-      if (e.name === "AbortError") {
-        e = new Error(`Timeout trying to reach ${endpoint} does not exist. Is Zotero running with the cita and zotero-api-endpoint plugins?`);
+      if (e.name === "AbortError" && this.isTimeout) {
+        e = new Error(`Timeout trying to reach ${endpoint}.`);
       }
       throw e;
     } finally {

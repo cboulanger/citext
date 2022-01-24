@@ -187,6 +187,11 @@ nav {
     display: block;
 }
 
+.modal-body {
+    overflow: scroll !important;
+    height: 70% !important;
+}
+
 /* ref identification */
 [data-tag="ref"]:nth-child(7n) {
     background-color: rgb(255, 255, 153);

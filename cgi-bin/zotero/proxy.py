@@ -18,7 +18,7 @@ try:
         response = requests.get(endpoint_url, timeout=10)
     elif request_method == "POST":
         if content_length != "" and int(content_length) > 0:
-            payload = sys.stdin.read(int(content_length))
+            payload = sys.stdin.readline(int(content_length))
         else:
             raise RuntimeError("No data")
         print("===> " + str(payload), file=sys.stderr)

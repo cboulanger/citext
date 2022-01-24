@@ -86,6 +86,14 @@
                        onclick="Actions.run_excite_command('segmentation');">
                     Auto-segmentation</a></li>
             </ul>
+            <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
+                <li><a id="btn-view-citation-data"
+                       class="dropdown-item ui-state-disabled enabled-if-refs"
+                       href="#"
+                       onclick="Actions.previewCitationData();">
+                    Preview citation data</a></li>
+            </ul>
+
         </div>
         <!-- save -->
         <div class="btn-group">
@@ -326,18 +334,33 @@
         <div class="modal-content">
             <div class="modal-header">
                 <h3 class="modal-title" style="float: left">EXcite Citation Identification and Segmentation</h3>
-                <button type="button" class="btn btn-secondary" style="float:right"
-                        data-dismiss="modal" onclick="$('#modal-help').hide()">Close
-                </button>
             </div>
             <div class="modal-body">
                <ul>
-                   <li><a href="https://github.com/cboulanger/excite-docker/blob/main/docs/readme.md">Online Help</a></li>
+                   <li><a href="https://github.com/cboulanger/excite-docker/blob/main/docs/readme.md" target="_blank">
+                       Dcoumentation on GitHub</a></li>
                </ul>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary"
                         data-dismiss="modal" onclick="$('#modal-help').hide()">Close
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- help window -->
+<div id="modal-citation-data-preview" class="modal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 class="modal-title" style="float: left">Citation data preview</h3>
+            </div>
+            <div class="modal-body" id="citation-data-preview-body">
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary"
+                        data-dismiss="modal" onclick="$('#modal-citation-data-preview').hide()">Close
                 </button>
             </div>
         </div>
