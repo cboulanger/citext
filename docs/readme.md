@@ -24,7 +24,7 @@ For information on installing the application, see [here](../README.md).
 
    1. After selecting text, a menu popup is shown with the available options. Long-clicking or
       tapping on a marked up section of a text will select it. 
-   2. To see the resulting markup, click on the ![](/Users/cboulanger/Code/excite-docker/docs/images/button-preview.png) 
+   2. To see the resulting markup, click on the ![](./images/button-preview.png) 
       button.
    3. details, see the [information on training the reference extraction
       model](https://exparser.readthedocs.io/en/latest/ReferenceExtraction/). 
@@ -38,7 +38,7 @@ For information on installing the application, see [here](../README.md).
       Correct the segmentation or mark up the individual segments of the citations. 
 
    2. To see the resulting markup, click on
-      the ![](/Users/cboulanger/Code/excite-docker/docs/images/button-preview.png) button. For details, see the [information
+      the ![](./images/button-preview.png) button. For details, see the [information
       on training the reference parsing model](https://exparser.readthedocs.io/en/latest/ReferenceParsing/). 
    
    3. When you are finished, click on "Save" or "Export" to save your changes to the training backend or to your computer.
