@@ -530,8 +530,9 @@ class Actions {
         let titleWords = title
           ?.split(" ")
           .filter(w => w.length > 4 && ++wc < 4)
-          .map(w => w.replace(/\p{P}/gu, ""))
-          .join(" ") || title;
+          .map(w => w.replace(/^\p{P}|\p{P}$/gu, ""))
+          .join(" ")
+          || title;
         let query = {
           "quicksearch-titleCreatorYear": ["contains", `${creator || ""} ${titleWords || ""} ${date || ""}`]
         }
@@ -829,9 +830,11 @@ class Zotero {
     } else if (item.publisher || !item.volume) {
       item.itemType = "bookSection";
       item.bookTitle = source;
+      delete item.issue;
     } else {
       item.itemType = "journalArticle";
       item.publicationTitle = source;
+      delete item.publisher;
     }
     return item;
   }
