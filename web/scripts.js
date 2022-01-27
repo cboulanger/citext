@@ -230,7 +230,6 @@ class Actions {
       .getTextToExport(false)
       .split("\n")
       .map(line => Zotero.convertRefsToJson(line));
-
     let html = `<pre>${JSON.stringify(refs, null, 2)}</pre>`;
     $("#citation-data-preview-body").html(html);
     $("#modal-citation-data-preview").show();
@@ -513,11 +512,13 @@ class Actions {
       } else if (!targetItem) {
         throw new Error("No identifier or selected item can be determined.");
       }
+      GUI.showSpinner(`Retrieving citations...`);
+      const citations = await Zotero.listCitations(libraryID, targetItem.key);
+      console.log({citations});
       msg = `Do you want to export ${refs.length} references to "${targetItem.title}"?`;
       if (!confirm(msg)) return;
       let total = refs.length;
       // loop through all the cited references
-      let citations = [];
       for (let [count, ref] of refs.entries()) {
         let msg = ` item ${count + 1} of ${total} cited references. Press the Escape key to abort.`;
         GUI.showSpinner("Identifying " + msg);
@@ -535,18 +536,32 @@ class Actions {
           "quicksearch-titleCreatorYear": ["contains", `${creator || ""} ${titleWords || ""} ${date || ""}`]
         }
         let itemKey;
-        let keys = await Zotero.search(libraryID, query, "keys");
-        if (keys.length === 0) {
-          GUI.showSpinner("Creating" + msg);
-          console.log({info: "Creating item"}, item);
-          keys = await Zotero.createItems(libraryID, [item]);
+        let foundItems = await Zotero.search(libraryID, query, "items");
+        if (foundItems.length) {
+          // if we have several entries, user should select but we're taking the first one for now
+          let itemToUpdate = foundItems.find(foundItem => item.itemType === foundItem.itemType);
+          if (itemToUpdate) {
+            Object.assign(itemToUpdate, item);
+            item = itemToUpdate;
+            console.log({info: "Updating item", item});
+            GUI.showSpinner("Updating" + msg);
+            await Zotero.updateItems(libraryID, [item]);
+            itemKey = item.key;
+          }
         }
-        itemKey = keys[0];
-        citations.push(itemKey);
+        if (!itemKey) {
+          GUI.showSpinner("Creating" + msg);
+          console.log({info: "Creating item", item});
+          ([itemKey] = await Zotero.createItems(libraryID, [item]));
+        }
+        if (citations.find(citation => citation.zotero === itemKey)) {
+          console.log("Citation already linked.");
+          continue;
+        }
+        GUI.showSpinner("Linking" + msg);
+        let result = await Zotero.addCitations(libraryID, targetItem.key, [itemKey]);
+        console.log(result);
       }
-      GUI.showSpinner("Adding citations to citing item");
-      let result = await Zotero.addCitations(libraryID, targetItem.key, citations);
-      console.log(result);
     } catch (e) {
       console.error(e);
       alert(e.message);
@@ -694,7 +709,9 @@ class Zotero {
     ITEM_ATTACHMENT_GET: this.API_ENDPOINT + "/attachment/get",
     LIBRARY_SEARCH: this.API_ENDPOINT + "/library/search",
     ITEM_CREATE: this.API_ENDPOINT + "/item/create",
-    CITATION_ADD: "cita/citations/add"
+    ITEM_UPDATE: this.API_ENDPOINT + "/item/update",
+    CITATION_ADD: "cita/citation/add",
+    CITATION_LIST: "cita/citation/list"
   }
 
   /**
@@ -768,11 +785,20 @@ class Zotero {
     let creators = [];
     if (r.author) {
       for (let author of r.author) {
-        creators.push({
-          "creatorType": "author",
-          "firstName": extract("given-names", author)?.[0],
-          "lastName": extract("surname", author)?.[0]
-        });
+        const firstName = extract("given-names", author)?.[0];
+        const lastName = extract("surname", author)?.[0];
+        if (firstName && lastName) {
+          creators.push({
+            "creatorType": "author",
+            firstName,
+            lastName
+          });
+        } else {
+          creators.push({
+            "creatorType": "author",
+            "name": lastName || firstName
+          });
+        }
       }
     }
     if (r.editor) {
@@ -784,10 +810,8 @@ class Zotero {
       }
     }
     let item = {
-      itemType: "journalArticle",
       creators,
       "title": r.title?.[0],
-      "publicationTitle": r.source?.[0],
       "date": r.year?.[0],
       "volume": r.volume?.[0],
       "issue": r.issue?.[0],
@@ -797,12 +821,17 @@ class Zotero {
       "DOI": r.identifier?.[0]?.startsWith("10.") ? r.identifier?.[0] : undefined,
       "ISBN": r.identifier?.[0]?.startsWith("978") ? r.identifier?.[0] : undefined,
     };
-    if (!item.publicationTitle) {
+    let source = r.source?.[0];
+    if (!source) {
       item.itemType = "book";
       delete item.pages;
       delete item.issue;
     } else if (item.publisher || !item.volume) {
       item.itemType = "bookSection";
+      item.bookTitle = source;
+    } else {
+      item.itemType = "journalArticle";
+      item.publicationTitle = source;
     }
     return item;
   }
@@ -856,6 +885,20 @@ class Zotero {
   }
 
   /**
+   * Update one or more new items in a Zotero library
+   * @param {number} libraryID
+   * @param {object[]} items
+   * @returns {Promise<string[]>}
+   */
+  static async updateItems(libraryID, items) {
+    return await this.callEndpoint(this.API.ITEM_UPDATE, {
+      libraryID,
+      items
+    });
+  }
+
+
+  /**
    * Add items in a Zotero library as citations to a source item
    * @param {number} libraryID  The library ID for the source and cited items
    * @param {string} sourceItemKey The item key of the source item
@@ -867,6 +910,19 @@ class Zotero {
       libraryID,
       sourceItemKey,
       citedItemKeys
+    });
+  }
+
+  /**
+   * list the cited references of an item
+   * @param {number} libraryID  The library ID for the source and cited items
+   * @param {string} sourceItemKey The item key of the source item
+   * @returns {Promise<object[]>} statusMessage - Result of the operation.
+   */
+  static async listCitations(libraryID, sourceItemKey) {
+    return await this.callEndpoint(this.API.CITATION_LIST, {
+      libraryID,
+      sourceItemKey
     });
   }
 }
