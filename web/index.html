@@ -31,7 +31,8 @@
                 <li><a class="dropdown-item" onclick="Actions.loadFromUrl()" href="#">
                     Load from URL
                 </a></li>
-                <li><a class="dropdown-item hidden visible-if-zotero-connection" onclick="Actions.loadFromZotero()" href="#">
+                <li><a class="dropdown-item hidden visible-if-zotero-connection" onclick="Actions.loadFromZotero()"
+                       href="#">
                     Load from currently selected Zotero item
                 </a></li>
             </ul>
@@ -85,15 +86,12 @@
                        href="#"
                        onclick="Actions.run_excite_command('segmentation');">
                     Auto-segmentation</a></li>
-            </ul>
-            <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
                 <li><a id="btn-view-citation-data"
                        class="dropdown-item ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.previewCitationData();">
                     Preview citation data</a></li>
             </ul>
-
         </div>
         <!-- save -->
         <div class="btn-group">
@@ -310,6 +308,10 @@
            onclick="Actions.removeAllTags();" href="#">
         Remove all tags inside selection
     </a></li>
+    <li><a id="btn-remove-all-tags-in-line" class="ui-state-disabled enabled-if-selection" tabindex="-1"
+           onclick="Actions.removeAllTags(true);" href="#">
+        Remove all tags in line(s)
+    </a></li>
     <li class="divider"></li>
     <li><a id="btn-copy" class="ui-state-disabled enabled-if-selection" tabindex="-1" onclick="Actions.copy();"
            href="#">
@@ -336,17 +338,17 @@
                 <h3 class="modal-title" style="float: left">EXcite Citation Identification and Segmentation</h3>
             </div>
             <div class="modal-body">
-               <ul>
-                   <li><a href="https://github.com/cboulanger/excite-docker/blob/main/docs/readme.md" target="_blank">
-                       Dcoumentation on GitHub</a></li>
-                   <li>For integration with Zotero, you need to download and install the following two Zotero Add-ons:
-                       <ul>
-                           <li><a href="../zotero/zotero-api-endpoint.xpi" download>Zotero API Endpoints</a></li>
-                           <li><a href="../zotero/cita.xpi" download>Cita</a></li>
-                       </ul>
+                <ul>
+                    <li><a href="https://github.com/cboulanger/excite-docker/blob/main/docs/readme.md" target="_blank">
+                        Dcoumentation on GitHub</a></li>
+                    <li>For integration with Zotero, you need to download and install the following two Zotero Add-ons:
+                        <ul>
+                            <li><a href="../zotero/zotero-api-endpoint.xpi" download>Zotero API Endpoints</a></li>
+                            <li><a href="../zotero/cita.xpi" download>Cita</a></li>
+                        </ul>
 
-                   </li>
-               </ul>
+                    </li>
+                </ul>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary"

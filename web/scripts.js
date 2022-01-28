@@ -111,13 +111,14 @@ class Actions {
         attachment = firstSelectedItem;
       } else {
         let key = firstSelectedItem.key;
-        let attachments = await Zotero.callEndpoint(Zotero.API.ITEM_ATTACHMENT_GET, {
-          libraryID, keys: [key]
-        });
+        let attachments = await Zotero.getItemAttachments(libraryID, [key]);
         if (attachments[key].length === 0) {
           throw new Error(`The item titled "${firstSelectedItem.title}" has no attachments`);
         }
-        attachment = attachments[key][0];
+        attachment = attachments[key].find(attachment => attachment.contentType === "application/pdf");
+        if (!attachments) {
+          throw new Error(`The item titled "${firstSelectedItem.title}" has no PDF attachment`);
+        }
       }
       if (!attachment.filepath) {
         throw new Error(`Attachment ${attachment.title} has not been downloaded`);
@@ -199,9 +200,22 @@ class Actions {
     GUI.updateMarkedUpText();
   }
 
-  static removeAllTags() {
+  static removeAllTags(wholeLine = false) {
     let sel = window.getSelection();
     if (!sel) return;
+    if (wholeLine) {
+      let startNode = sel.anchorNode;
+      while (startNode.previousSibling && startNode.previousSibling.nodeName !== "BR") {
+        startNode = startNode.previousSibling;
+      }
+      let endNode = sel.focusNode;
+      while (endNode.nextSibling && endNode.nextSibling.nodeName !== "BR") {
+        endNode = endNode.nextSibling;
+      }
+      if (startNode && endNode) {
+        sel.setBaseAndExtent(startNode, 0, endNode, 1);
+      }
+    }
     if (sel.rangeCount) {
       let container = document.createElement("div");
       for (let i = 0, len = sel.rangeCount; i < len; ++i) {
@@ -528,10 +542,10 @@ class Actions {
         // search
         let wc = 0;
         let titleWords = title
-          ?.split(" ")
-          .filter(w => w.length > 4 && ++wc < 4)
-          .map(w => w.replace(/^\p{P}|\p{P}$/gu, ""))
-          .join(" ")
+            ?.split(" ")
+            .filter(w => w.length > 4 && ++wc < 4)
+            .map(w => w.replace(/^\p{P}|\p{P}$/gu, ""))
+            .join(" ")
           || title;
         let query = {
           "quicksearch-titleCreatorYear": ["contains", `${creator || ""} ${titleWords || ""} ${date || ""}`]
@@ -539,15 +553,20 @@ class Actions {
         let itemKey;
         let foundItems = await Zotero.search(libraryID, query, "items");
         if (foundItems.length) {
-          // if we have several entries, user should select but we're taking the first one for now
-          let itemToUpdate = foundItems.find(foundItem => item.itemType === foundItem.itemType);
-          if (itemToUpdate) {
-            Object.assign(itemToUpdate, item);
-            item = itemToUpdate;
-            console.log({info: "Updating item", item});
-            GUI.showSpinner("Updating" + msg);
-            await Zotero.updateItems(libraryID, [item]);
-            itemKey = item.key;
+          // if we have several entries, user should select but we're taking the first matching one for now
+          let foundItem = foundItems.find(foundItem => item.itemType === foundItem.itemType);
+          if (foundItem) {
+            // merge properties from exparser into found item without overwriting any existing ones
+            let newItem = Object.assign(item, foundItem);
+            // update only if properties have been added
+            let newItemHasMoreProperties =
+              Object.values(newItem).filter(Boolean).length > Object.values(item).filter(Boolean).length;
+            if (newItemHasMoreProperties) {
+              console.log({info: "Updating item", item});
+              GUI.showSpinner("Updating" + msg);
+              await Zotero.updateItems(libraryID, [newItem]);
+            }
+            itemKey = foundItem.key;
           }
         }
         if (!itemKey) {
@@ -702,6 +721,7 @@ class Zotero {
   // timeout 2 minutes
   static timeout = 2 * 60 * 1000;
   static isTimeout = false;
+  static numberTimeouts = 0;
 
   static API_ENDPOINT = "zotero-api-endpoint";
 
@@ -751,7 +771,11 @@ class Zotero {
       return result;
     } catch (e) {
       if (e.name === "AbortError" && this.isTimeout) {
-        e = new Error(`Timeout trying to reach ${endpoint}.`);
+        if (++this.numberTimeouts < 3) {
+          return await this.callEndpoint(endpoint, postData);
+        }
+        this.numberTimeouts = 0;
+        e = new Error(`Timeout trying to reach ${endpoint} (tried 3 times).`);
       }
       throw e;
     } finally {
