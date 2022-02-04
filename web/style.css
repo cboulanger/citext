@@ -1,0 +1,411 @@
+html, body {
+    height: 100%
+}
+
+body {
+    padding: 0;
+    background: #e5e9f9 !important;
+    font-size: medium !important;
+    margin: 0;
+    overflow: hidden;
+}
+
+nav {
+    border-width: 0px;
+}
+
+.navbar {
+    padding-top: 10px;
+    padding-left: 10px;
+    padding-right: 10px;
+    padding-bottom: 0;
+    margin-bottom: 0px !important;
+}
+
+.navbar-brand {
+    margin-right: 0px !important;
+}
+
+.navbar-brand {
+    padding: 0px !important;
+}
+
+.dropdown-menu {
+    z-index: auto;
+}
+
+.dropdown-toggle {
+    height: 34px;
+}
+
+.button-label {
+    margin-left: 5px;
+}
+
+#context-menu > li, #context-menu > div > li {
+    user-select: none;
+}
+
+#context-menu > li > a > i {
+    position: absolute;
+    left: 5px;
+    padding-top: 2px;
+}
+
+#app-logo {
+    height: 40px;
+    margin: 5px;
+}
+
+#app-title {
+    float: right;
+    margin-top: 20px;
+}
+
+#navbar-buttons {
+    padding-right: 10px;
+}
+
+.iframecss {
+    border: 1px solid #779caf !important;
+    height: 100%;
+    width: 100%;
+}
+
+#page-navigation {
+    margin-left: 5px;
+    margin-right: 5px;
+}
+
+#label-page-number {
+    width: 20px;
+    font-size: x-small;
+    text-align: center;
+}
+
+#pdf-label, #text-label {
+    vertical-align: middle;
+    padding-left: 10px;
+    overflow: hidden;
+}
+
+.view-text-buttons > *,
+.view-pdf-buttons > *,
+#refs-navigation > *,
+#page-navigation > * {
+    vertical-align: middle;
+}
+
+#text-content > .page-marker {
+    width: 100%;
+    height: 1px;
+    border: none;
+}
+
+.document-view {
+    background-color: inherit;
+}
+
+.references-view {
+    background-color: #efefef !important;
+}
+
+.page-marker::before {
+    content: "Page " attr(data-page);
+    font-size: 12px;
+    position: relative;
+    float: right;
+    cursor: pointer;
+    padding: 2px;
+    background: lightgray;
+}
+
+#text-content > .page-marker ~ .page-marker {
+    border: 1px black dotted;
+}
+
+.view-text-display {
+    font-family: Menlo, Monaco, Consolas, "Courier New", monospace !important;
+    font-size: small !important;
+    border: 1px solid #779caf;
+    cursor: text;
+    overflow: scroll;
+    padding: 10px;
+    white-space: nowrap !important;
+}
+
+.view-markup-display {
+    overflow: scroll;
+    border: 1px solid #779caf;
+    font-size: small !important;
+}
+
+.view-text-buttons {
+    display: none;
+}
+
+/* tags eye-candy */
+[data-tag] {
+    border: 1px grey dotted;
+    position: relative;
+    border-radius: 3px;
+    padding-right: 2px;
+    padding-left: 2px;
+    margin: 2px;
+}
+
+[data-tag]:hover {
+    border-style: solid;
+}
+
+.references-view > [data-tag]:hover,
+#refs-button-grid > [data-tag]:hover {
+    box-shadow: 0 0 5px rgba(33,33,33,.8);
+}
+
+.references-view > [data-tag]:before {
+    content: attr(data-tag);
+    position: absolute;
+    left: 0;
+    /* move to top */
+    bottom: 100%;
+    margin-bottom: 5px;
+    /* styling */
+    /*width: 70px;*/
+    padding: 3px;
+    border-radius:3px;
+    font-size: x-small;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #fff;
+    color: #000;
+    text-align: center;
+    display: none;
+    z-index: 99999;
+}
+
+.references-view > [data-tag]:hover:before {
+    display: block;
+}
+
+.modal-body {
+    overflow: scroll !important;
+    height: 70% !important;
+}
+
+/* ref identification */
+[data-tag="ref"]:nth-child(7n) {
+    background-color: rgb(255, 255, 153);
+}
+
+[data-tag="ref"]:nth-child(7n-1) {
+    background-color: rgb(252, 201, 108);
+}
+
+[data-tag="ref"]:nth-child(7n-2) {
+    background-color: rgb(236, 184, 249);
+}
+
+[data-tag="ref"]:nth-child(7n-3) {
+    background-color: rgb(152, 230, 249);
+}
+
+[data-tag="ref"]:nth-child(7n-4) {
+    background-color: rgb(135, 245, 168);
+}
+
+[data-tag="ref"]:nth-child(7n-5) {
+    background-color: rgb(244, 132, 112);
+}
+
+[data-tag="ref"]:nth-child(7n-6) {
+    background-color: rgb(111, 252, 226);
+}
+
+[data-tag="oth"] {
+    background-color: rgb(162, 165, 165);
+}
+
+/* ref segmentation */
+[data-tag="surname"] {
+    background-color: #fabd11;
+}
+
+[data-tag="given-names"] {
+    background-color: #fdea84;
+}
+
+[data-tag="year"] {
+    background-color: #9a74ea;
+}
+
+[data-tag="title"] {
+    background-color: #adddcf;
+}
+
+[data-tag="source"] {
+    background-color: #889cfd;
+}
+
+[data-tag="editor"] {
+    background-color: #de9150;
+}
+
+[data-tag="volume"] {
+    background-color: #4ab74f;
+}
+
+[data-tag="issue"] {
+    background-color: #138013;
+}
+
+[data-tag="fpage"] {
+    background-color: #ef3349;
+}
+
+[data-tag="lpage"] {
+    background-color: #ee59ba;
+}
+
+[data-tag="publisher"] {
+    background-color: #efcd05;
+}
+
+[data-tag="url"] {
+    background-color: #2187f8;
+}
+
+[data-tag="identifier"] {
+    background-color: #8de1ea;
+}
+
+[data-tag="other"] {
+    background-color: rgb(162, 165, 165);
+}
+/** tag grid in context menu */
+.refs-button-grid {
+    display: grid !important;
+    grid-template-rows: 1fr 1fr 1fr 1fr 1fr;
+    grid-template-columns: 1fr 1fr 1fr;
+}
+
+.refs-button-grid > li > a {
+    text-align: center;
+    text-wrap: avoid;
+    color: black;
+    display: block;
+    font-size: small;
+    text-decoration: none;
+    padding: 2px;
+}
+
+/* todo: scrollbars aren't really working here */
+#markup-content {
+    overflow: visible;
+}
+
+.unselectable {
+    -moz-user-select: none;
+    -khtml-user-select: none;
+    -webkit-user-select: none;
+    -o-user-select: none;
+    user-select: none;
+}
+
+/* CSS grid, done with https://grid.layoutit.com/?id=d5AowTC */
+.grid-container {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 50% 50%;
+    gap: 0px 0px;
+    grid-auto-flow: row;
+    grid-template-areas:
+    "view-text view-pdf"
+    "view-markup view-markup";
+    width: 100%;
+    height: 90vh;
+}
+
+.view-text {
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    grid-template-rows: 30px auto;
+    grid-auto-rows: 1fr;
+    gap: 0px 0px;
+    grid-auto-flow: column;
+    grid-template-areas:
+    "view-text-label view-text-buttons"
+    "view-text-display view-text-display";
+    grid-area: view-text;
+    height: 100%;
+}
+
+.view-text-display {
+    grid-area: view-text-display;
+}
+
+.view-text-label {
+    grid-area: view-text-label;
+    max-height: 30px;
+    overflow: hidden;
+}
+
+.view-text-buttons {
+    grid-area: view-text-buttons;
+}
+
+.view-pdf {
+    display: grid;
+    grid-template-columns: 1.4fr 0.6fr;
+    grid-template-rows: 30px auto;
+    gap: 0px 0px;
+    grid-auto-flow: row;
+    grid-template-areas:
+    "view-pdf-label view-pdf-buttons"
+    "view-pdf-display view-pdf-display";
+    grid-area: view-pdf;
+}
+
+.view-pdf-display {
+    grid-area: view-pdf-display;
+}
+
+.view-pdf-label {
+    grid-area: view-pdf-label;
+    max-height: 30px;
+    overflow: hidden;
+}
+
+.view-pdf-buttons {
+    grid-area: view-pdf-buttons;
+    height: 30px;
+}
+
+.view-markup {
+    display: grid;
+    grid-template-columns: 1.5fr 0.5fr;
+    grid-template-rows: 30px auto;
+    grid-auto-rows: 1fr;
+    gap: 0px 0px;
+    grid-auto-flow: row;
+    grid-template-areas:
+    "view-markup-label view-markup-buttons"
+    "view-markup-display view-markup-display";
+    grid-area: view-markup;
+    height: 100%;
+}
+
+.view-markup-label {
+    grid-area: view-markup-label;
+}
+
+.view-markup-buttons {
+    grid-area: view-markup-buttons;
+}
+
+.view-markup-display {
+    grid-area: view-markup-display;
+}
+
+.modal-dialog {
+    width: 80% !important;
+}

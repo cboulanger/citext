@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 
 import os, cgi, tempfile, json
 print("Content-type: application/json")

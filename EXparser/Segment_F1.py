@@ -26,8 +26,8 @@ execfile('./EXparser/src/gle_fun_seg.py')
 execfile('./EXparser/src/spc_fun_seg.py')
 execfile('./EXparser/src/classification.py')
 
-	
-	
+
+
 
 def get_score(prob,n,p):    # predicted probability, number of tags and the position beginning (b) or end (e) or all (a)
 	if len(prob) >= n:
@@ -42,14 +42,14 @@ def get_score(prob,n,p):    # predicted probability, number of tags and the posi
 			score=np.mean(np.array(prob))
 		else:
 			print ('The selected position must be either "b", "e" or "a"')
-	
+
 	else:
 		##*print 'The number of selected labeles must be smaller or equal to the length of string'
 		score=np.mean(np.array(prob))
 	return score
-	
 
-	
+
+
 def comp_prob(label_pred,llin,tlin,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen):
 	abv=['FN','YR','AT','PG','SR','ED']
 	label_pred=[tmp for tmp in label_pred if tmp in abv]
@@ -81,7 +81,7 @@ def comp_prob(label_pred,llin,tlin,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,
 			#l.extend([-1])
 			#d.extend([-1])
 			a.extend([0])
-	#g=np.concatenate((l,a,[w],n))   #best 
+	#g=np.concatenate((l,a,[w],n))   #best
 
 	#g=np.concatenate((n,[w]))
 	#g=np.exp(kde_gtag.score([g]))
@@ -92,24 +92,24 @@ def comp_prob(label_pred,llin,tlin,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,
 	w=np.exp(kde_wtag.score([w]))
 	#ll=np.exp(kde_llen.score(llin))
 	#tl=np.exp(kde_tlen.score(tlin))
-	
-	
+
+
 	prob=w*n*a#*tl
 	#prob=n
 	return prob
 
-def main_sg(ln,vtag):   
+def main_sg(ln,vtag):
 #preparing training data
 	global xd
 	global yd
 	test_sents=[]
 	test_feat=[]
-	
+
 	#ln=preprocwt(ln)
 	ln=ln.split()
 
 	##print "size of line::",len(ln)
-	
+
 	w=ln[0]
 	test_sents.append([w])
 	test_feat.append([word2feat(w,stopw,0,len(ln),b1,b2,b3,b4,b5,b6)])
@@ -119,7 +119,7 @@ def main_sg(ln,vtag):
 		w1=ln[1]
 		test_sents[len(test_sents)-1].extend([w1])
 		test_feat[len(test_feat)-1].extend([word2feat(w1,stopw,1,len(ln),b1,b2,b3,b4,b5,b6)])
-		
+
 	if 2<len(ln):
 		w2=ln[2]
 		test_sents[len(test_sents)-1].extend([w2])
@@ -146,7 +146,7 @@ def main_sg(ln,vtag):
 	label_pred,prob_pred=one_page(label_pred,prob_pred)
 	prob_pred=[float("%.4f" % prob_pred[i][label_pred[i]]) for i in range (len(prob_pred))]
 
-	
+
 	label_pred=flname_rect(label_pred)
 	if vtag==1:
 		nln=tagging(ln,label_pred,prob_pred)
@@ -159,9 +159,9 @@ def main_sg(ln,vtag):
 	else:
 		nln=0
 	return prob_pred,label_pred,nln
-	
 
-	
+
+
 def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by reference extraction
 	#valid=[1]*len(txt)
 	#ref_prob=[max(b[1::]) for b in ref_prob0]
@@ -169,7 +169,7 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 	ref_id=[0]*len(txt)
 	ref_prob=np.array(ref_prob)
 	ref_prob[np.where(np.array(valid)==0)]=0
-	prep=[0]*len(txt)     #az vector of whether the line is preprocessed or not in order to not preprocessed everything 
+	prep=[0]*len(txt)     #az vector of whether the line is preprocessed or not in order to not preprocessed everything
 	tmp=max(ref_prob)
 	u=1
 	kde_ntag=kde_ntag2 if lng=='de' else kde_ntag1
@@ -181,20 +181,20 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 	kde_llen=kde_llen2 if lng=='de' else kde_llen1
 	kde_tlen=kde_tlen2 if lng=='de' else kde_tlen1
 	mll=np.median([len(tmp) for tmp in txt])	#median length of line (used for restriction)
-	
+
 	while ((sum(valid)>0)&(tmp>0)):
 		start=np.argmax(ref_prob)
 		valid[start]=0
 		txt[start]=preprocwt(txt[start]) if prep[start]==0 else txt[start]
 		prep[start]=1
 		l=[txt[start]]
-		tlin=len(' '.join(l).split())   #length in terms of token 
+		tlin=len(' '.join(l).split())   #length in terms of token
 		lim=[start]*3   # the first cell is the begining of the string, the second is the starting line and the last is the end of the string
 		samples=17
 		llin=1			#length of the line
 		ww=1
 		for i in range (samples):
-			x=random.randint(0, 1) if (lim[2]-lim[0])>0 else 0    # add or remove 0 
+			x=random.randint(0, 1) if (lim[2]-lim[0])>0 else 0    # add or remove 0
 			x=0
 			#w=random.randint(0, 1)   #top or buttom
 			w=ww%2
@@ -211,16 +211,16 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 						txt[s1]=preprocwt(txt[s1]) if prep[s1]==0 else txt[s1]
 						prep[s1]=1
 						l0=[txt[s1]]+l
-						tlin0=len(' '.join(l0).split())   #length in terms of token 
+						tlin0=len(' '.join(l0).split())   #length in terms of token
 						pb,lb0,_=main_sg(' '.join(l0),0)
 						rp0=restriction(lb0,txt[s1],mll,3)*restriction(lb0,txt[s1],mll,1)*restriction(lb0,l[0],mll,5)
-						
+
 						rp=restriction(lb,txt[s1],mll,4)*restriction(lb,l[0],mll,1)*restriction(lb,l[0],mll,6)
 						p0=get_score(pb,len(' '.join(l).split()),'e')
 						cp0=comp_prob(lb0,llin+1,tlin0,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
 						pn0=max(ref_prob0[s1][1:3])
 						pn=ref_prob0[s1][3]
-						
+
 						pn0=p0*cp0*pn0*rp0
 						pn=p*cp*pn*rp
 						#with open('rrr.txt','ab') as fid:
@@ -240,7 +240,7 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 						txt[s2]=preprocwt(txt[s2]) if prep[s2]==0 else txt[s2]
 						prep[s2]=1
 						l0=l+[txt[s2]]
-						tlin0=len(' '.join(l0).split())   #length in terms of token 
+						tlin0=len(' '.join(l0).split())   #length in terms of token
 						pb,lb0,_=main_sg(' '.join(l0),0)
 						rp0=restriction(lb0,l[-1],mll,3)*restriction(lb0,l[-1],mll,1)*restriction(lb0,txt[s2],mll,5)
 						rp=restriction(lb,l[-1],mll,4)*restriction(lb,txt[s2],mll,1)*restriction(lb0,txt[s2],mll,6)
@@ -248,7 +248,7 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 						cp0=comp_prob(lb0,llin+1,tlin0,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
 						pn0=max(ref_prob0[s2][2::])
 						pn=ref_prob0[s2][1]
-						
+
 						pn0=p0*cp0*pn0*rp0
 						pn=p*cp*pn*rp
 						#with open('rrr.txt','ab') as fid:
@@ -308,18 +308,18 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 						lb=lb0
 			'''
 
-		#if check_ref(lb):	 #this fucntion checks the validity of a reference if it is conforme to the standards or not (having usual tags)				
+		#if check_ref(lb):	 #this fucntion checks the validity of a reference if it is conforme to the standards or not (having usual tags)
 		ref_id[lim[0]:lim[2]+1]=[u]*((lim[2]+1)-lim[0])
 		u+=1
 		ref_prob[np.where(np.array(valid)==0)]=0
 		tmp=max(ref_prob)
-		
-		
-		
+
+
+
 	##################################################
 	#We try to merge references if they are wrongly splited (rather missted to be merged in the previous step)
 	ref_id=np.array(ref_id)
-	
+
 	ZZ=[]
 	tmp=np.unique(ref_id,return_index=True)
 	Z = [x for _,x in sorted(zip(tmp[1],tmp[0]))][1::]
@@ -358,7 +358,7 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 			rp0=restriction(lb0,l1[-1],mll,3)*restriction(lb0,l[0],mll,5)*restriction(lb0,l[0],mll,2)*restriction(lb0,l[0],mll,2)
 			rp=restriction(lb,l1[-1],mll,4)*restriction(lb,l[0],mll,6)*restriction(lb,l[0],mll,2)*restriction(lb1,l[0],mll,2)
 			cp0=comp_prob(lb0,llin+1,tlin0,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
-			
+
 			#with open('rrr.txt','ab') as fid:
 				#fid.write(str(i)+'(up):'+str([pn0,rp0,cp0,p0,p10])+':'+' '.join(l0)+'\r'+str([pn,rp,cp,p,p1])+':'+' '.join(l)+'\r\r\r')
 			if (pn0*rp0*cp0*p0*p10)>(pn*rp*cp*p*p1):
@@ -366,12 +366,12 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 		if ii<(len(Z)-1):
 			id1=np.where(ref_id==Z[ii+1])[0]
 			l1=[txt[idd] for idd in id1]
-			l0=l+l1	
+			l0=l+l1
 			pb,lb0,_=main_sg(' '.join(l0),0)
 			p0=get_score(pb,len(' '.join(l).split()),'b')
 			##
 			p10=get_score(pb,len(' '.join(l1).split()),'e')
-			pb,lb0,_=main_sg(' '.join(l),0)
+			pb,lb1,_=main_sg(' '.join(l),0)
 			p1=get_score(pb,len(' '.join(l1).split()),'a')
 			##
 			###
@@ -385,13 +385,13 @@ def segment(txt,ref_prob0,valid):   #ref_prob is the probability given by refere
 				#fid.write(str(i)+'(down):'+str([pn0,rp0,cp0,p0,p10])+':'+' '.join(l0)+'\r'+str([pn,rp,cp,p,p1])+':'+' '.join(l)+'\r\r\r')
 			if (pn0*rp0*cp0*p0*p10)>(pn*rp*cp*p*p1):
 				ref_id[np.where(ref_id==Z[ii+1])[0]]=Z[ii]
-				
+
 		tmp=np.unique(ref_id,return_index=True)
 		Z = [x for _,x in sorted(zip(tmp[1],tmp[0]))][1::]
 		tmp3=[tmp2 for tmp2 in Z if tmp2 not in ZZ]
 	##################################################
 	return ref_id
-	
+
 def sg_ref(txt,refs,opt):
 	tmp=np.unique(refs,return_index=True)
 	Z = [x for _,x in sorted(zip(tmp[1],tmp[0]))][1::]
@@ -405,7 +405,7 @@ def sg_ref(txt,refs,opt):
 			for u in range(len(tmp)):
 				ln=txt[tmp[u]] if u==0 else ln+' '+txt[tmp[u]]
 			tmp1 = re.finditer(r'([A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß])'.decode('utf-8'), ln)
-			
+
 			##print "line ::",ln ## toberemoved
 			tmp2 = [m.start(0) for m in tmp1]
 			if bool(tmp2):
@@ -463,7 +463,7 @@ with open('EXparser/Utils/kde_llen_de.pkl', 'rb') as fid:
 with open('EXparser/Utils/kde_tlen_de.pkl', 'rb') as fid:
 	kde_tlen2 = pickle.load(fid)
 with open('EXparser/Utils/rf_de.pkl', 'rb') as fid:
-	clf2 = pickle.load(fid)	
+	clf2 = pickle.load(fid)
 global idxx
 idxx=np.load('./EXparser/idxx.npy')
 #execfile('Segment_F1.py')

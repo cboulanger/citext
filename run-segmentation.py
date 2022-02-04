@@ -120,7 +120,7 @@ if __name__ == "__main__":
         dir_list = os.listdir(config_url_Refs() + subfolder)
         list_of_files = []
         for item in dir_list:
-            if item.endswith('.csv'):
+            if not item.startswith('.') and item.endswith('.csv'):
                 list_of_files.append(os.path.splitext(item)[0])
 
         call_Exparser(list_of_files, subfolder)

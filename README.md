@@ -1,4 +1,4 @@
-# EXParser Docker Image
+# EXParser Docker image & web frontend
 
 This is a docker image of a collection of [tools](https://excite.informatik.uni-stuttgart.de/#software) 
 from the [EXcite project](https://excite.informatik.uni-stuttgart.de/)
@@ -6,21 +6,34 @@ which serve to extract citation data from PDF Documents. In particular, it provi
 for producing training material which is needed to improve citation recognition for
 particular corpora of scholarly literatur where the current algorith does not perform well.
 
-The code has been forked from https://git.gesis.org/hosseiam/excite-docker, but parts of the frontend 
-have been completely rewritten. 
+The code has been forked from https://git.gesis.org/hosseiam/excite-docker, but has been
+in many parts completely rewritten. 
 
-Demos of the training frontends are available here (no backend functionality):
-
-- [Reference String Extraction](https://cboulanger.github.io/excite-docker/EXannotator/EXRef-Identifier/index.html) 
-- [Reference Segmentation](https://cboulanger.github.io/excite-docker/EXannotator/EXRef-Segmentation/index.html)
+A demo of the web frontend (without backend functionality) is available 
+[here](https://cboulanger.github.io/excite-docker/web/index.html).
 
 ## Installation
 
-1. Install prerequisites: [Docker](https://docs.docker.com/install) and [Python v3](https://www.python.org/downloads/)
+1. Install prerequisites: [Docker](https://docs.docker.com/install) and [Python v3](https://www.python.org/downloads/) 
+   with the `requests` module
 2. Clone this repo: `git clone https://github.com/cboulanger/excite-docker.git && cd excite-docker`
-3. Build docker image: `sudo docker build --no-cache -t excite_toolchain .`
-4. Run server: `./start-server`
-5. Open frontend at http://127.0.0.1:8000/index.html
+3. Build docker image: `./bin/build`
+4. Make all needed scripts executable `chmod +x ./bin/* && chmod +x ./cgi-bin/*`
+5. If you want to connect the web app with a locally running Zotero instance, install the following Zotero Add-ons:
+   1. [cita](https://github.com/diegodlh/zotero-cita/raw/bc59a5f86285b74e6c23d75f557295ea492da1ae/cita.xpi)
+   2. [zotero-apt-endpoint](https://github.com/Dominic-DallOsto/zotero-api-endpoint/releases/tag/builds/latest)
+
+## Use of the web frontend
+
+1. Run server: `./bin/start-server`
+2. Open frontend at http://127.0.0.1:8000/web/index.html
+3. Click on "Help" for instructions
+
+## Zotero support
+
+If a [Zotero](https://zotero.org) with the appropriate add-ins (see above) is running, the webapp will enable
+additional commands that let you retrieve the PDF attachment(s) of the currently selected item/collection,
+extract references from them and store them with the citing item. 
 
 ## Run extraction via CLI
 
@@ -43,27 +56,14 @@ You can retrain the model, using your own training data. At the moment feature
 extraction is done before the model training. 
 
 > If you want to use this feature, you need to have
-[git-lfs](https://www.atlassian.com/git/tutorials/git-lfs) installed before you
+[git-lfs](https://www.atlassian.com/git/tutorials/git-lfs) installed **before** you
 check out this repository. git-lfs is necessary to download the large files that
 are used during training.
 
-Before training, run the `prepare-training` script. This will do the following:
+Before training, run `./bin/prepare-training`. Training data needs to be placed into 
+the `Exparser/Dataset` folder. For details, see [here](./EXparser/Dataset/README.md).
 
-- Ask you if you want to you download the [Excite project's ground truth
-  data](https://github.com/exciteproject/Exparser/tree/master/EXparser/Dataset ),
-  which provides a basis to which you can add your own data.
-
-- Download the [EXannotator Web GUI](https://github.com/cboulanger/EXannotator) which can
-  be used to correct training data or produce new training data.
-
-Training data needs to be placed into the `Exparser/Dataset` folder. For
-details, see [here](./EXparser/Dataset/README.md).
-
-To run the training, execute
-
-```
-sudo docker run -v $(pwd):/app excite_toolchain train_extraction
-```
+To run the training, execute `./bin/training`.
 
 Input files (for features extraction):
 ```

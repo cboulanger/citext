@@ -41,7 +41,7 @@ def call_Exparser(list_of_files, subfolder):
             refs = segment(txt, ref_prob0, valid)
             reslt, refstr, retex = sg_ref(txt, refs, 2)
 
-            # reslt: segmented references # refstr: refstr references # retex: bibtex
+            # result: segmented references # refstr: refstr references # retex: bibtex
             print ('Number of references: ' + str(len(refstr)))
             # create references file 
             wf = open(path_refs, 'w')        
@@ -105,7 +105,7 @@ if __name__ == "__main__":
         dir_list = os.listdir(config_url_Layouts() + subfolder)
         list_of_files = []
         for item in dir_list:
-            if item.endswith('.csv'):
+            if not item.startswith('.') and item.endswith('.csv'):
                 list_of_files.append(os.path.splitext(item)[0])
 
         call_Exparser(list_of_files, subfolder)

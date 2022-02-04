@@ -1,0 +1,20 @@
+#!/usr/bin/env bash
+
+temp_file=$(mktemp)
+
+docker run --rm -d \
+  -v $(pwd)/Data/0-pdfs_no_ocr:/input \
+  -v $(pwd)/Data/1-pdfs:/output \
+  -e OCR_LANGUAGES="deu eng" \
+  -e OCR_ACTION_ON_SUCCESS=DELETE_INPUT_FILES \
+  --name ocrmypdf-auto \
+  cmccambridge/ocrmypdf-auto
+
+echo "Waiting for OCR server to start..."
+
+# wait for end of OCR container setup
+while ! docker logs ocrmypdf-auto 2>&1 | grep -q 'Watching'; do
+    sleep 1
+done
+
+echo "Started OCR server."
