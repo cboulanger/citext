@@ -2,7 +2,7 @@
 import time, datetime, json, os, subprocess, traceback
 import sys
 from configs import *
-from EXparser.run_training import _call_extraction_training, _call_extraction_segmentation
+from EXparser.run_training import _call_extraction_training, _call_segmentation_training
 
 logf = open(config_url_venu() + 'logfile.log', "a")
 
@@ -77,8 +77,8 @@ def call_extraction_training():
     _call_extraction_training()
 
 
-def call_extraction_segmentation():
-    _call_extraction_segmentation()
+def call_segmentation_training():
+    _call_segmentation_training()
 
 
 if __name__ == "__main__":
@@ -96,6 +96,6 @@ if __name__ == "__main__":
     elif func_name == "train_extraction":
         call_extraction_training()
     elif func_name == "train_segmentation":
-        call_extraction_training()
+        call_segmentation_training()
     else:
         print("Wrong input command!")

@@ -18,7 +18,7 @@ def _call_extraction_training():
         print(traceback.format_exc())
 
 
-def _call_extraction_segmentation():
+def _call_segmentation_training():
     try:
         proc = subprocess.Popen(['python /app/EXparser/Feature_Extraction.py'], stdout=subprocess.PIPE, shell=True)
         (output, err) = proc.communicate()
