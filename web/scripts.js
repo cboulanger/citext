@@ -1244,7 +1244,7 @@ class GUI {
     let html = "";
     switch (displayMode) {
       // Display document contents
-      case DISPLAY_MODES.DOCUMENT:
+      case DISPLAY_MODES.DOCUMENT: {
         let text_Lines = text
           .split('\n')
           .map(line => line.trim());
@@ -1284,10 +1284,13 @@ class GUI {
           $("#label-page-number").html("");
           $(".visible-if-pages").addClass("hidden");
         }
-        $("#text-label").html(textFileName + " (Document)");
+        // count references
+        const num_refs = text.split("<ref>").length-1;
+        $("#text-label").html(textFileName +` (${num_refs} identified references)`);
         break;
+      }
       // Display references
-      case DISPLAY_MODES.REFERENCES:
+      case DISPLAY_MODES.REFERENCES: {
         if (text.includes("<?xml ")) {
           let textLines = text.split("\n");
           // if standard-compliant xml from , remove declaration and top node
@@ -1302,11 +1305,14 @@ class GUI {
               .replace(/<\/ref>/g, ''));
           text = textLines.join("\n");
         }
+        // count references
+        const num_refs = text.split("\n").length;
         html = text
           .replace(/\n/g, "<br>")
           .replace(/<\/?author>/g, "");
-        $("#text-label").html(textFileName + " (References)");
+        $("#text-label").html(textFileName + ` (${num_refs} references)`);
         break;
+      }
     }
     // translate tag names to data-tag attributes
     let tag_names = [];
