@@ -4,3 +4,4 @@ Thumbs.db
 logfile.log
 # python virtual environment
 /venv/
+/tmp/

@@ -25,15 +25,15 @@ from sklearn_crfsuite import metrics
 import sys
 #sys.path.insert(0, './src')
 #from gle_fun_seg import *
-#execfile('./src/Initial_Data.py')
-execfile('./src/gle_fun.py')
-execfile('./src/gle_fun_seg.py')
+#execfile('/app/Exparser/src/Initial_Data.py')
+execfile('/app/Exparser/src/gle_fun.py')
+execfile('/app/Exparser/src/gle_fun_seg.py')
 
 
 
 
 #preparing training data
-fold="Dataset/SEG"
+fold="/app/Exparser/Dataset/SEG"
 fdir=os.listdir(fold)
 train_sents=[]
 train_feat=[]
@@ -104,7 +104,7 @@ crf = sklearn_crfsuite.CRF(
 
 crf.fit(train_feat, train_label)
 
-with open('Utils/crf_model.pkl', 'wb') as fid:
+with open('/app/Exparser/Utils/crf_model.pkl', 'wb') as fid:
     cPickle.dump(crf, fid) 
 
 

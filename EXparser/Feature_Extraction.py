@@ -15,8 +15,7 @@ execfile('/app/EXparser//src/gle_fun.py')
 execfile('/app/EXparser//src/gle_fun_ext.py')
 
 if not os.path.isdir('/app/EXparser/Dataset/Features/tmp'):
-	os.mkdir('/app/EXparser/Dataset/Data_Comp/tmp/')
-
+	os.mkdir('/app/EXparser/Dataset/Features/tmp')
 
 fold="/app/EXparser/Dataset/LYT"
 fdir=os.listdir(fold)
