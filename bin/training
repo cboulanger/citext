@@ -1,3 +1,37 @@
 #!/usr/bin/env bash
+set -o errexit
+trap 'exit 130' INT
 
-docker run -v $(pwd):/app excite_toolchain train_extraction
+if [[ ! -d Exparser/Dataset/Features ]]; then
+    echo "No training data exists. Please run ./bin/prepare-training first."
+    exit 1
+fi
+
+echo
+echo "============================================="
+echo "Training reference extraction, please wait..."
+echo "============================================="
+echo
+start_extraction=`date +%s`
+docker run -it --rm -v $(pwd):/app excite_toolchain train_extraction
+end_extraction=`date +%s`
+runtime_extraction=$((end_extraction-start_extraction))
+
+echo
+echo "==============================================="
+echo "Training reference segmentation, please wait..."
+echo "==============================================="
+echo
+start_segmentation=`date +%s`
+docker run -it --rm -v $(pwd):/app excite_toolchain train_segmentation
+end_segmentation=`date +%s`
+
+# Report performance
+convertsecs() {
+ ((h=${1}/3600))
+ ((m=(${1}%3600)/60))
+ ((s=${1}%60))
+ printf "%02d:%02d:%02d" $h $m $s
+}
+runtime_segmentation=$((end_segmentation-start_segmentation))
+echo "Finished extraction training in $(convertsecs $runtime_extraction) and segmentation training in $(convertsecs $runtime_segmentation)."
