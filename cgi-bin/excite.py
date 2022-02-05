@@ -111,7 +111,8 @@ try:
         return_code = 0
         while True:
             return_code = tsk.poll()
-            if return_code is not None: break
+            if return_code is not None:
+                break
             line = str(tsk.stdout.readline())
             if line.strip() != "":
                 last_line = line.strip()

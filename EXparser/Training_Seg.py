@@ -29,9 +29,6 @@ import sys
 execfile('/app/Exparser/src/gle_fun.py')
 execfile('/app/Exparser/src/gle_fun_seg.py')
 
-
-
-
 #preparing training data
 fold="/app/Exparser/Dataset/SEG"
 fdir=os.listdir(fold)
@@ -39,12 +36,14 @@ train_sents=[]
 train_feat=[]
 train_label=[]
 
-
+total = str(len(fdir))
 for u in range (len(fdir)):
 	fname=fold+"/"+fdir[u]
+	if fdir[u].startswith("."):
+		continue
+	print('Segmentation training:' + str(u+1) + '/' + total)
 	file = open(fname, "rb")
 	reader = csv.reader(file, delimiter='\t',quoting=csv.QUOTE_NONE)   #, quotechar='|'
-	print 'File in prcossecing =  '+fdir[u]+'  . . .'
 	for row in reader:
 		tic = time.clock()
 		ln=row[0].decode('utf-8')

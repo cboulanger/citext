@@ -19,10 +19,13 @@ if not os.path.isdir('/app/EXparser/Dataset/Features/tmp'):
 
 fold="/app/EXparser/Dataset/LYT"
 fdir=os.listdir(fold)
+total = str(len(fdir))
 for u in range(0,len(fdir)):
+	if fdir[u].startswith("."):
+		continue
+	print('Feature extraction:' + str(u+1) + '/' + total)
 	if not os.path.isfile('/app/EXparser/Dataset/Features/tmp/'+fdir[u]+'.npy'):
 		np.save('/app/EXparser/Dataset/Features/tmp/'+fdir[u]+'.npy',0)
-		print 'File in processing = '+str(u)+' out of '+str(len(fdir))+' . . .'
 		fname=fold+"/"+fdir[u]
 		file = open(fname, "rb")
 		reader=file.read()
@@ -90,8 +93,6 @@ for u in range(0,len(fdir)):
 		tmp2=[np.argmin(abs(np.array(bins6)-x)) for x in llw]
 		allw=[tmp2.count(x) for x in range(len(bins6))]
 
-		
-		
 		#extracting features	
 		
 		FS=np.empty((0,65),float)   #feature space
@@ -174,10 +175,6 @@ for u in range(0,len(fdir)):
 			#print time.time()-t
 		np.savetxt('/app/EXparser/Dataset/Features/'+fdir[u], FS)
 		file.close()
-	else:
-		print 'File already processed'
-
-
 
 
 #execfile('Feature_Extraction.py')

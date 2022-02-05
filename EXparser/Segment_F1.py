@@ -27,8 +27,6 @@ execfile('./EXparser/src/spc_fun_seg.py')
 execfile('./EXparser/src/classification.py')
 
 
-
-
 def get_score(prob,n,p):    # predicted probability, number of tags and the position beginning (b) or end (e) or all (a)
 	if len(prob) >= n:
 		if p=='b':

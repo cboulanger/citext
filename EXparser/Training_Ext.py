@@ -1,35 +1,24 @@
 # -*- coding: UTF-8 -*- 
 
+import random
+import os, sys
+import re
+import numpy as np
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.naive_bayes import *
+from sklearn.feature_extraction.text import *
+import cPickle
+from sklearn.cluster import KMeans
 
 def vec2crfeat(vec,prefix):
 	feat={}
 	[feat.update({prefix+'f'+str(i):vec[i],}) for i in range(len(vec))]
 	return feat
 
-
 def row_count(filename):
     with open(filename) as in_file:
         return sum(1 for row in in_file)
 
-
-import random
-import uuid
-import os
-import csv
-import re
-import codecs
-import numpy as np
-from sklearn import svm
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.naive_bayes import *
-from sklearn.feature_extraction.text import *
-from sklearn import preprocessing
-import cPickle
-from sklearn.feature_selection import RFE
-import sklearn_crfsuite
-from sklearn.cluster import KMeans
-
-# execfile('./src/Initial_Data.py')
 idxx = np.load('/app/EXparser/idxx.npy')
 
 # Training
@@ -39,8 +28,11 @@ SM = np.empty((0, 1), float)  # feature space
 fold = "/app/EXparser/Dataset/LYT"
 fdir = os.listdir(fold)
 validator = 1
+total = str(len(fdir))
 for u in range(len(fdir)):
-    print 'File in processing = ' + str(u) + ' . . .'
+    if fdir[u].startswith("."):
+        continue
+    print('Extraction training:' + str(u+1) + '/' + total)
     file = open("/app/EXparser/Dataset/Features/" + fdir[u], "rb")
     reader = file.read()
     file.close()

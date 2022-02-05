@@ -28,9 +28,12 @@ import jenkspy
 
 fold="/app/EXparser/Dataset/LRT"
 fdir=os.listdir(fold)
+total=str(len(fdir))
 for u in range(0,len(fdir)):
+	if fdir[u].startswith("."):
+		continue
+	print('Text to Vec:' + str(u+1) + '/' + total)
 	if not os.path.isfile("/app/EXparser/Dataset/RefLD/"+fdir[u]):
-		print 'File in processing = '+str(u)+' out of '+str(len(fdir))+' . . .'
 		fname=fold+"/"+fdir[u]
 		file = open(fname, "rb")
 		reader = csv.reader(file, delimiter='\t',quoting=csv.QUOTE_NONE)   
@@ -60,7 +63,5 @@ for u in range(0,len(fdir)):
 					i=0
 				R=np.append(R,[[ref]],0)	
 		np.savetxt('/app/EXparser/Dataset/RefLD/'+fdir[u], R)
-	else:
-		print 'file already processed'
-		
-#execfile('Txt2Vec.py')		
+
+#execfile('Txt2Vec.py')
