@@ -21,3 +21,10 @@ EXparser/Utils/kde_ntag_en.pkl filter=lfs diff=lfs merge=lfs -text
 EXparser/Utils/kde_tlen_en.pkl filter=lfs diff=lfs merge=lfs -text
 EXparser/Utils/kde_wtag_de.pkl filter=lfs diff=lfs merge=lfs -text
 EXparser/Utils/* filter=lfs diff=lfs merge=lfs -text
+EXparser/lists/abv.csv filter=lfs diff=lfs merge=lfs -text
+EXparser/lists/cities.csv filter=lfs diff=lfs merge=lfs -text
+EXparser/lists/edt.csv filter=lfs diff=lfs merge=lfs -text
+EXparser/lists/journals.csv filter=lfs diff=lfs merge=lfs -text
+EXparser/lists/names.csv filter=lfs diff=lfs merge=lfs -text
+EXparser/lists/publishers.csv filter=lfs diff=lfs merge=lfs -text
+EXparser/lists/stopwords.csv filter=lfs diff=lfs merge=lfs -text
