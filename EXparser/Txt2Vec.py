@@ -24,7 +24,6 @@ import re
 import codecs
 import numpy as np
 import jenkspy
-# execfile('/app/EXparser/src/Initial_Data.py')
 
 fold="/app/EXparser/Dataset/LRT"
 fdir=os.listdir(fold)
@@ -63,5 +62,3 @@ for u in range(0,len(fdir)):
 					i=0
 				R=np.append(R,[[ref]],0)	
 		np.savetxt('/app/EXparser/Dataset/RefLD/'+fdir[u], R)
-
-#execfile('Txt2Vec.py')

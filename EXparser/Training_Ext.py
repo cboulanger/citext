@@ -1,23 +1,25 @@
 # -*- coding: UTF-8 -*- 
 
 import random
-import os, sys
+import os
 import re
+import sys
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
-from sklearn.naive_bayes import *
-from sklearn.feature_extraction.text import *
 import cPickle
 from sklearn.cluster import KMeans
 
-def vec2crfeat(vec,prefix):
-	feat={}
-	[feat.update({prefix+'f'+str(i):vec[i],}) for i in range(len(vec))]
-	return feat
+
+def vec2crfeat(vec, prefix):
+    feat = {}
+    [feat.update({prefix + 'f' + str(i): vec[i], }) for i in range(len(vec))]
+    return feat
+
 
 def row_count(filename):
     with open(filename) as in_file:
         return sum(1 for row in in_file)
+
 
 idxx = np.load('/app/EXparser/idxx.npy')
 
@@ -30,38 +32,34 @@ fdir = os.listdir(fold)
 validator = 1
 total = str(len(fdir))
 for u in range(len(fdir)):
+    print('Extraction training:' + str(u + 1) + '/' + total)
+    sys.stdout.flush()
     if fdir[u].startswith("."):
         continue
-    print('Extraction training:' + str(u+1) + '/' + total)
-    file = open("/app/EXparser/Dataset/Features/" + fdir[u], "rb")
-    reader = file.read()
-    file.close()
+    with open("/app/EXparser/Dataset/Features/" + fdir[u], "rb") as file:
+        reader = str(file.read())
     reader = re.sub(r'[\r\n]+', '\r', reader)
     reader = reader.split('\r')
     reader = reader[0:-1] if reader[-1] == '' else reader
-
-    file = open("/app/EXparser/Dataset/RefLD/" + fdir[u], "rb")
-    reader2 = file.read()
-    file.close()
+    with open("/app/EXparser/Dataset/RefLD/" + fdir[u], "rb") as file:
+        reader2 = str(file.read())
     reader2 = re.sub(r'[\r\n]+', '|', reader2)
     reader2 = reader2.split('|')
     reader2 = reader2[0:-1] if reader2[-1] == '' else reader2
 
     Fs = np.empty((0, 50 * 3), float)  # feature space
     Sm = np.empty((0, 1), float)  # feature space
-
     for uu in range(len(reader)):
-
         row2 = reader2[uu]
         r_2 = int(float(row2[0]))
         Sm = np.append(Sm, [[r_2]], 0)
 
         row = reader[uu]
         r = np.array(row.split(' ')).astype(np.float)
-        if (uu == 0):
+        if uu == 0:
             r1 = np.array(reader[uu + 1].split(' ')).astype(np.float)
             r2 = np.array([0] * 65)
-        elif (uu == (len(reader) - 1)):
+        elif uu == (len(reader) - 1):
             r1 = np.array([0] * 65)
             r2 = np.array(reader[uu - 1].split(' ')).astype(np.float)
         else:
@@ -72,6 +70,7 @@ for u in range(len(fdir)):
         r2 = r2[idxx]
         r = np.concatenate((r, r1, r2))
         Fs = np.append(Fs, [r], 0)
+
     Fs[np.isinf(Fs)] = 1
     # Uncomment for Normalisation
     # Fs=np.transpose([(x-min(x))/(max(x)-min(x)) for x in np.transpose(Fs)])
@@ -124,5 +123,3 @@ clf1.fit(FSN, SMN)
 # save the classifier
 with open('/app/EXparser/Utils/rf.pkl', 'wb') as fid2:
     cPickle.dump(clf1, fid2)
-
-# execfile('Training_Ext.py')

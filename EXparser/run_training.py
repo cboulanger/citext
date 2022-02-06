@@ -2,7 +2,7 @@ import subprocess, traceback
 
 def pipe_stdout(proc):
     for line in proc.stdout:
-        print(line.strip())
+        print(">>> " + line.strip())
 
 def _call_extraction_training():
     try:

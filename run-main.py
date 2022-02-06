@@ -1,11 +1,10 @@
 # -*- coding: utf-8 -*-
-import time, datetime, json, os, subprocess, traceback
+import os, subprocess, traceback
 import sys
 from configs import *
 from EXparser.run_training import _call_extraction_training, _call_segmentation_training
 
 logf = open(config_url_venu() + 'logfile.log', "a")
-
 
 def call_run_layout_extractor():
     command = ''
@@ -47,7 +46,7 @@ def call_run_exparser():
     command = ''
     try:
         command = 'python run-exparser.py'
-        print(command)
+        logf.write(command)
         proc = subprocess.Popen([command], stdout=subprocess.PIPE, shell=True)
         (output, err) = proc.communicate()
         print(output)  

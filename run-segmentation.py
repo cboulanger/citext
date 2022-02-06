@@ -1,16 +1,16 @@
 # -*- coding: utf-8 -*-
-import time, datetime, json, os
-import sys, traceback
+import os
+import sys
+import time
+import traceback
+from langdetect import detect
+from EXparser.Segment_F1 import *
+from JsonParser import *
 from configs import *
 
-execfile('./EXparser/Segment_F1.py')
-from JsonParser import *
-
-reload(sys)
+reload(sys) # ??
 sys.setdefaultencoding('utf8')
-
 logf = open(config_url_venu() + 'logfile.log', "a")
-
 
 def call_Exparser(list_of_files, subfolder):
     t1 = time.time()
@@ -19,7 +19,7 @@ def call_Exparser(list_of_files, subfolder):
     list_of_time = []
 
     for filename in list_of_files:
-        print("%s of %s --- File name is : %s" % (i, count, filename))
+        print("Segmenting:%s/%s:%s" % (i, count,filename))
         try:
             t11 = time.time()
             # path_layout = config_url_Layouts() + subfolder + filename + '.csv'
@@ -50,13 +50,11 @@ def call_Exparser(list_of_files, subfolder):
             valid = [1] * len(txt)
             ref_prob0 = [(0, 1, 0, 0)] * len(txt)
 
-            print len(txt)
-
             refs = segment(txt, ref_prob0, valid)
             reslt, refstr, retex = sg_ref(txt, refs, 2)
 
             # reslt: segmented references # refstr: refstr references # retex: bibtex
-            print ('Number of references: ' + str(len(refstr)))
+            #print ('Number of references: ' + str(len(refstr)))
             # create references file 
             # wf = open(path_refs, 'w')
             # for item in refstr:

@@ -1286,7 +1286,11 @@ class GUI {
         }
         // count references
         const num_refs = text.split("<ref>").length-1;
-        $("#text-label").html(textFileName +` (${num_refs} identified references)`);
+        let label = ""
+        if (textFileName) {
+          label = textFileName +` (${num_refs} identified references)`;
+        }
+        $("#text-label").html(label);
         break;
       }
       // Display references
@@ -1310,7 +1314,11 @@ class GUI {
         html = text
           .replace(/\n/g, "<br>")
           .replace(/<\/?author>/g, "");
-        $("#text-label").html(textFileName + ` (${num_refs} references)`);
+        let label = "";
+        if (textFileName) {
+          label = textFileName + ` (${num_refs} references)`;
+        }
+        $("#text-label").html(label);
         break;
       }
     }
