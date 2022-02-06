@@ -32,7 +32,7 @@ fdir = os.listdir(fold)
 validator = 1
 total = str(len(fdir))
 for u in range(len(fdir)):
-    print('Extraction training:' + str(u + 1) + '/' + total)
+    print('>Extraction training:' + str(u + 1) + '/' + total)
     sys.stdout.flush()
     if fdir[u].startswith("."):
         continue

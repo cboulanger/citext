@@ -1,7 +1,10 @@
 # -*- coding: UTF-8 -*- 
+import os
+import csv
+import re
+import numpy as np
 
-def check_ref(ln): 
-	
+def check_ref(ln):
 	tmp=re.findall(r'<ref>'.decode('utf-8'), ln)
 	if tmp:
 		ref=1
@@ -17,21 +20,13 @@ def check_eref(ln):
 		eref=0
 	return eref
 
-
-import os
-import csv
-import re
-import codecs
-import numpy as np
-import jenkspy
-
 fold="/app/EXparser/Dataset/LRT"
 fdir=os.listdir(fold)
 total=str(len(fdir))
 for u in range(0,len(fdir)):
 	if fdir[u].startswith("."):
 		continue
-	print('Text to Vec:' + str(u+1) + '/' + total)
+	print('>Text to Vec:' + str(u+1) + '/' + total)
 	if not os.path.isfile("/app/EXparser/Dataset/RefLD/"+fdir[u]):
 		fname=fold+"/"+fdir[u]
 		file = open(fname, "rb")

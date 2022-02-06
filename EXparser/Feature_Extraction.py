@@ -1,11 +1,7 @@
 # -*- coding: UTF-8 -*- 
 
-
-import os
-import numpy as np
 import jenkspy
 from itertools import groupby
-
 from src.gle_fun import *
 from src.gle_fun_ext import *
 
@@ -18,7 +14,7 @@ total = str(len(fdir))
 for u in range(0, len(fdir)):
     if fdir[u].startswith("."):
         continue
-    print('Feature extraction:' + str(u + 1) + '/' + total)
+    print('>Feature extraction:' + str(u + 1) + '/' + total)
     if not os.path.isfile('/app/EXparser/Dataset/Features/tmp/' + fdir[u] + '.npy'):
         np.save('/app/EXparser/Dataset/Features/tmp/' + fdir[u] + '.npy', 0)
         fname = fold + "/" + fdir[u]

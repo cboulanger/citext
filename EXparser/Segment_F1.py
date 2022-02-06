@@ -7,29 +7,8 @@ import pickle
 from src.spc_fun_seg import *
 from src.classification import *
 
-# vars to import into other modules
 lng = ""
-idxx = None
-crf1 = None
-clf2 = None
-clf1 = None
-crf2 = None
-kde_ntag1 = None
-kde_ltag1 = None
-kde_dtag1 = None
-kde_atag1 = None
-kde_wtag1 = None
-kde_gtag1 = None
-kde_llen1 = None
-kde_tlen1 = None
-kde_ntag2 = None
-kde_ltag2 = None
-kde_dtag2 = None
-kde_atag2 = None
-kde_wtag2 = None
-kde_gtag2 = None
-kde_llen2 = None
-kde_tlen2 = None
+
 
 def get_score(prob, n, p):
     # predicted probability, number of tags and the position beginning (b) or end (e) or all (a)
@@ -46,7 +25,6 @@ def get_score(prob, n, p):
         else:
             raise RuntimeError('The selected position must be either "b", "e" or "a"')
     else:
-        ##*print 'The number of selected labeles must be smaller or equal to the length of string'
         score = np.mean(np.array(prob))
     return score
 
@@ -426,8 +404,6 @@ def sg_ref(txt, refs, opt):
             for u in range(len(tmp)):
                 ln = txt[tmp[u]] if u == 0 else ln + ' ' + txt[tmp[u]]
             tmp1 = re.finditer(r'([A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß])'.decode('utf-8'), ln)
-
-            ##print "line ::",ln ## toberemoved
             tmp2 = [m.start(0) for m in tmp1]
             if bool(tmp2):
                 tmp2 = tmp2[0]
@@ -440,56 +416,51 @@ def sg_ref(txt, refs, opt):
                 restex.append(tmp)
     return reslt, refstr, restex
 
+# load models
+with open('EXparser/Utils/crf_model_en.pkl', 'rb') as fid:
+    crf1 = cPickle.load(fid)
+with open('EXparser/Utils/kde_ntag_en.pkl', 'rb') as fid:
+    kde_ntag1 = pickle.load(fid)
+with open('EXparser/Utils/kde_ltag_en.pkl', 'rb') as fid:
+    kde_ltag1 = pickle.load(fid)
+with open('EXparser/Utils/kde_dtag_en.pkl', 'rb') as fid:
+    kde_dtag1 = pickle.load(fid)
+with open('EXparser/Utils/kde_atag_en.pkl', 'rb') as fid:
+    kde_atag1 = pickle.load(fid)
+with open('EXparser/Utils/kde_wtag_en.pkl', 'rb') as fid:
+    kde_wtag1 = pickle.load(fid)
+with open('EXparser/Utils/kde_gtag_en.pkl', 'rb') as fid:
+    kde_gtag1 = pickle.load(fid)
+with open('EXparser/Utils/kde_llen_en.pkl', 'rb') as fid:
+    kde_llen1 = pickle.load(fid)
+with open('EXparser/Utils/kde_tlen_en.pkl', 'rb') as fid:
+    kde_tlen1 = pickle.load(fid)
+with open('EXparser/Utils/rf_en.pkl', 'rb') as fid:
+    clf1 = pickle.load(fid)
+with open('EXparser/Utils/crf_model_de.pkl', 'rb') as fid:
+    crf2 = cPickle.load(fid)
+with open('EXparser/Utils/kde_ntag_de.pkl', 'rb') as fid:
+    kde_ntag2 = pickle.load(fid)
+with open('EXparser/Utils/kde_ltag_de.pkl', 'rb') as fid:
+    kde_ltag2 = pickle.load(fid)
+with open('EXparser/Utils/kde_dtag_de.pkl', 'rb') as fid:
+    kde_dtag2 = pickle.load(fid)
+with open('EXparser/Utils/kde_atag_de.pkl', 'rb') as fid:
+    kde_atag2 = pickle.load(fid)
+with open('EXparser/Utils/kde_wtag_de.pkl', 'rb') as fid:
+    kde_wtag2 = pickle.load(fid)
+with open('EXparser/Utils/kde_gtag_de.pkl', 'rb') as fid:
+    kde_gtag2 = pickle.load(fid)
+with open('EXparser/Utils/kde_llen_de.pkl', 'rb') as fid:
+    kde_llen2 = pickle.load(fid)
+with open('EXparser/Utils/kde_tlen_de.pkl', 'rb') as fid:
+    kde_tlen2 = pickle.load(fid)
+with open('EXparser/Utils/rf_de.pkl', 'rb') as fid:
+    clf2 = pickle.load(fid)
 
-def load_models():
-    global crf1, clf2, clf1, crf2, idxx
-    global kde_ntag1, kde_ltag1, kde_dtag1, kde_atag1, kde_wtag1, kde_gtag1, kde_llen1, kde_tlen1
-    global kde_ntag2, kde_ltag2, kde_dtag2, kde_atag2, kde_wtag2, kde_gtag2, kde_llen2, kde_tlen2
-
-    with open('EXparser/Utils/crf_model_en.pkl', 'rb') as fid:
-        crf1 = cPickle.load(fid)
-    with open('EXparser/Utils/kde_ntag_en.pkl', 'rb') as fid:
-        kde_ntag1 = pickle.load(fid)
-    with open('EXparser/Utils/kde_ltag_en.pkl', 'rb') as fid:
-        kde_ltag1 = pickle.load(fid)
-    with open('EXparser/Utils/kde_dtag_en.pkl', 'rb') as fid:
-        kde_dtag1 = pickle.load(fid)
-    with open('EXparser/Utils/kde_atag_en.pkl', 'rb') as fid:
-        kde_atag1 = pickle.load(fid)
-    with open('EXparser/Utils/kde_wtag_en.pkl', 'rb') as fid:
-        kde_wtag1 = pickle.load(fid)
-    with open('EXparser/Utils/kde_gtag_en.pkl', 'rb') as fid:
-        kde_gtag1 = pickle.load(fid)
-    with open('EXparser/Utils/kde_llen_en.pkl', 'rb') as fid:
-        kde_llen1 = pickle.load(fid)
-    with open('EXparser/Utils/kde_tlen_en.pkl', 'rb') as fid:
-        kde_tlen1 = pickle.load(fid)
-    with open('EXparser/Utils/rf_en.pkl', 'rb') as fid:
-        clf1 = pickle.load(fid)
-    with open('EXparser/Utils/crf_model_de.pkl', 'rb') as fid:
-        crf2 = cPickle.load(fid)
-    with open('EXparser/Utils/kde_ntag_de.pkl', 'rb') as fid:
-        kde_ntag2 = pickle.load(fid)
-    with open('EXparser/Utils/kde_ltag_de.pkl', 'rb') as fid:
-        kde_ltag2 = pickle.load(fid)
-    with open('EXparser/Utils/kde_dtag_de.pkl', 'rb') as fid:
-        kde_dtag2 = pickle.load(fid)
-    with open('EXparser/Utils/kde_atag_de.pkl', 'rb') as fid:
-        kde_atag2 = pickle.load(fid)
-    with open('EXparser/Utils/kde_wtag_de.pkl', 'rb') as fid:
-        kde_wtag2 = pickle.load(fid)
-    with open('EXparser/Utils/kde_gtag_de.pkl', 'rb') as fid:
-        kde_gtag2 = pickle.load(fid)
-    with open('EXparser/Utils/kde_llen_de.pkl', 'rb') as fid:
-        kde_llen2 = pickle.load(fid)
-    with open('EXparser/Utils/kde_tlen_de.pkl', 'rb') as fid:
-        kde_tlen2 = pickle.load(fid)
-    with open('EXparser/Utils/rf_de.pkl', 'rb') as fid:
-        clf2 = pickle.load(fid)
-    idxx = np.load('./EXparser/idxx.npy')
+idxx = np.load('./EXparser/idxx.npy')
 
 # note:
 # Preprocessing is desactivated in main_sg and activated in main to ensure that the text is
 # preprpcessed for all functions
 
-load_models()

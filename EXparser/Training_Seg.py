@@ -17,7 +17,7 @@ train_label = []
 
 total = str(len(fdir))
 for u in range(len(fdir)):
-    print('Segmentation training:' + str(u + 1) + '/' + total)
+    print('>Segmentation training:' + str(u + 1) + '/' + total)
     if fdir[u].startswith("."):
         continue
     fname = fold + "/" + fdir[u]

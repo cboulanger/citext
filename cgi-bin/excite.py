@@ -104,23 +104,22 @@ try:
         # run docker command and write output to server output
         args = ['docker', 'run', '--rm', '-v' + os.getcwd() + ':/app', 'excite_toolchain', command]
         sys.stderr.write(" ".join(args) + "\n")
-        tsk = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT, universal_newlines=True)
+        proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         # check for process completion and copy output to stderr
-        last_line = ""
         return_code = 0
         while True:
-            return_code = tsk.poll()
+            return_code = proc.poll()
             if return_code is not None:
                 break
-            line = str(tsk.stdout.readline())
-            if line.strip() != "":
-                last_line = line.strip()
-            sys.stderr.write(line)
+            line = proc.stdout.readline().strip()
+            if line != "":
+                # write to stderr so that it is printed in the server output
+                sys.stderr.write(line)
 
         # subprocess returned with error
         if return_code != 0:
-            raise RuntimeError(last_line)
+            raise RuntimeError("\n".join(proc.stderr.readlines()))
 
     if result_path is None:
         result["success"] = True
