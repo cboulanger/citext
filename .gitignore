@@ -1,6 +1,7 @@
 Thumbs.db
 *.log
 *.pyc
+.DS_Store
 logfile.log
 # python virtual environment
 /venv/
