@@ -3,27 +3,28 @@
 
 import re
 import numpy as np
-from gle_fun import textlow, stopw
+from .gle_fun import textlow, stopw
 
 # variables:
-acc = 'A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ'.decode('utf-8')  # all capital characters
-asc = 'a-zäüöïèéçâîôêëùìòàãõñûß'.decode('utf-8')  # all small characters
+acc = 'A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ'  # all capital characters
+asc = 'a-zäüöïèéçâîôêëùìòàãõñûß'  # all small characters
 ftag = ['given-names', 'surname', 'year', 'title', 'editor', 'source', 'publisher', 'other', 'page', 'volume',
         'author', 'fpage', 'lpage', 'issue', 'url', 'identifier']  # full name of tags
 atag = ['FN', 'LN', 'YR', 'AT', 'ED', 'SR', 'PB', 'OT', 'PG', 'VL', 'AR', 'FP', 'LP', 'IS', 'UR',
         'ID']  # Abreviated tags
 
+
 # preproces the line with tag
 def preproc(ln):
     # remove or replace strange character:
-    ln = re.sub(r'–'.decode('utf-8'), '-', ln)
-    ln = re.sub(r"[']+".decode('utf-8'), '"', ln)
-    ln = re.sub(r'[‘]+|[’]+|[`]+|„|“'.decode('utf-8'), '"', ln)
+    ln = re.sub(r'–', '-', ln)
+    ln = re.sub(r"[']+", '"', ln)
+    ln = re.sub(r'[‘]+|[’]+|[`]+|„|“', '"', ln)
 
     # remove space between two given names A. B.
     ln = re.sub(
-        r"((?<![" + acc + asc + "0-9])[" + acc + "][\.])([\s]+[" + acc + "][\.](?![" + acc + asc + "0-9]))".decode(
-            'utf-8'), r"\1\2", ln)
+        r"((?<![" + acc + asc + "0-9])[" + acc + "][\.])([\s]+[" + acc + "][\.](?![" + acc + asc + "0-9]))", r"\1\2",
+        ln)
 
     # remove empty tags
     tag = '|'.join(ftag)
@@ -81,21 +82,21 @@ def findtag(w, l):  # w is the word and l is if the tag is still open
     i = 0
     v = True
     while (i < len(ftag)) & (v):
-        tmp1 = re.findall(r'<' + ftag[i] + '>'.decode('utf-8'), w)
-        tmp2 = re.findall(r'</' + ftag[i] + '>'.decode('utf-8'), w)
+        tmp1 = re.findall(r'<' + ftag[i] + '>', w)
+        tmp2 = re.findall(r'</' + ftag[i] + '>', w)
         if (bool(tmp1) & bool(tmp2)):
             v = False
-            w = re.sub(r'<' + ftag[i] + '>|</' + ftag[i] + '>'.decode('utf-8'), '', w)
+            w = re.sub(r'<' + ftag[i] + '>|</' + ftag[i] + '>', '', w)
             a = atag[i]
             l = -1
         elif tmp2:
             v = False
-            w = re.sub(r'<' + ftag[i] + '>|</' + ftag[i] + '>'.decode('utf-8'), '', w)
+            w = re.sub(r'<' + ftag[i] + '>|</' + ftag[i] + '>', '', w)
             a = atag[i]
             l = -1
         elif tmp1:
             v = False
-            w = re.sub(r'<' + ftag[i] + '>|</' + ftag[i] + '>'.decode('utf-8'), '', w)
+            w = re.sub(r'<' + ftag[i] + '>|</' + ftag[i] + '>', '', w)
             a = atag[i]
             l = i
         i += 1
@@ -116,54 +117,53 @@ def get_pos(i, l):
 
 
 def get_len(w):
-    ln = 1.0 / len(re.sub(r'\b\s'.decode('utf-8'), '', w))
+    ln = 1.0 / len(re.sub(r'\b\s', '', w))
     return ln
 
 
 def get_rne(w):  # ratio number to everything
-    rne = 1.0 * len(re.findall(r'[0-9]+'.decode('utf-8'), w)) / max(1, len(re.sub(r'\b\s'.decode('utf-8'), '', w)))
+    rne = 1.0 * len(re.findall(r'[0-9]+', w)) / max(1, len(re.sub(r'\b\s', '', w)))
     return rne
 
 
 def get_rce(w):  # ratio character to everything
-    rce = 1.0 * len(re.findall(r'[' + acc + asc + ']+'.decode('utf-8'), w)) / max(1, len(re.sub(r'\b\s'.decode('utf-8'),
-                                                                                                '', w)))
+    rce = 1.0 * len(re.findall(r'[' + acc + asc + ']+', w)) / max(1, len(re.sub(r'\b\s', '', w)))
     return rce
 
 
 def get_rse(w):  # ratio special character to everything
-    rse = 1.0 * len(re.findall(r'[^0-9' + acc + asc + ']+'.decode('utf-8'), w)) / max(1, len(re.sub(
-        r'\b\s'.decode('utf-8'), '', w)))
+    rse = 1.0 * len(re.findall(r'[^0-9' + acc + asc + ']+', w)) / max(1, len(re.sub(
+        r'\b\s', '', w)))
     return rse
 
 
 def get_rca(w):  # ratio capital letter to all letters
-    rca = 1.0 * len(re.findall(r'[A' + acc + ']+'.decode('utf-8'), w)) / max(1, len(re.findall(
-        r'[' + acc + asc + ']'.decode('utf-8'), w)))
+    rca = 1.0 * len(re.findall(r'[A' + acc + ']+', w)) / max(1, len(re.findall(
+        r'[' + acc + asc + ']', w)))
     return rca
 
 
 def get_rsa(w):  # ratio small letter to all letters
-    rsa = 1.0 * len(re.findall(r'[a' + asc + ']+'.decode('utf-8'), w)) / max(1, len(re.findall(
-        r'[' + acc + asc + ']'.decode('utf-8'), w)))
+    rsa = 1.0 * len(re.findall(r'[a' + asc + ']+', w)) / max(1, len(re.findall(
+        r'[' + acc + asc + ']', w)))
     return rsa
 
 
 def get_yr(w):  # [2]
     # extract all 4 digits from 1000 to 2999
-    yr = re.findall(r'1[8-9]{1}[0-9]{2}|20[0-2]{1}[0-9]{1}'.decode('utf-8'), w)
+    yr = re.findall(r'1[8-9]{1}[0-9]{2}|20[0-2]{1}[0-9]{1}', w)
     yr = bool(yr)
     return yr
 
 
 def get_pg(w):  # [3]
-    tmp = re.findall(r'[0-9]+[^0-9\.\(\)\[\]\{\}]+[0-9]+'.decode('utf-8'), w)
+    tmp = re.findall(r'[0-9]+[^0-9\.\(\)\[\]\{\}]+[0-9]+', w)
     pg = bool(tmp)
     return pg
 
 
 def get_lex1(w):  # [4]
-    # tmp=re.findall(r'\s[Ii]n:'.decode('utf-8'), w)    # to be checked
+    # tmp=re.findall(r'\s[Ii]n:', w)    # to be checked
     tmp = re.sub(r'[ ]+(In[:]*|in:)[ ]*', '', w)  # different from testing
     lex1 = not bool(tmp)
     return lex1
@@ -171,7 +171,7 @@ def get_lex1(w):  # [4]
 
 def get_cd(w):  # [20]
     # extract all 4 digits from 1000 to 2999
-    tmp = re.findall(r'(?<![' + acc + asc + '0-9])([' + acc + '][\.]){1,2}(?![' + acc + asc + '0-9])'.decode('utf-8'),
+    tmp = re.findall(r'(?<![' + acc + asc + '0-9])([' + acc + '][\.]){1,2}(?![' + acc + asc + '0-9])',
                      w)
     cd = bool(tmp)
     return cd
@@ -179,7 +179,7 @@ def get_cd(w):  # [20]
 
 def get_stw(w):  # [15]
     # extract all 4 digits from 1000 to 2999
-    tmp = re.findall(stopw.decode('utf-8'), w)  # remove stopword
+    tmp = re.findall(stopw, w)  # remove stopword
     if tmp:
         stw = True
     else:
@@ -188,47 +188,46 @@ def get_stw(w):  # [15]
 
 
 def get_lex2(w):  # [9]
-    tmp = re.findall(r'Hg\.|Hrs[g]+\.|[eE]d[s]*\.'.decode('utf-8'), w)
+    tmp = re.findall(r'Hg\.|Hrs[g]+\.|[eE]d[s]*\.', w)
     lex2 = bool(tmp)
     return lex2
 
 
 def get_lex3(w):  # [12]
     tmp = re.findall(
-        r'(verlag)|(press)|(universit(y|ät))|(publi(cation[s]*|shing|sher[s]*))|(book[s]*)|(intitut[e]*)'.decode(
-            'utf-8'), textlow(w))
+        r'(verlag)|(press)|(universit(y|ät))|(publi(cation[s]*|shing|sher[s]*))|(book[s]*)|(intitut[e]*)', textlow(w))
     lex3 = bool(tmp)
     return lex3
 
 
 def get_lex6(w):  # [13]
-    tmp = re.findall(r'[Bb]d\.|[Bb]and'.decode('utf-8'), w)
+    tmp = re.findall(r'[Bb]d\.|[Bb]and', w)
     lex6 = bool(tmp)
     return lex6
 
 
 def get_lex7(w):  # [14]
-    # tmp=re.findall(r'[\b]*[eE]d[s]*.[\s]*'.decode('utf-8'), w)
-    tmp = re.findall(r'S\.|PP\.|pp\.|ss\.|SS\.|[Pp]ages[\.]'.decode('utf-8'), w)
+    # tmp=re.findall(r'[\b]*[eE]d[s]*.[\s]*', w)
+    tmp = re.findall(r'S\.|PP\.|pp\.|ss\.|SS\.|[Pp]ages[\.]', w)
     lex7 = bool(tmp)
     return lex7
 
 
 def get_lex8(w):  # [14]
-    tmp = re.findall(r'Vgl\.'.decode('utf-8'), w)
+    tmp = re.findall(r'Vgl\.', w)
     lex8 = bool(tmp)
     return lex8
 
 
 def get_dgt(w):  # [11]   #is digit
-    tmp = re.sub(r'[0-9\b\s]'.decode('utf-8'), '', w)
-    tmp2 = re.sub(r'[\b\s]'.decode('utf-8'), '', w)
+    tmp = re.sub(r'[0-9\b\s]', '', w)
+    tmp2 = re.sub(r'[\b\s]', '', w)
     dgt = bool(tmp2) & (not bool(tmp))
     return dgt
 
 
 def get_cgt(w):  # [16]   #contains digit
-    tmp = re.findall(r'[0-9]'.decode('utf-8'), w)
+    tmp = re.findall(r'[0-9]', w)
     if tmp:
         cgt = True
     else:
@@ -237,28 +236,27 @@ def get_cgt(w):  # [16]   #contains digit
 
 
 def get_lnk(w):  # [*1]   #is link
-    # tmp=re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'.decode('utf-8'), w)
+    # tmp=re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', w)
     tmp = re.findall(
-        r'(http://|ftp://|https://|www\.)([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?'.decode(
-            'utf-8'), w)
+        r'(http://|ftp://|https://|www\.)([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?', w)
     lnk = bool(tmp)
     return lnk
 
 
 def get_vol(w):  # [*2]   #is vol.
-    tmp = re.findall(r'[Vv]ol\.|[Jj]g\.'.decode('utf-8'), w)
+    tmp = re.findall(r'[Vv]ol\.|[Jj]g\.', w)
     vol = bool(tmp)
     return vol
 
 
 def get_und(w):  # [*2]   #is und
-    tmp = re.findall(r'[^0-9' + acc + asc + '](u\.|and|und)[^0-9' + acc + asc + ']'.decode('utf-8'), w)
+    tmp = re.findall(r'[^0-9' + acc + asc + '](u\.|and|und)[^0-9' + acc + asc + ']', w)
     und = bool(tmp)
     return und
 
 
 def get_amo(w):  # [*2]   #is among others
-    tmp = re.findall(r'[^0-9A' + acc + asc + ']u\.a\.[^0-9' + acc + asc + ']'.decode('utf-8'), w)
+    tmp = re.findall(r'[^0-9A' + acc + asc + ']u\.a\.[^0-9' + acc + asc + ']', w)
     if tmp:
         amo = True
     else:
@@ -267,13 +265,13 @@ def get_amo(w):  # [*2]   #is among others
 
 
 def get_num(w):  # [*2]   #is link
-    tmp = re.findall(r'[Nn][ro][\.\:]*'.decode('utf-8'), w)
+    tmp = re.findall(r'[Nn][ro][\.\:]*', w)
     num = bool(tmp)
     return num
 
 
 def fin_db(w, stopw, b1, b2, b3, b4, b5, b6):  # [1,10]    # search in databases
-    tmp0 = textlow(re.sub(r'[^' + acc + asc + ']'.decode('utf-8'), '', w))
+    tmp0 = textlow(re.sub(r'[^' + acc + asc + ']', '', w))
     db = {'name': tmp0 in b1, 'abv': tmp0 in b2, 'city': tmp0 in b3, 'edit': tmp0 in b4, 'jornal': tmp0 in b5,
           'publish': tmp0 in b6}
     return db
@@ -285,8 +283,8 @@ def get_last(w):  # [5,6,17,19,22,23,27,28]   c is the last character of the wor
     else:
         c = w[-1] * 2
 
-    tmp1 = re.sub(r'[^' + acc + asc + ']'.decode('utf-8'), '', c[1])
-    tmp2 = re.sub(r'[^0-9]'.decode('utf-8'), '', c[1])
+    tmp1 = re.sub(r'[^' + acc + asc + ']', '', c[1])
+    tmp2 = re.sub(r'[^0-9]', '', c[1])
     if (c[0] == ',') | (c[1] == ','):
         lst = {'cum': True, 'parnt': False, 'dot': False, 'dpt': False, 'qot': False, 'slash': False, 'pvir': False,
                'pon': False, 'rem': 'P'}  # P=1, B=2, Q=3, S=4, C=5, D=6, O=7
@@ -299,7 +297,7 @@ def get_last(w):  # [5,6,17,19,22,23,27,28]   c is the last character of the wor
     elif (c[0] == ':') | (c[1] == ':'):
         lst = {'cum': False, 'parnt': False, 'dot': False, 'dpt': True, 'qot': False, 'slash': False, 'pvir': False,
                'pon': False, 'rem': 'P'}  # P=1, B=2, Q=3, S=4, C=5, D=6, O=7
-    elif (c[0] == '"') | (c[0] == "'") | (c[1] == '"') | (c[1] == "'") | (c[1] == "“".decode('utf-8')):
+    elif (c[0] == '"') | (c[0] == "'") | (c[1] == '"') | (c[1] == "'") | (c[1] == "“"):
         lst = {'cum': False, 'parnt': False, 'dot': False, 'dpt': False, 'qot': True, 'slash': False, 'pvir': False,
                'pon': False, 'rem': 'Q'}  # P=1, B=2, Q=3, S=4, C=5, D=6, O=7
     elif (c[0] == '/') | (c[0] == '\\') | (c[1] == '/') | (c[1] == '\\'):
@@ -324,13 +322,13 @@ def get_last(w):  # [5,6,17,19,22,23,27,28]   c is the last character of the wor
 
 
 def get_first(c):
-    tmp1 = re.sub(r'[^' + acc + ']'.decode('utf-8'), '', c)
-    tmp3 = re.sub(r'[^' + asc + ']'.decode('utf-8'), '', c)
-    tmp2 = re.sub(r'[^0-9]'.decode('utf-8'), '', c)
+    tmp1 = re.sub(r'[^' + acc + ']', '', c)
+    tmp3 = re.sub(r'[^' + asc + ']', '', c)
+    tmp2 = re.sub(r'[^0-9]', '', c)
     if (c == '{') | (c == '(') | (c == '['):
         fst = {'parntl': True, 'qotl': False, 'slashl': False, 'nonchl': False,
                'lenl': 'B'}  # B=2, Q=3, S=4, C=5, D=6, O=7
-    elif (c == '"') | (c == "'") | (c == "„".decode('utf-8')):
+    elif (c == '"') | (c == "'") | (c == "„"):
         fst = {'parntl': False, 'qotl': True, 'slashl': False, 'nonchl': False,
                'lenl': 'Q'}  # B=2, Q=3, S=4, C=5, D=6, O=7
     elif (c == '/') | (c == '\\'):

@@ -153,8 +153,7 @@ for u in range(len(fdir)):
     fname = fold + "/" + fdir[u]
     file = open(fname, "rb")
     reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)  # , quotechar='|'
-    print
-    'File in prcossecing =  ' + fdir[u] + '  . . .'
+    print('File in prcossecing =  ' + fdir[u] + '  . . .')
     for row in reader:
         ln = row[0].decode('utf-8')
         ln = re.sub(r'<author>|</author>', '', ln)  # remove author tag
@@ -188,8 +187,7 @@ fold = "./Dataset/RefLD"
 fold2 = "./Dataset/LYT"  # ********************************************************************
 fdir = os.listdir(fold)
 for u in range(len(fdir)):
-    print
-    'File in prcossecing =  ' + fdir[u] + '  . . .'
+    print('File in prcossecing =  ' + fdir[u] + '  . . .')
     fname = fold + "/" + fdir[u]
     file = open(fname, 'rb')
     reader = file.read()

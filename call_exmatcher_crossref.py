@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
 import sys
-reload(sys)
-sys.setdefaultencoding("utf-8")
+import importlib
+
+# importlib.reload(sys) #todo: why?
+# sys.setdefaultencoding("utf-8")
 from configs import *
 # from exmatcher_crossref_package.crossref import *
 sys.path.insert(0, config_url_exmatcher_crossref_package())
-from crossref import *
+from .crossref import *
 import json, ast
 import pprint
 

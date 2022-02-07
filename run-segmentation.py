@@ -2,15 +2,17 @@
 import os
 import sys
 import time
+import importlib
 import traceback
 from langdetect import detect
 from EXparser.Segment_F1 import *
 from JsonParser import *
 from configs import *
 
-reload(sys) # ??
-sys.setdefaultencoding('utf8')
+# importlib.reload(sys) # todo: why?
+# sys.setdefaultencoding('utf8')
 logf = open(config_url_venu() + 'logfile.log', "a")
+
 
 def call_Exparser(list_of_files, subfolder):
     t1 = time.time()

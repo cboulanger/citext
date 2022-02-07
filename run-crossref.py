@@ -1,15 +1,16 @@
 # -*- coding: utf-8 -*-
-import time, datetime, datetime, json, os, subprocess
+import time, os, subprocess
+import traceback
 from configs import *
-import sys, json, ast
 
 logf = open(config_url_venu() + 'logfile.log', "a")
+
 
 def excite_call_Exmatcher_python(filename):
     command = ''
     try:
         os.chdir(config_url_venu())
-        command = 'python call_exmatcher_crossref.py ' + filename + '.csv'
+        command = 'python3.6 call_exmatcher_crossref.py ' + filename + '.csv'
         print(command)
         proc = subprocess.Popen([command], stdout=subprocess.PIPE, shell=True)
         (output, err) = proc.communicate()
@@ -19,6 +20,7 @@ def excite_call_Exmatcher_python(filename):
         logf.write(traceback.format_exc())
         logf.write('*' * 50 + '\n')
     return command
+
 
 def excite_call_Exmatcher():
     try:
@@ -45,9 +47,10 @@ def excite_call_Exmatcher():
         print('Ave Time: %s' %(sum(list_of_time) / float(len(list_of_time))))
     except:
         print(traceback.format_exc())
-        logf.write('File Name: %s \n' %(filename))
+        # logf.write('File Name: %s \n' %(filename))
         logf.write(traceback.format_exc())
         logf.write('*' * 50 + '\n')
+
 
 if __name__ == "__main__":
     excite_call_Exmatcher()

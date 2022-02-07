@@ -12,3 +12,4 @@ bibtexparser==1.0.1
 celery==4.2.0
 patool==1.12
 langdetect==1.0.7
+progress

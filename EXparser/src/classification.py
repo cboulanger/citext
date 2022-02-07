@@ -1,9 +1,11 @@
 # -*- coding: UTF-8 -*- 
 import jenkspy
-from gle_fun import *
-from gle_fun_ext import *
-from gle_fun_seg import *
+
+from .gle_fun import *
+from .gle_fun_ext import *
+from .gle_fun_seg import *
 from itertools import groupby
+import numpy as np
 
 
 def check_num_page(row, hc, vsl):  # this function checks whether the current line is only a page number
@@ -138,10 +140,11 @@ def ref_ext(reader, lng, idxx, clf1, clf2):
     u = 1
     rfidx = [0, 0, 'font', 0]
     for row in reader:
+        # print(row.encode('utf-8'))
         row = row.split('\t')
-        row[0] = row[0].decode('utf-8')
+        row[0] = row[0]
         if len(row[0]) > 1:
-            lh = lh + map(len, row[0].split())
+            lh = lh + list(map(len, row[0].split()))
             tmp = np.asarray([i for i, c in enumerate(row[0]) if isup(c)]) + 1
             if len(tmp) <= 1:
                 tmp = [1, 1]
@@ -149,17 +152,24 @@ def ref_ext(reader, lng, idxx, clf1, clf2):
             hc = hc + [float(row[1])]
             vsl = vsl + [float(row[2])]
             wc = wc + [float(row[3])]
-            ll = ll + [len(re.sub(r'\s'.decode('utf-8'), '', row[0]))]
+            ll = ll + [len(re.sub(r'\s', '', row[0]))]
             llw = llw + [len(row[0].split())]
 
             if (u < len(reader) - 1):
-                nvsl = float(reader[u + 1].split('\t')[2])
+                xx = reader[u + 1].split('\t')[2]
+                try:
+                    nvsl = float(xx)
+                except:
+                    nvsl = 0
             else:
                 nvsl = 0
             tmp = min_ver_dist(float(row[2]), pvsl, nvsl)
             spl = spl + [tmp]
-            rfidx = check_litratur(row, rfidx, u)  # take the idx of literature section
-            ffm.append(row[6])
+            if len(row) > 6:
+                rfidx = check_litratur(row, rfidx, u)  # take the idx of literature section
+                ffm.append(row[6])
+            else:
+                ffm.append(0)
         pvsl = float(row[2])
         u += 1
     ffm = [[x, len(list(y))] for x, y in groupby(sorted(ffm))]
@@ -172,7 +182,7 @@ def ref_ext(reader, lng, idxx, clf1, clf2):
     bins5 = [min(ll), np.max(ll)]
     bins6 = [min(llw), np.max(llw)]
     bins7 = [min(spl), np.max(spl)]
-    npg = int(row[5])  # number of paragraphs
+    npg = int(float(row[5]))  # number of paragraphs
 
     tmp2 = [np.argmin(abs(np.array(bins1) - x)) for x in lh]
     alh = [tmp2.count(x) for x in range(len(bins1))]
@@ -190,7 +200,7 @@ def ref_ext(reader, lng, idxx, clf1, clf2):
     for row in reader:
         row = row.split('\t')
         # if not check_num_page(row,hc,vsl):   #check if it is not a page number line
-        row[0] = row[0].decode('utf-8')
+        row[0] = row[0]
         txt.append(row[0])
         f1 = get_cc(row[0])  # 1 value
         f2 = get_sc(row[0])  # 1 value
@@ -220,7 +230,7 @@ def ref_ext(reader, lng, idxx, clf1, clf2):
         f42 = tmp  # 1 value
         f43 = float(row[1])  # 1 value
         f44 = float(row[3])  # 1 value
-        f18 = get_pb(int(row[5]), npg)  # 1 value
+        f18 = get_pb(int(float(row[5])), npg)  # 1 value
         f19 = get_wc(row[3], bins4)  # 1 value
 
         # extract lexicon features
@@ -245,7 +255,10 @@ def ref_ext(reader, lng, idxx, clf1, clf2):
         f40 = get_lv(u, len(reader))  # 1 value
         f45 = get_index(row[0])
         f46 = get_pos_lit(rfidx, u)
-        f47, f48 = get_ffm(row[6], ffm)
+        if len(row) > 6:
+            f47, f48 = get_ffm(row[6], ffm)
+        else:
+            f47, f48 = 0, 0
         u += 1
 
         # end extraction lexicon features

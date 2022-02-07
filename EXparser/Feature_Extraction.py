@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*- 
 
 import jenkspy
+import numpy as np
 from itertools import groupby
 from src.gle_fun import *
 from src.gle_fun_ext import *

@@ -9,6 +9,7 @@ logf = open(config_url_venu() + 'logfile.log', "a")
 
 output_on_same_line = False
 
+
 def parse_and_format_output(output):
     global output_on_same_line
     # keep output that starts with ">" on one line
@@ -40,6 +41,7 @@ def run_command(command):
 
     # subprocess returned with error
     if return_code != 0:
+        print("\n".join(proc.stderr.readlines()))
         raise RuntimeError("\n".join(proc.stderr.readlines()))
 
 
@@ -53,25 +55,25 @@ def call_run_layout_extractor():
 
 
 def call_run_exmatcher():
-    run_command('python run-crossref.py')
+    run_command('python3.6 run-crossref.py')
 
 
 def call_run_exparser():
-    run_command('python run-exparser.py')
+    run_command('python3.6 run-exparser.py')
 
 
 def call_segmentation():
-    run_command('python run-segmentation.py')
+    run_command('python3.6 run-segmentation.py')
 
 
 def call_extraction_training():
     for cmd in ["Feature_Extraction", "Txt2Vec", "Training_Ext"]:
-        run_command('python /app/EXparser/' + cmd + '.py')
+        run_command('python3.6 /app/EXparser/' + cmd + '.py')
 
 
 def call_segmentation_training():
     for cmd in ["Feature_Extraction", "Txt2Vec", "Training_Seg"]:
-        run_command('python /app/EXparser/' + cmd + '.py')
+        run_command('python3.6 /app/EXparser/' + cmd + '.py')
 
 
 if __name__ == "__main__":

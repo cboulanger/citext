@@ -129,9 +129,9 @@ def one_page(label, prob):
 # preproces the line without tag
 def preprocwt(ln):
     # remove or replace strange character:
-    ln = re.sub(r'–'.decode('utf-8'), '-', ln)
-    ln = re.sub(r"[']+".decode('utf-8'), '"', ln)
-    ln = re.sub(r'[‘]+|[’]+|[`]+|„|“'.decode('utf-8'), '"', ln)
+    ln = re.sub(r'–', '-', ln)
+    ln = re.sub(r"[']+", '"', ln)
+    ln = re.sub(r'[‘]+|[’]+|[`]+|„|“', '"', ln)
     # add spaces before "(" and after ")"
     ln = re.sub(r"(\w)([\(\{\[])", r"\1 \2", ln)
     ln = re.sub(r"([\,\:\)\}\]])(\w)", r"\1 \2", ln)
@@ -142,54 +142,53 @@ def preprocwt(ln):
 
     # remove space between two given names A. B.
     ln = re.sub(
-        r"((?<![A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß0-9])[A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ][\.])([\s]+[A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ][\.](?![A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß0-9]))".decode(
-            'utf-8'), r"\1\2", ln)
+        r"((?<![A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß0-9])[A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ][\.])([\s]+[A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ][\.](?![A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß0-9]))", r"\1\2", ln)
 
     ln = re.sub(r"(pp\.|PP\.|S\.|SS\.|ss\.|[Pp]ages[\.])([0-9])", r"\1 \2", ln)
     # clean page range  (removed for Grobid)
     '''
-    tmp0=re.finditer(r'[\s\(\[\{][0-9]+[^0-9\.\(\)\[\]\{\}\,\:\.]+[0-9]+[\s\)\]\}\.\,]'.decode('utf-8'), ln)
+    tmp0=re.finditer(r'[\s\(\[\{][0-9]+[^0-9\.\(\)\[\]\{\}\,\:\.]+[0-9]+[\s\)\]\}\.\,]', ln)
     tmp = [(m.start(0),m.end(0)) for m in tmp0]
     tmp1=len(tmp)
     for u in range(tmp1):
         ln=ln[0:tmp[u][0]+1]+re.sub(r'[^0-9]+','-',ln[tmp[u][0]+1:tmp[u][1]-1])+ln[tmp[u][1]-1::]
-        tmp0=re.finditer(r'[\s\(\[\{][0-9]+[^0-9\.\(\)\[\]\{\}\,\:\.]+[0-9]+[\s\)\]\}\.\,]'.decode('utf-8'), ln)
+        tmp0=re.finditer(r'[\s\(\[\{][0-9]+[^0-9\.\(\)\[\]\{\}\,\:\.]+[0-9]+[\s\)\]\}\.\,]', ln)
         tmp = [(m.start(0),m.end(0)) for m in tmp0]
     '''
     # add space before ( [ " ' ....
-    tmp0 = re.finditer(r'(?<=[0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß])([\(\[\{])'.decode('utf-8'), ln)
+    tmp0 = re.finditer(r'(?<=[0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß])([\(\[\{])', ln)
     tmp = [m.start(0) for m in tmp0]
     while tmp:
         ln = ln[0:tmp[0]] + ' ' + ln[tmp[0]:]
-        tmp0 = re.finditer(r'(?<=[0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß])([\(\[\{])'.decode('utf-8'), ln)
+        tmp0 = re.finditer(r'(?<=[0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß])([\(\[\{])', ln)
         tmp = [m.start(0) for m in tmp0]
 
     return ln
 
 
 def lateproc(ln):
-    ln = re.sub(r'<empty prob="[01].[0-9]{4}">|</empty>'.decode('utf-8'), '', ln)
+    ln = re.sub(r'<empty prob="[01].[0-9]{4}">|</empty>', '', ln)
 
     # add first page and last page
-    tmp0 = re.finditer(r'<page prob="0.[0-9]{4}">(.)+</page>'.decode('utf-8'), ln)
+    tmp0 = re.finditer(r'<page prob="0.[0-9]{4}">(.)+</page>', ln)
     tmp = [(m.start(0), m.end(0)) for m in tmp0]
     if tmp:
         tmp = tmp[0]
         a = ln[tmp[0] + 21:tmp[1] - 7]
-        a = re.sub(r'[\s]*[^0-9]+[\s]*'.decode('utf-8'), '</fpage> - <lpage ' + ln[tmp[0] + 6:tmp[0] + 20], a)
+        a = re.sub(r'[\s]*[^0-9]+[\s]*', '</fpage> - <lpage ' + ln[tmp[0] + 6:tmp[0] + 20], a)
         ln = ln[0:tmp[0] + 21] + a + ln[tmp[1] - 7::]
-        ln = re.sub(r'<page '.decode('utf-8'), '<fpage ', ln)
+        ln = re.sub(r'<page ', '<fpage ', ln)
         tmp = re.findall(r'<lpage', ln)
         if bool(tmp):
-            ln = re.sub(r'</page>'.decode('utf-8'), '</lpage>', ln)
+            ln = re.sub(r'</page>', '</lpage>', ln)
         else:
-            ln = re.sub(r'</page>'.decode('utf-8'), '</fpage>', ln)
+            ln = re.sub(r'</page>', '</fpage>', ln)
 
     # add author.
     tmpp = 0  # where to start looking from
-    tmp0 = re.finditer(r'(?<!<author>)<surname'.decode('utf-8'), ln[tmpp::])
+    tmp0 = re.finditer(r'(?<!<author>)<surname', ln[tmpp::])
     tmp = [(m.start(0), m.end(0)) for m in tmp0]
-    tmp0 = re.finditer(r'(?<!<author>)(?<!</given-names> )<given-names'.decode('utf-8'), ln[tmpp::])
+    tmp0 = re.finditer(r'(?<!<author>)(?<!</given-names> )<given-names', ln[tmpp::])
     tmp1 = [(m.start(0), m.end(0)) for m in tmp0]
     while (bool(tmp) | bool(tmp1)):
         if not tmp:
@@ -207,9 +206,9 @@ def lateproc(ln):
         # if a==0:
         ln = ln[0:tmp[0] + tmpp] + '<author>' + ln[tmp[0] + tmpp::]
         tmpp = tmp[0] + tmpp + 8  # add the length of '<author>'
-        tmp0 = re.finditer(r'</given-names>(?!</author>)(?! <given-names)'.decode('utf-8'), ln[tmpp::])
+        tmp0 = re.finditer(r'</given-names>(?!</author>)(?! <given-names)', ln[tmpp::])
         tmp2 = [(m.start(0), m.end(0)) for m in tmp0]
-        tmp0 = re.finditer(r'</surname>(?!</author>)'.decode('utf-8'), ln[tmpp::])
+        tmp0 = re.finditer(r'</surname>(?!</author>)', ln[tmpp::])
         tmp3 = [(m.start(0), m.end(0)) for m in tmp0]
         if tmp2:
             ln = ln[0:tmp2[0][1] + tmpp] + '</author>' + ln[tmp2[0][1] + tmpp::]
@@ -218,9 +217,9 @@ def lateproc(ln):
             ln = ln[0:tmp3[0][1] + tmpp] + '</author>' + ln[tmp3[0][1] + tmpp::]
             tmpp = tmp3[0][1] + tmpp + 9  # update tmpp
 
-        tmp0 = re.finditer(r'(?<!<author>)<surname'.decode('utf-8'), ln[tmpp::])
+        tmp0 = re.finditer(r'(?<!<author>)<surname', ln[tmpp::])
         tmp = [(m.start(0), m.end(0)) for m in tmp0]
-        tmp0 = re.finditer(r'(?<!<author>)(?<!</given-names> )<given-names'.decode('utf-8'), ln[tmpp::])
+        tmp0 = re.finditer(r'(?<!<author>)(?<!</given-names> )<given-names', ln[tmpp::])
         tmp1 = [(m.start(0), m.end(0)) for m in tmp0]
 
     return ln
@@ -229,28 +228,28 @@ def lateproc(ln):
 def lateproc_wp(ln):  # without probability
     # remove <empty>
     ln = re.sub(r'[\,\;\:\.]\<', '<', ln)
-    ln = re.sub(r'<empty>|</empty>'.decode('utf-8'), '', ln)
+    ln = re.sub(r'<empty>|</empty>', '', ln)
 
     # add first page and last page
-    tmp0 = re.finditer(r'<page>(.)+</page>'.decode('utf-8'), ln)
+    tmp0 = re.finditer(r'<page>(.)+</page>', ln)
     tmp = [(m.start(0), m.end(0)) for m in tmp0]
     if tmp:
         tmp = tmp[0]
         a = ln[tmp[0] + 7:tmp[1] - 7]
-        a = re.sub(r'[\s]*[^0-9]+[\s]*'.decode('utf-8'), '</fpage> - <lpage>' + ln[tmp[0] + 6:tmp[0] + 6], a)
+        a = re.sub(r'[\s]*[^0-9]+[\s]*', '</fpage> - <lpage>' + ln[tmp[0] + 6:tmp[0] + 6], a)
         ln = ln[0:tmp[0] + 7] + a + ln[tmp[1] - 7::]
-        ln = re.sub(r'<page>'.decode('utf-8'), '<fpage>', ln)
+        ln = re.sub(r'<page>', '<fpage>', ln)
         tmp = re.findall(r'<lpage', ln)
         if bool(tmp):
-            ln = re.sub(r'</page>'.decode('utf-8'), '</lpage>', ln)
+            ln = re.sub(r'</page>', '</lpage>', ln)
         else:
-            ln = re.sub(r'</page>'.decode('utf-8'), '</fpage>', ln)
+            ln = re.sub(r'</page>', '</fpage>', ln)
 
     # add author.
     tmpp = 0  # where to start looking from
-    tmp0 = re.finditer(r'(?<!<author>)<surname'.decode('utf-8'), ln[tmpp::])
+    tmp0 = re.finditer(r'(?<!<author>)<surname', ln[tmpp::])
     tmp = [(m.start(0), m.end(0)) for m in tmp0]
-    tmp0 = re.finditer(r'(?<!<author>)(?<!</given-names> )<given-names'.decode('utf-8'), ln[tmpp::])
+    tmp0 = re.finditer(r'(?<!<author>)(?<!</given-names> )<given-names', ln[tmpp::])
     tmp1 = [(m.start(0), m.end(0)) for m in tmp0]
     while (bool(tmp) | bool(tmp1)):
         if not tmp:
@@ -268,9 +267,9 @@ def lateproc_wp(ln):  # without probability
         # if a==0:
         ln = ln[0:tmp[0] + tmpp] + '<author>' + ln[tmp[0] + tmpp::]
         tmpp = tmp[0] + tmpp + 8  # add the length of '<author>'
-        tmp0 = re.finditer(r'</given-names>(?!</author>)(?! <given-names)'.decode('utf-8'), ln[tmpp::])
+        tmp0 = re.finditer(r'</given-names>(?!</author>)(?! <given-names)', ln[tmpp::])
         tmp2 = [(m.start(0), m.end(0)) for m in tmp0]
-        tmp0 = re.finditer(r'</surname>(?!</author>)'.decode('utf-8'), ln[tmpp::])
+        tmp0 = re.finditer(r'</surname>(?!</author>)', ln[tmpp::])
         tmp3 = [(m.start(0), m.end(0)) for m in tmp0]
         if tmp2:
             ln = ln[0:tmp2[0][1] + tmpp] + '</author>' + ln[tmp2[0][1] + tmpp::]
@@ -279,16 +278,16 @@ def lateproc_wp(ln):  # without probability
             ln = ln[0:tmp3[0][1] + tmpp] + '</author>' + ln[tmp3[0][1] + tmpp::]
             tmpp = tmp3[0][1] + tmpp + 9  # update tmpp
 
-        tmp0 = re.finditer(r'(?<!<author>)<surname'.decode('utf-8'), ln[tmpp::])
+        tmp0 = re.finditer(r'(?<!<author>)<surname', ln[tmpp::])
         tmp = [(m.start(0), m.end(0)) for m in tmp0]
-        tmp0 = re.finditer(r'(?<!<author>)(?<!</given-names> )<given-names'.decode('utf-8'), ln[tmpp::])
+        tmp0 = re.finditer(r'(?<!<author>)(?<!</given-names> )<given-names', ln[tmpp::])
         tmp1 = [(m.start(0), m.end(0)) for m in tmp0]
 
     return ln
 
 
 def tagging(ln, label, prob):  # with probability
-    ch = '0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß\-'.decode('utf-8')
+    ch = '0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß\-'
     tag = ['given-names', 'surname', 'year', 'title', 'editor', 'source', 'publisher', 'other', 'page', 'volume',
            'author', 'fpage', 'lpage', 'issue', 'url', 'identifier', 'empty']
     abv = ['FN', 'LN', 'YR', 'AT', 'ED', 'SR', 'PB', 'OT', 'PG', 'VL', 'AR', 'FP', 'LP', 'IS', 'UR', 'ID', 'XX']
@@ -349,7 +348,7 @@ def tagging(ln, label, prob):  # with probability
 
 
 def tagging_wp(ln, label):  # tagging without probabilities
-    ch = '0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß\-'.decode('utf-8')
+    ch = '0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß\-'
     tag = ['given-names', 'surname', 'year', 'title', 'editor', 'source', 'publisher', 'other', 'page', 'volume',
            'author', 'fpage', 'lpage', 'issue', 'url', 'identifier', 'empty']
     abv = ['FN', 'LN', 'YR', 'AT', 'ED', 'SR', 'PB', 'OT', 'PG', 'VL', 'AR', 'FP', 'LP', 'IS', 'UR', 'ID', 'XX']

@@ -1,7 +1,7 @@
 # -*- coding: UTF-8 -*- 
-# Definition: general function for extraction and segemntation
+# Definition: general function for extraction and segmentation
 
-import re, os
+import os
 
 list_dir = '/app/Exparser/lists/'
 
@@ -10,12 +10,13 @@ stopw = r'\bgewesen\b|\beines\b|\bim\b|\bselbst\b|\bdu\b|\bkeinen\b|\bmancher\b|
 # with  open(list_dir + "stopwords.csv", "r") as file:
 # todo: join stopwords to raw string above
 
+
 def read_words_from_file(filename):
     path = list_dir + filename
     # check for local override
-    if (os.path.isfile(path + ".local.csv")):
+    if os.path.isfile(path + ".local.csv"):
         path += ".local"
-    with open(path + ".csv", "r") as file:
+    with open(path + ".csv", "r", encoding="utf-8") as file:
         return set(file.readlines())
 
 
@@ -27,28 +28,9 @@ b4 = read_words_from_file("edt")
 b5 = read_words_from_file("journals")
 b6 = read_words_from_file("publishers")
 
+
 # make text lower
 def textlow(ln):
-    ln = re.sub(r'[Ää]', 'ae', ln)
-    ln = re.sub(r'[Üü]', 'ue', ln)
-    ln = re.sub(r'[Öö]', 'oe', ln)
-    ln = re.sub(r'Ï', 'ï', ln)
-    ln = re.sub(r'È', 'è', ln)
-    ln = re.sub(r'É', 'é', ln)
-    ln = re.sub(r'Ç', 'ç', ln)
-    ln = re.sub(r'Â', 'â', ln)
-    ln = re.sub(r'Î', 'î', ln)
-    ln = re.sub(r'Ô', 'ô', ln)
-    ln = re.sub(r'Ê', 'ê', ln)
-    ln = re.sub(r'Ë', 'ë', ln)
-    ln = re.sub(r'Ù', 'ù', ln)
-    ln = re.sub(r'Ì', 'ì', ln)
-    ln = re.sub(r'Ò', 'ò', ln)
-    ln = re.sub(r'À', 'à', ln)
-    ln = re.sub(r'Ã', 'ã', ln)
-    ln = re.sub(r'Õ', 'õ', ln)
-    ln = re.sub(r'Ñ', 'ñ', ln)
-    ln = re.sub(r'Û', 'û', ln)
-    ln = re.sub(r'ß', 'ss', ln)
-    ln = ln.lower()
-    return ln
+    # string method that converts a string to a case-insensitive form following
+    # an algorithm described by the Unicode Standard
+    return ln.casefold()

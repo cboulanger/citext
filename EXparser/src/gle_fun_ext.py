@@ -2,12 +2,13 @@
 # Definition: general function for extraction
 import re
 import numpy as np
-from gle_fun import textlow
+from .gle_fun import textlow
+
 
 # end make text lower
 # test if it is upper instead of is.upper() which does not consider special character
 def isup(a):
-    b = re.sub(r'[^A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ]'.decode('utf-8'), '', a)
+    b = re.sub(r'[^A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ]', '', a)
     l = bool(b)
     return l
 
@@ -16,22 +17,22 @@ def isup(a):
 
 # this function extracts capital characters
 def get_cc(ln):  # [1]
-    tmp = re.sub(r'[^A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ]'.decode('utf-8'), '', ln)
-    cc = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+'.decode('utf-8'), '', ln))
+    tmp = re.sub(r'[^A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ]', '', ln)
+    cc = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
     return cc
 
 
 # this function extracts small characters
 def get_sc(ln):  # [2]
-    tmp = re.sub(r'[^a-zäüöïèéçâîôêëùìòàãõñûß]'.decode('utf-8'), '', ln)
-    sc = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+'.decode('utf-8'), '', ln))
+    tmp = re.sub(r'[^a-zäüöïèéçâîôêëùìòàãõñûß]', '', ln)
+    sc = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
     return sc
 
 
 # this function extracts words with capital characters
 def get_cw(ln):  # [3]
     tmp = re.findall(
-        r'(?u)\b[A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ][A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß]+\b'.decode('utf-8'), ln)
+        r'(?u)\b[A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ][A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß]+\b', ln)
     if (len(ln.split()) != 0):
         cw = 1.0 * len(tmp) / len(ln.split())
     else:
@@ -42,7 +43,7 @@ def get_cw(ln):  # [3]
 # this function extracts words with small characters
 def get_sw(ln):  # [4]
     tmp = re.findall(
-        r'(?u)\b[a-zäüöïèéçâîôêëùìòàãõñû][A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß]+\b'.decode('utf-8'), ln)
+        r'(?u)\b[a-zäüöïèéçâîôêëùìòàãõñû][A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß]+\b', ln)
     if (len(ln.split()) != 0):
         sw = 1.0 * len(tmp) / len(ln.split())
     else:
@@ -53,53 +54,52 @@ def get_sw(ln):  # [4]
 # this function extracts years
 def get_yr_re(ln):  # [5]   #re=reference extraction
     # extract all 4 digits from 1000 to 2999
-    yr = re.findall(r'1[8-9]{1}[0-9]{2}|20[0-2]{1}[0-9]{1}'.decode('utf-8'), ln)
+    yr = re.findall(r'1[8-9]{1}[0-9]{2}|20[0-2]{1}[0-9]{1}', ln)
     yr = int(bool(yr))
     return yr
 
 
 def get_qm(ln):  # [6]
-    tmp = re.sub(r'[^"|“|”|‘|’|«|»]'.decode('utf-8'), '', ln)
-    tmp2 = re.sub(r"[^']".decode('utf-8'), '', ln)
-    qm = 1.0 * (len(tmp) + len(tmp2)) / len(re.sub(r'[\s\b\t]+'.decode('utf-8'), '', ln))
+    tmp = re.sub(r'[^"|“|”|‘|’|«|»]', '', ln)
+    tmp2 = re.sub(r"[^']", '', ln)
+    qm = 1.0 * (len(tmp) + len(tmp2)) / len(re.sub(r'[\s\b\t]+', '', ln))
     return qm
 
 
 def get_cl(ln):  # [7]
-    tmp = re.sub(r'[^:]'.decode('utf-8'), '', ln)
-    cl = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+'.decode('utf-8'), '', ln))
+    tmp = re.sub(r'[^:]', '', ln)
+    cl = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
     return cl
 
 
 def get_sl(ln):  # [8]
-    tmp = re.sub(r'[^\\|/]'.decode('utf-8'), '', ln)
-    sl = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+'.decode('utf-8'), '', ln))
+    tmp = re.sub(r'[^\\|/]', '', ln)
+    sl = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
     return sl
 
 
 def get_bs(ln):  # [9,10]
-    tmp = re.sub(r'[^\(|\)|\[|\]|\{|\}]'.decode('utf-8'), '', ln)
-    bs = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+'.decode('utf-8'), '', ln))
+    tmp = re.sub(r'[^\(|\)|\[|\]|\{|\}]', '', ln)
+    bs = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
     return bs
 
 
 def get_dt(ln):  # [11]
-    tmp = re.sub(r'[^\.]'.decode('utf-8'), '', ln)
-    dt = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+'.decode('utf-8'), '', ln))
+    tmp = re.sub(r'[^\.]', '', ln)
+    dt = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
     return dt
 
 
 def get_cm(ln):  # [12]
-    tmp = re.sub(r'[^\,]'.decode('utf-8'), '', ln)
-    cm = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+'.decode('utf-8'), '', ln))
+    tmp = re.sub(r'[^\,]', '', ln)
+    cm = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
     return cm
 
 
 def get_cd_re(ln):  # [13]   re=reference extraction
     # extract all 4 digits from 1000 to 2999
     tmp = re.findall(
-        r'(?<![A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß0-9])([A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ][\.]){1,2}(?![A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß0-9])'.decode(
-            'utf-8'), ln)
+        r'(?<![A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß0-9])([A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ][\.]){1,2}(?![A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß0-9])', ln)
     if (len(ln.split()) != 0):
         cd = 1.0 * len(tmp) / len(ln.split())
     else:
@@ -133,7 +133,7 @@ def get_ch(ln, bins, ach):  # [15]
 
 
 def get_pg_re(ln):  # [16]   re=reference extraction
-    tmp = re.findall(r'[0-9]+[^0-9\.\(\)\[\]\{\}]+[0-9]+'.decode('utf-8'), ln)
+    tmp = re.findall(r'[0-9]+[^0-9\.\(\)\[\]\{\}]+[0-9]+', ln)
     pg = int(bool(tmp))
     return pg
 
@@ -163,7 +163,7 @@ def get_spl(sp, pl):  # [19]
 
 # length of lines in term of characters (histogram)
 def get_ll(ln, bins):  # [1bis]
-    tmp = len(re.sub(r'\s'.decode('utf-8'), '', ln))
+    tmp = len(re.sub(r'\s', '', ln))
     ll = (float(tmp) - bins[0]) / (bins[1] - bins[0])
     return ll
 
@@ -183,80 +183,77 @@ def get_lv(lv, lvg):  # [3bis]
 
 # Lexicon features  (findings)
 def get_lex1_re(ln):  # [20]    re=reference extraction
-    tmp = re.findall(r'[ ]+(In[:]*|in:)[ ]*'.decode('utf-8'), ln)  # to be checked
+    tmp = re.findall(r'[ ]+(In[:]*|in:)[ ]*', ln)  # to be checked
     lex1 = int(bool(tmp))
     return lex1
 
 
 def get_lex2_re(ln):  # [21]    re=reference extraction
-    tmp = re.findall(r'Hg\.|Hrsg\.|[eE]d[s]*\.'.decode('utf-8'), ln)
+    tmp = re.findall(r'Hg\.|Hrsg\.|[eE]d[s]*\.', ln)
     lex2 = int(bool(tmp))
     return lex2
 
 
 def get_lex3_re(ln):  # [22]    re=reference extraction
     tmp = re.findall(
-        r'(verlag)|(press)|(universit(y|ät))|(publi(cation[s]*|shing|sher[s]*))|(book[s]*)|(intitut[e]*)'.decode(
-            'utf-8'), textlow(ln))
+        r'(verlag)|(press)|(universit(y|ät))|(publi(cation[s]*|shing|sher[s]*))|(book[s]*)|(intitut[e]*)', textlow(ln))
     lex3 = int(bool(tmp))
     return lex3
 
 
 def get_lex4_re(ln):  # [23]    re=reference extraction
-    tmp = re.findall(r'\&'.decode('utf-8'), ln)
+    tmp = re.findall(r'\&', ln)
     lex4 = int(bool(tmp))
     return lex4
 
 
 def get_lex5_re(ln):  # [24]   re=reference extraction
-    tmp = re.findall(r'Journal'.decode('utf-8'), ln)
+    tmp = re.findall(r'Journal', ln)
     lex5 = int(bool(tmp))
     return lex5
 
 
 def get_lex6_re(ln):  # [25]   re=reference extraction
-    tmp = re.findall(r'[Bb]d\.|[Bb]and'.decode('utf-8'), ln)
+    tmp = re.findall(r'[Bb]d\.|[Bb]and', ln)
     lex6 = int(bool(tmp))
     return lex6
 
 
 def get_lex7_re(ln):  # [26]
-    tmp = re.findall(r'S\.|PP\.|pp\.|ss\.|SS\.|[Pp]ages[\.]'.decode('utf-8'), ln)
+    tmp = re.findall(r'S\.|PP\.|pp\.|ss\.|SS\.|[Pp]ages[\.]', ln)
     lex7 = int(bool(tmp))
     return lex7  # lexicon features from databases
 
 
 def get_lnk_re(ln):  # [*1]   #is link  re=reference extraction
-    # tmp=re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'.decode('utf-8'), ln)
+    # tmp=re.findall(r'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+', ln)
     tmp = re.findall(
-        r'(http://|ftp://|https://|www\.)([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?'.decode(
-            'utf-8'), ln)
+        r'(http://|ftp://|https://|www\.)([\w_-]+(?:(?:\.[\w_-]+)+))([\w.,@?^=%&:/~+#-]*[\w@?^=%&/~+#-])?', ln)
     lnk = int(bool(tmp))
     return lnk
 
 
 def get_vol_re(ln):  # [*2]   #is vol.   re=reference extraction
-    tmp = re.findall(r'[Vv]ol\.|[Jj]g\.'.decode('utf-8'), ln)
+    tmp = re.findall(r'[Vv]ol\.|[Jj]g\.', ln)
     vol = int(bool(tmp))
     return vol
 
 
 def get_und_re(ln):  # [*2]   #is und   re=reference extraction
-    tmp = re.findall(r'[\b\s]u\.[\b\s]|[\s]*and[\s]*|[\s]*und[\s]*'.decode('utf-8'), ln)
+    tmp = re.findall(r'[\b\s]u\.[\b\s]|[\s]*and[\s]*|[\s]*und[\s]*', ln)
     und = int(bool(tmp))
     return und
 
 
 def get_amo_re(ln):  # [*2]   #is among others   re=reference extraction
     tmp = re.findall(
-        r'[^0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß]u\.a\.[^0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß]'.decode(
-            'utf-8'), ln)
+        r'[^0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß]u\.a\.[^0-9A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß]', ln)
     amo = int(bool(tmp))
     return amo
 
 
 def get_num_re(ln):  # [*2]   #is link   re=reference extraction
-    tmp = re.findall(r'[Nn][ro][\.\:]*'.decode('utf-8'), ln)
+    tmp = re.findall(r'[Nn][ro][\.\:]*', ln)
     num = int(bool(tmp))
     return num
 
@@ -265,7 +262,7 @@ def fin_db_re(ln, stopw, b1, b2, b3, b4, b5, b6):  # re=reference extraction
     ln = re.split(' ', ln)
     a = [0] * 6
     for w in ln:
-        tmp0 = textlow(re.sub(r'[^A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñû]'.decode('utf-8'), '', w))
+        tmp0 = textlow(re.sub(r'[^A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñû]', '', w))
         a[0] = a[0] + 1 if tmp0 in b1 else a[0]
         a[1] = a[1] + 1 if tmp0 in b2 else a[1]
         a[2] = a[2] + 1 if tmp0 in b3 else a[2]
@@ -332,8 +329,11 @@ def min_ver_dist(vsl, pvsl, nvsl):  # minimal vertical distance
 
 
 def get_ffm(fm, ffm):
-    if fm in ffm[0]:
-        ff = ffm[0].index(fm)
+    list_fmm = list(ffm)
+    if len(list_fmm) == 0:
+        return -1, 0
+    if fm in list_fmm[0]:
+        ff = list_fmm[0].index(fm)
     else:
         ff = -1
     tmp = int(bool(re.findall(r'Bold', fm)))

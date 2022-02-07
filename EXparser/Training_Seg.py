@@ -1,9 +1,9 @@
 # -*- coding: UTF-8 -*- 
-
-import os
 import csv
+import os
+import re
 import time
-import cPickle
+import pickle
 import sklearn_crfsuite
 from src.gle_fun import *
 from src.gle_fun_seg import *
@@ -21,11 +21,11 @@ for u in range(len(fdir)):
     if fdir[u].startswith("."):
         continue
     fname = fold + "/" + fdir[u]
-    file = open(fname, "rb")
+    file = open(fname, encoding="utf-8")
     reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)  # , quotechar='|'
     for row in reader:
-        tic = time.clock()
-        ln = row[0].decode('utf-8')
+        tic = time.time()
+        ln = row[0]
         ln = re.sub(r'<author>|</author>', '', ln)  # remove author tag
         ln = re.sub(r'</fpage>|<lpage>', '', ln)  # change page tag
         ln = re.sub(r'<fpage>', '<page>', ln)  # change page tag
@@ -67,7 +67,7 @@ for u in range(len(fdir)):
             # add their features to w
             # update features
             train_feat[len(train_feat) - 1] = add2feat(train_feat[len(train_feat) - 1], i)
-        toc = time.clock()
+        toc = time.time()
     # print 'processing time = '+ str(toc - tic)
 
     file.close()
@@ -82,6 +82,6 @@ crf = sklearn_crfsuite.CRF(
 crf.fit(train_feat, train_label)
 
 with open('/app/Exparser/Utils/crf_model.pkl', 'wb') as fid:
-    cPickle.dump(crf, fid)
+    pickle.dump(crf, fid)
 
 # execfile('Training_Seg.py')

@@ -2,10 +2,9 @@
 # segment a reference string
 # Optimized trainingII
 import random
-import cPickle
 import pickle
-from src.spc_fun_seg import *
-from src.classification import *
+from .src.spc_fun_seg import *
+from .src.classification import *
 
 lng = ""
 
@@ -113,7 +112,7 @@ def main_sg(ln, vtag):
         # update features
         test_feat[len(test_feat) - 1] = add2feat(test_feat[len(test_feat) - 1], i)
 
-    crf = crf2 if lng == 'de' else crf1
+    # crf = crf2 if lng == 'de' else crf1 #todo: we have one model for now: crf - produced by Training_Seg.py
     label_pred = crf.predict_single(test_feat[0])  # predict
     prob_pred = crf.predict_marginals_single(test_feat[0])
     label_pred, prob_pred = one_page(label_pred, prob_pred)
@@ -154,15 +153,14 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
     kde_tlen = kde_tlen2 if lng == 'de' else kde_tlen1
     mll = np.median([len(tmp) for tmp in txt])  # median length of line (used for restriction)
 
-    while ((sum(valid) > 0) & (tmp > 0)):
+    while sum(valid) > 0 and tmp > 0:
         start = np.argmax(ref_prob)
         valid[start] = 0
         txt[start] = preprocwt(txt[start]) if prep[start] == 0 else txt[start]
         prep[start] = 1
         l = [txt[start]]
         tlin = len(' '.join(l).split())  # length in terms of token
-        lim = [
-                  start] * 3  # the first cell is the begining of the string, the second is the starting line and the last is the end of the string
+        lim = [start] * 3  # the first cell is the begining of the string, the second is the starting line and the last is the end of the string
         samples = 17
         llin = 1  # length of the line
         ww = 1
@@ -403,7 +401,7 @@ def sg_ref(txt, refs, opt):
         if len(tmp) > 0:
             for u in range(len(tmp)):
                 ln = txt[tmp[u]] if u == 0 else ln + ' ' + txt[tmp[u]]
-            tmp1 = re.finditer(r'([A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß])'.decode('utf-8'), ln)
+            tmp1 = re.finditer(r'([A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß])', ln)
             tmp2 = [m.start(0) for m in tmp1]
             if bool(tmp2):
                 tmp2 = tmp2[0]
@@ -411,56 +409,50 @@ def sg_ref(txt, refs, opt):
                 _, _, tmp0 = main_sg(ln, opt)
                 refstr.append(ln)
                 reslt.append(tmp0)
-                tmp = refToBibtex(i, tmp0.encode('utf-8'), 'article', True)
+                tmp = refToBibtex(i, tmp0, 'article', True)
                 xs = tmp
                 restex.append(tmp)
     return reslt, refstr, restex
 
+
 # load models
-with open('EXparser/Utils/crf_model_en.pkl', 'rb') as fid:
-    crf1 = cPickle.load(fid)
-with open('EXparser/Utils/kde_ntag_en.pkl', 'rb') as fid:
-    kde_ntag1 = pickle.load(fid)
-with open('EXparser/Utils/kde_ltag_en.pkl', 'rb') as fid:
-    kde_ltag1 = pickle.load(fid)
-with open('EXparser/Utils/kde_dtag_en.pkl', 'rb') as fid:
-    kde_dtag1 = pickle.load(fid)
-with open('EXparser/Utils/kde_atag_en.pkl', 'rb') as fid:
-    kde_atag1 = pickle.load(fid)
-with open('EXparser/Utils/kde_wtag_en.pkl', 'rb') as fid:
-    kde_wtag1 = pickle.load(fid)
-with open('EXparser/Utils/kde_gtag_en.pkl', 'rb') as fid:
-    kde_gtag1 = pickle.load(fid)
-with open('EXparser/Utils/kde_llen_en.pkl', 'rb') as fid:
-    kde_llen1 = pickle.load(fid)
-with open('EXparser/Utils/kde_tlen_en.pkl', 'rb') as fid:
-    kde_tlen1 = pickle.load(fid)
-with open('EXparser/Utils/rf_en.pkl', 'rb') as fid:
-    clf1 = pickle.load(fid)
-with open('EXparser/Utils/crf_model_de.pkl', 'rb') as fid:
-    crf2 = cPickle.load(fid)
-with open('EXparser/Utils/kde_ntag_de.pkl', 'rb') as fid:
-    kde_ntag2 = pickle.load(fid)
-with open('EXparser/Utils/kde_ltag_de.pkl', 'rb') as fid:
-    kde_ltag2 = pickle.load(fid)
-with open('EXparser/Utils/kde_dtag_de.pkl', 'rb') as fid:
-    kde_dtag2 = pickle.load(fid)
-with open('EXparser/Utils/kde_atag_de.pkl', 'rb') as fid:
-    kde_atag2 = pickle.load(fid)
-with open('EXparser/Utils/kde_wtag_de.pkl', 'rb') as fid:
-    kde_wtag2 = pickle.load(fid)
-with open('EXparser/Utils/kde_gtag_de.pkl', 'rb') as fid:
-    kde_gtag2 = pickle.load(fid)
-with open('EXparser/Utils/kde_llen_de.pkl', 'rb') as fid:
-    kde_llen2 = pickle.load(fid)
-with open('EXparser/Utils/kde_tlen_de.pkl', 'rb') as fid:
-    kde_tlen2 = pickle.load(fid)
-with open('EXparser/Utils/rf_de.pkl', 'rb') as fid:
-    clf2 = pickle.load(fid)
+# segmentation model
+with open('EXparser/Utils/crf_model.pkl', 'rb') as fid:
+    crf = pickle.load(fid)
+# extraction
+with open('EXparser/Utils/rf.pkl', 'rb') as fid:
+    rf = pickle.load(fid)
+
+# with open('EXparser/Utils/crf_model_en.pkl', 'rb') as fid:
+#     crf1 = pickle.load(fid)
+
+#todo: what are these?
+kde_ntag1 = pickle.load(open('EXparser/Utils/kde_ntag_en.pkl', "rb"), encoding="latin1")
+kde_ltag1 = pickle.load(open('EXparser/Utils/kde_ltag_en.pkl', "rb"), encoding="latin1")
+kde_dtag1 = pickle.load(open('EXparser/Utils/kde_dtag_en.pkl', "rb"), encoding="latin1")
+kde_atag1 = pickle.load(open('EXparser/Utils/kde_atag_en.pkl', "rb"), encoding="latin1")
+kde_wtag1 = pickle.load(open('EXparser/Utils/kde_wtag_en.pkl', "rb"), encoding="latin1")
+kde_gtag1 = pickle.load(open('EXparser/Utils/kde_gtag_en.pkl', "rb"), encoding="latin1")
+kde_llen1 = pickle.load(open('EXparser/Utils/kde_llen_en.pkl', "rb"), encoding="latin1")
+kde_tlen1 = pickle.load(open('EXparser/Utils/kde_tlen_en.pkl', "rb"), encoding="latin1")
+kde_ntag2 = pickle.load(open('EXparser/Utils/kde_ntag_de.pkl', "rb"), encoding="latin1")
+kde_ltag2 = pickle.load(open('EXparser/Utils/kde_ltag_de.pkl', "rb"), encoding="latin1")
+kde_dtag2 = pickle.load(open('EXparser/Utils/kde_dtag_de.pkl', "rb"), encoding="latin1")
+kde_atag2 = pickle.load(open('EXparser/Utils/kde_atag_de.pkl', "rb"), encoding="latin1")
+kde_wtag2 = pickle.load(open('EXparser/Utils/kde_wtag_de.pkl', "rb"), encoding="latin1")
+kde_gtag2 = pickle.load(open('EXparser/Utils/kde_gtag_de.pkl', "rb"), encoding="latin1")
+kde_llen2 = pickle.load(open('EXparser/Utils/kde_llen_de.pkl', "rb"), encoding="latin1")
+kde_tlen2 = pickle.load(open('EXparser/Utils/kde_tlen_de.pkl', "rb"), encoding="latin1")
+
+# with open('EXparser/Utils/rf_en.pkl', 'rb') as fid:
+#     clf1 = pickle.load(fid)
+# with open('EXparser/Utils/crf_model_de.pkl', 'rb') as fid:
+#     crf2 = pickle.load(fid)
+# with open('EXparser/Utils/rf_de.pkl', 'rb') as fid:
+#     clf2 = pickle.load(fid)
 
 idxx = np.load('./EXparser/idxx.npy')
 
 # note:
 # Preprocessing is desactivated in main_sg and activated in main to ensure that the text is
 # preprpcessed for all functions
-
