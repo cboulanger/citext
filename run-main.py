@@ -23,7 +23,7 @@ def run_command(command):
         if line != "":
             # keep output that starts with ">" as a progress indicator message ">task:index/total"
             if line.startswith(">"):
-                [task, progress] = line[1:].split(":")
+                [task, progress, *_] = line[1:].split(":")
                 [index, total] = progress.split("/")
                 if not progressbar or task != currtask:
                     if progressbar:
@@ -44,8 +44,9 @@ def run_command(command):
 
     # subprocess returned with error
     if return_code != 0:
-        print("\n".join(proc.stderr.readlines()))
-        raise RuntimeError("\n".join(proc.stderr.readlines()))
+        err_msg = "\n".join(proc.stderr.readlines())
+        sys.stderr.write(err_msg)
+        raise RuntimeError(err_msg)
 
 
 def call_run_layout_extractor():
