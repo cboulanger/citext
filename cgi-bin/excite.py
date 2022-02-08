@@ -119,7 +119,7 @@ try:
 
         # subprocess returned with error
         if return_code != 0:
-            raise RuntimeError("\n".join(proc.stderr.readlines()))
+            raise Exception("\n".join(proc.stderr.readlines()))
 
     if result_path is None:
         result["success"] = True
