@@ -9,7 +9,7 @@ from src.gle_fun import *
 from src.gle_fun_seg import *
 
 # preparing training data
-fold = "/app/Exparser/Dataset/SEG"
+fold = "/app/EXparser/Dataset/SEG"
 fdir = os.listdir(fold)
 train_sents = []
 train_feat = []
@@ -81,7 +81,7 @@ crf = sklearn_crfsuite.CRF(
 
 crf.fit(train_feat, train_label)
 
-with open('/app/Exparser/Utils/crf_model.pkl', 'wb') as fid:
+with open('/app/EXparser/Utils/crf_model.pkl', 'wb') as fid:
     pickle.dump(crf, fid)
 
 # execfile('Training_Seg.py')

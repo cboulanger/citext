@@ -21,13 +21,13 @@ def row_count(filename):
         return sum(1 for row in in_file)
 
 
-idxx = np.load('/app/Exparser/idxx.npy')
+idxx = np.load('/app/EXparser/idxx.npy')
 
 # Training
 FS = np.empty((0, 50 * 3), float)  # feature space
 SM = np.empty((0, 1), float)  # feature space
 
-fold = "/app/Exparser/Dataset/LYT"
+fold = "/app/EXparser/Dataset/LYT"
 fdir = os.listdir(fold)
 validator = 1
 total = str(len(fdir))
@@ -36,12 +36,12 @@ for u in range(len(fdir)):
     sys.stdout.flush()
     if fdir[u].startswith("."):
         continue
-    with open("/app/Exparser/Dataset/Features/" + fdir[u]) as file:
+    with open("/app/EXparser/Dataset/Features/" + fdir[u]) as file:
         reader = str(file.read())
     reader = re.sub(r'[\r\n]+', '\r', reader)
     reader = reader.split('\r')
     reader = reader[0:-1] if reader[-1] == '' else reader
-    with open("/app/Exparser/Dataset/RefLD/" + fdir[u]) as file:
+    with open("/app/EXparser/Dataset/RefLD/" + fdir[u]) as file:
         reader2 = str(file.read())
     reader2 = re.sub(r'[\r\n]+', '|', reader2)
     reader2 = reader2.split('|')
@@ -112,8 +112,8 @@ FSN = np.concatenate((FS[tmp], FS[tmp1], FS[tmp2], FS[tmp3]), axis=0)
 SMN = np.concatenate((SM[tmp], SM[tmp1], SM[tmp2], SM[tmp3]), axis=0)
 
 FSN[np.isinf(FSN)] = 1
-np.save('/app/Exparser/Utils/FSN.npy', FSN)
-np.save('/app/Exparser/Utils/SMN.npy', SMN)
+np.save('/app/EXparser/Utils/FSN.npy', FSN)
+np.save('/app/EXparser/Utils/SMN.npy', SMN)
 # Uncomment for Non-considering I-Line
 # FSN=np.delete(FSN,np.where(SMN==2)[0],0)
 # SMN=np.delete(SMN,np.where(SMN==2)[0])
@@ -121,5 +121,5 @@ np.save('/app/Exparser/Utils/SMN.npy', SMN)
 clf1 = RandomForestClassifier(n_estimators=500)
 clf1.fit(FSN, SMN)
 # save the classifier
-with open('/app/Exparser/Utils/rf.pkl', 'wb') as fid2:
+with open('/app/EXparser/Utils/rf.pkl', 'wb') as fid2:
     pickle.dump(clf1, fid2)
