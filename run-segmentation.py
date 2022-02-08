@@ -32,21 +32,21 @@ def call_Exparser(list_of_files, subfolder):
         path_segs_ditc = config_url_Refs_segment_dict() + subfolder + filename + '.csv'
 
         file = open(path_refs, 'rb')
-        reader = file.read()
+        reader = str(file.read())
         global lng
-        lng = detect(reader.decode('utf-8'))
+        lng = detect(reader)
         file.close()
 
         # txt, valid, _, ref_prob0 = ref_ext(reader)
 
-        reader = re.sub(r'[\r\n]+', '\n', reader)
+        reader = re.sub(r'[\r\n]+', '\n', str(reader))
         reader = reader.split('\n')
         reader = reader[0:-1] if reader[-1] == '' else reader
 
         txt = []
         for row in reader:
             row = row.split('\t')
-            row[0] = row[0].decode('utf-8')
+            row[0] = row[0]
             txt.append(row[0])
 
         valid = [1] * len(txt)

@@ -231,7 +231,12 @@ class Actions {
 
   static checkResult(result) {
     if (result.error) {
-      throw new Error(result.error);
+      let error = result.error;
+      if (error.split("\n").length > 1) {
+        error = error.split("\n").pop();
+      }
+      console.error(result.error);
+      throw new Error(error);
     }
     if (result.success === undefined) {
       throw new Error("Invalid response.");
@@ -363,9 +368,14 @@ class Actions {
     if (command === "segmentation") {
       GUI.showSpinner("Segmenting references...");
       url = `${SERVER_URL}/excite.py?command=segmentation&file=${filenameNoExt}`;
-      result = await (await fetch(url)).json();
-      GUI.hideSpinner();
-      if (!this.checkResult(result)) return;
+      try {
+        result = await (await fetch(url)).json();
+        this.checkResult(result)
+      } catch (e) {
+        return alert(e.message);
+      } finally {
+        GUI.hideSpinner();
+      }
       textContent = result.success;
       GUI.setDisplayMode(DISPLAY_MODES.REFERENCES);
     }

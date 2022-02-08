@@ -44,8 +44,8 @@ def run_command(command):
 
     # subprocess returned with error
     if return_code != 0:
-        err_msg = "\n".join(proc.stderr.readlines())
-        sys.stderr.write(err_msg)
+        lines = [line.strip('\n') for line in proc.stderr.readlines() if line.strip('\n')]
+        err_msg = '\n'.join(lines)
         raise RuntimeError(err_msg)
 
 
@@ -108,4 +108,4 @@ if __name__ == "__main__":
         logf.write(traceback.format_exc())
         sys.exit(1)
     finally:
-        logf.write('\n*' * 50 + '\n')
+        logf.write('\n' + ('*' * 50) + '\n')

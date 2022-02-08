@@ -26,7 +26,7 @@ def call_Exparser(list_of_files, subfolder):
         path_layout = config_url_Layouts() + subfolder + filename + '.csv'
         path_refs = config_url_Refs() + subfolder + filename + '.csv'
         path_segs = config_url_Refs_segment() + subfolder + filename + '.xml'
-        path_refs_and_bibtex = config_url_Refs_bibtex() + subfolder + filename + '.csv'
+        path_refs_and_bibtex = config_url_Refs_bibtex() + subfolder + filename + '.bib'
         path_segs_prob = config_url_Refs_segment_prob() + subfolder + filename + '.csv'
         path_segs_ditc = config_url_Refs_segment_dict() + subfolder + filename + '.csv'
 

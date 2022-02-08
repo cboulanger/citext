@@ -2,6 +2,9 @@
 
 import json, os, cgi, shutil, subprocess, io, sys, tempfile, time
 
+# todo use configs
+# from configs import *
+
 print("Content-type: application/json")
 print()
 
@@ -72,11 +75,11 @@ try:
     # Identify citations
     elif command == "exparser":
         result_path = refs_dir + filename + ".csv"
-        cleanup.append(result_path)
-        # also clean up segmentation and bibtex data, which we will re-produce in a seprate step
+        #cleanup.append(result_path)
+        # also clean up segmentation and bibtex data, which we will re-produce in a separate step
         cleanup.append(refs_dict_dir + filename + ".csv")
         cleanup.append(refs_prob_dir + filename + ".csv")
-        cleanup.append(refs_bibtex_dir + filename + ".csv")
+        cleanup.append(refs_bibtex_dir + filename + ".bib")
 
     # Segment citations
     elif command == "segmentation":
@@ -88,10 +91,10 @@ try:
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
         result_path = refs_seg_dir + filename + ".xml"
-        cleanup.append(result_path)
+       #cleanup.append(result_path)
         cleanup.append(refs_dict_dir + filename + ".csv")
         cleanup.append(refs_prob_dir + filename + ".csv")
-        cleanup.append(refs_bibtex_dir + filename + ".csv")
+        #cleanup.append(refs_bibtex_dir + filename + ".bib")
 
     elif command == "train_extraction":
         result_path = None
@@ -119,7 +122,9 @@ try:
 
         # subprocess returned with error
         if return_code != 0:
-            raise Exception("\n".join(proc.stderr.readlines()))
+            lines = [line.strip('\n') for line in proc.stderr.readlines() if line.strip('\n')]
+            err_msg = '\n'.join(lines)
+            raise RuntimeError(err_msg)
 
     if result_path is None:
         result["success"] = True
@@ -134,12 +139,13 @@ try:
             raise RuntimeError(str(err))
 
 except RuntimeError as err:
-    result["error"] = str(err)
+    sys.stderr.write(str(err) + '\n')
+    result["error"] = str(err).strip('\n')
 
 except BaseException as err:
     import traceback
     traceback.print_exc()
-    result["error"] = str(err)
+    result["error"] = str(err).strip('\n')
 
 finally:
     # return result
