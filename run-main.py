@@ -4,32 +4,16 @@ import subprocess
 import sys
 import traceback
 from configs import *
+from progress.bar import Bar
 
 logf = open(config_url_venu() + 'logfile.log', "a")
 
-output_on_same_line = False
-
-
-def parse_and_format_output(output):
-    global output_on_same_line
-    # keep output that starts with ">" on one line
-    if output.startswith(">"):
-        if output_on_same_line:
-            sys.stdout.write("\033[F")  # back to previous line
-            sys.stdout.write("\033[K")  # clear line
-        else:
-            output_on_same_line = True;
-        # we can add a progress meter later
-        print(">>> " + output[1:])
-    else:
-        if output_on_same_line:
-            print()
-            output_on_same_line = False
-        print(output)
 
 
 def run_command(command):
     logf.write(command)
+    progressbar = None;
+    currtask = ""
     proc = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
     while True:
         return_code = proc.poll()
@@ -37,7 +21,26 @@ def run_command(command):
             break
         line = str(proc.stdout.readline()).strip()
         if line != "":
-            parse_and_format_output(line)
+            # keep output that starts with ">" as a progress indicator message ">task:index/total"
+            if line.startswith(">"):
+                [task, progress] = line[1:].split(":")
+                [index, total] = progress.split("/")
+                if not progressbar or task != currtask:
+                    if progressbar:
+                        progressbar.finish()
+                    currtask = task
+                    progressbar = Bar(task, bar_prefix=' [', bar_suffix='] ', empty_fill = '.',
+                                      suffix='%(index)d/%(max)d: %(eta_td)s remaining...',
+                                      max=int(total))
+                progressbar.goto(int(index))
+                if int(index) == int(total):
+                    progressbar.finish()
+            else:
+                if progressbar:
+                    progressbar.finish()
+                    progressbar = None
+                    print()
+                print(line)
 
     # subprocess returned with error
     if return_code != 0:
