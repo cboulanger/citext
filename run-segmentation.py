@@ -1,5 +1,4 @@
 # -*- coding: utf-8 -*-
-import os
 import sys
 import time
 import importlib
@@ -31,7 +30,7 @@ def call_Exparser(list_of_files, subfolder):
         path_segs_prob = config_url_Refs_segment_prob() + subfolder + filename + '.csv'
         path_segs_ditc = config_url_Refs_segment_dict() + subfolder + filename + '.csv'
 
-        file = open(path_refs, 'rb')
+        file = open(path_refs)
         reader = str(file.read())
         global lng
         lng = detect(reader)
@@ -76,7 +75,7 @@ def call_Exparser(list_of_files, subfolder):
             data["ref_bib"] = item
             ref_text_x = refstr[j]
             data["ref_text_x"] = ref_text_x
-            json_dict = json.dumps(data, ensure_ascii=False, encoding='utf8')
+            json_dict = json.dumps(data, ensure_ascii=False)
             wf_ref_and_bib.write("%s\n" % json_dict)
             j += 1
         # create ref_seg_prob_file, ref_dict_file, ref_gws_file
@@ -93,7 +92,7 @@ def call_Exparser(list_of_files, subfolder):
             data["ref_seg_dic"] = json.loads(ref_seg_dic)
             ref_text_x = refstr[j]
             data["ref_text_x"] = ref_text_x
-            json_dict = json.dumps(data, ensure_ascii=False, encoding='utf8')
+            json_dict = json.dumps(data, ensure_ascii=False)
             wf_ref_dic.write("%s\n" % json_dict)
             j += 1
         logf.write('Segmentation is done for: ' + filename)
