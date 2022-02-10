@@ -6,7 +6,7 @@ import numpy as np
 
 
 def check_ref(ln):
-    tmp = re.findall(r'<ref>'.decode('utf-8'), ln)
+    tmp = re.findall(r'<ref>', ln)
     if tmp:
         ref = 1
     else:
@@ -15,7 +15,7 @@ def check_ref(ln):
 
 
 def check_eref(ln):
-    tmp = re.findall(r'</ref>'.decode('utf-8'), ln)
+    tmp = re.findall(r'</ref>', ln)
     if tmp:
         eref = 1
     else:
@@ -41,7 +41,7 @@ for u in range(0, len(fdir)):
         R = np.empty((0, 1), int)
         for row in reader:
             if row != []:
-                row[0] = row[0].decode('utf-8')
+                row[0] = row[0]
                 b = check_ref(row[0])
                 e = check_eref(row[0])
 

@@ -34,7 +34,7 @@ def call_Exparser(list_of_files, subfolder):
         reader = file.read()
         global lng
         try:
-            lng = detect(reader.decode('utf-8'))
+            lng = detect(reader)
         except:
             logf.write("Cannot extract language from " + path_layout)
             lng = ""

@@ -426,7 +426,7 @@ with open('EXparser/Utils/rf.pkl', 'rb') as fid:
 # with open('EXparser/Utils/crf_model_en.pkl', 'rb') as fid:
 #     crf1 = pickle.load(fid)
 
-#todo: what are these?
+# Models for reference completeness
 kde_ntag1 = pickle.load(open('EXparser/Utils/kde_ntag_en.pkl', "rb"), encoding="latin1")
 kde_ltag1 = pickle.load(open('EXparser/Utils/kde_ltag_en.pkl', "rb"), encoding="latin1")
 kde_dtag1 = pickle.load(open('EXparser/Utils/kde_dtag_en.pkl', "rb"), encoding="latin1")

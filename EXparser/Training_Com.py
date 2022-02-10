@@ -38,12 +38,10 @@ def dist_tags(b):
             ntag.extend([tmp2.index(abv0[i]) + 7 - len(tmp2)])  # position of the tag in the reference string
         else:
             ntag.extend([0])
-            # dtag.extend([-1])
-            # ltag.extend([-1])
+            dtag.extend([-1])
+            ltag.extend([-1])
             atag.extend([0])
 
-    # print str(atag)
-    # print str(ntag)
     gtag = np.concatenate((ltag, atag, wtag, ntag))  # best
     # gtag=np.concatenate((ntag,[wtag]))
     return ntag, dtag, ltag, atag, wtag, gtag
@@ -57,21 +55,21 @@ def findtag(w, l):  # w is the word and l is if the tag is still open
     i = 0
     v = True
     while (i < len(tag)) & (v):
-        tmp1 = re.findall(r'<' + tag[i] + '>'.decode('utf-8'), w)
-        tmp2 = re.findall(r'</' + tag[i] + '>'.decode('utf-8'), w)
+        tmp1 = re.findall(r'<' + tag[i] + '>', w)
+        tmp2 = re.findall(r'</' + tag[i] + '>', w)
         if (bool(tmp1) & bool(tmp2)):
             v = False
-            w = re.sub(r'<' + tag[i] + '>|</' + tag[i] + '>'.decode('utf-8'), '', w)
+            w = re.sub(r'<' + tag[i] + '>|</' + tag[i] + '>', '', w)
             a = abv[i]
             l = -1
         elif tmp2:
             v = False
-            w = re.sub(r'<' + tag[i] + '>|</' + tag[i] + '>'.decode('utf-8'), '', w)
+            w = re.sub(r'<' + tag[i] + '>|</' + tag[i] + '>', '', w)
             a = abv[i]
             l = -1
         elif tmp1:
             v = False
-            w = re.sub(r'<' + tag[i] + '>|</' + tag[i] + '>'.decode('utf-8'), '', w)
+            w = re.sub(r'<' + tag[i] + '>|</' + tag[i] + '>', '', w)
             a = abv[i]
             l = i
         i += 1
@@ -84,9 +82,9 @@ def findtag(w, l):  # w is the word and l is if the tag is still open
 
 def preproc(ln):
     # remove or replace strange character:
-    ln = re.sub(r'–'.decode('utf-8'), '-', ln)
-    ln = re.sub(r'<article-title>'.decode('utf-8'), '<title>', ln)
-    ln = re.sub(r'</article-title>'.decode('utf-8'), '</title>', ln)
+    ln = re.sub(r'–', '-', ln)
+    ln = re.sub(r'<article-title>', '<title>', ln)
+    ln = re.sub(r'</article-title>', '</title>', ln)
 
     # remove empty tags
     tag = 'given-names|surname|year|title|editor|source|publisher|other|page|volume|author|fpage|lpage|issue|url|identifier'
@@ -151,11 +149,11 @@ fdir = os.listdir(fold)
 train_label = []
 for u in range(len(fdir)):
     fname = fold + "/" + fdir[u]
-    file = open(fname, "rb")
+    file = open(fname)
     reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)  # , quotechar='|'
     print('File in prcossecing =  ' + fdir[u] + '  . . .')
     for row in reader:
-        ln = row[0].decode('utf-8')
+        ln = row[0]
         ln = re.sub(r'<author>|</author>', '', ln)  # remove author tag
         ln = re.sub(r'</fpage>|<lpage>', '', ln)  # change page tag
         ln = re.sub(r'<fpage>', '<page>', ln)  # change page tag
@@ -189,7 +187,7 @@ fdir = os.listdir(fold)
 for u in range(len(fdir)):
     print('File in prcossecing =  ' + fdir[u] + '  . . .')
     fname = fold + "/" + fdir[u]
-    file = open(fname, 'rb')
+    file = open(fname)
     reader = file.read()
     file.close()
     reader = re.sub(r'\.[0]+e\+00\r\n', '', reader)
@@ -197,7 +195,7 @@ for u in range(len(fdir)):
     [llen.append([len(t)]) for t in x]
 
     fname = fold2 + "/" + fdir[u]
-    file = open(fname, 'rb')
+    file = open(fname)
     reader2 = file.read()
     file.close()
     reader2 = reader2.split('\r\n')
@@ -207,29 +205,28 @@ for u in range(len(fdir)):
         tlen.append(
             [sum([len((y.split('\t')[0]).split()) for y in reader2[uu[0]:uu[1] + 1]])])  # number of token per ref
 
-# kde_ltag=KernelDensity(kernel='gaussian', bandwidth=1).fit(ltag)
+# kde_ltag = KernelDensity(kernel='gaussian', bandwidth=1).fit(ltag)
 kde_ntag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(ntag)
-# kde_dtag=KernelDensity(kernel='gaussian', bandwidth=1).fit(dtag)
+# kde_dtag = KernelDensity(kernel='gaussian', bandwidth=1).fit(dtag)
 kde_atag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(atag)
 kde_wtag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(wtag)
-# kde_gtag=KernelDensity(kernel='gaussian', bandwidth=1).fit(gtag)
-# kde_llen=KernelDensity(kernel='gaussian', bandwidth=1).fit(llen)
-# kde_tlen=KernelDensity(kernel='gaussian', bandwidth=1).fit(tlen)
+# kde_gtag = KernelDensity(kernel='gaussian', bandwidth=1).fit(gtag)
+kde_llen = KernelDensity(kernel='gaussian', bandwidth=1).fit(llen)
+kde_tlen = KernelDensity(kernel='gaussian', bandwidth=1).fit(tlen)
 
 # with open('Utils/kde_ltag.pkl', 'wb') as fid:
-# pickle.dump(kde_ltag, fid)
+#     pickle.dump(kde_ltag, fid)
 with open('Utils/kde_ntag' + sfx + '.pkl', 'wb') as fid:
     pickle.dump(kde_ntag, fid)
 # with open('Utils/kde_dtag.pkl', 'wb') as fid:
-# pickle.dump(kde_dtag, fid)
+#     pickle.dump(kde_dtag, fid)
 with open('Utils/kde_atag' + sfx + '.pkl', 'wb') as fid:
     pickle.dump(kde_atag, fid)
 with open('Utils/kde_wtag' + sfx + '.pkl', 'wb') as fid:
     pickle.dump(kde_wtag, fid)
 # with open('Utils/kde_gtag.pkl', 'wb') as fid:
-# pickle.dump(kde_gtag, fid)
-# with open('Utils/kde_llen.pkl', 'wb') as fid:
-# pickle.dump(kde_llen, fid)
-# with open('Utils/kde_tlen.pkl', 'wb') as fid:
-# pickle.dump(kde_tlen, fid)
-
+#     pickle.dump(kde_gtag, fid)
+with open('Utils/kde_llen.pkl', 'wb') as fid:
+    pickle.dump(kde_llen, fid)
+with open('Utils/kde_tlen.pkl', 'wb') as fid:
+    pickle.dump(kde_tlen, fid)

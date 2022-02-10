@@ -39,7 +39,7 @@ for u in range(0, len(fdir)):
         rfidx = [0, 0, 'font', 0]
         for row in reader:
             row = row.split('\t')
-            row[0] = row[0].decode('utf-8')
+            row[0] = row[0]
             # print row
             if len(row[0]) > 1:
                 lh = lh + map(len, row[0].split())
@@ -49,7 +49,7 @@ for u in range(0, len(fdir)):
                 ch = ch + [x - tmp[i - 1] for i, x in enumerate(tmp)][1:]
                 hc = hc + [float(row[1])]
                 wc = wc + [float(row[3])]
-                ll = ll + [len(re.sub(r'\s'.decode('utf-8'), '', row[0]))]
+                ll = ll + [len(re.sub(r'\s', '', row[0]))]
                 llw = llw + [len(row[0].split())]
                 if (uu < len(reader) - 1):
                     nvsl = float(reader[uu + 1].split('\t')[2])
@@ -100,7 +100,7 @@ for u in range(0, len(fdir)):
         uu = 0
         for row in reader:
             row = row.split('\t')
-            row[0] = row[0].decode('utf8')
+            row[0] = row[0]
             f1 = get_cc(row[0])  # 1 value
             f2 = get_sc(row[0])  # 1 value
             f3 = get_cw(row[0])  # 1 value
