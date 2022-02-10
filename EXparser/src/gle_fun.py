@@ -5,28 +5,23 @@ import os
 
 list_dir = '/app/Exparser/lists/'
 
-# list of stop words  (it is better to make them in a file)
-stopw = r'\bgewesen\b|\beines\b|\bim\b|\bselbst\b|\bdu\b|\bkeinen\b|\bmancher\b|\bsollte\b|\bkein\b|\beurem\b|\bjeder\b|\bhinter\b|\bmich\b|\bihres\b|\bmeiner\b|\balles\b|\bwelcher\b|\bals\b|\bhatten\b|\bihren\b|\bdein\b|\bwieder\b|\bwird\b|\bzum\b|\bderselbe\b|\bnach\b|\bviel\b|\bwas\b|\bsie\b|\bnoch\b|\bsolches\b|\betwas\b|\beiniger\b|\bob\b|\beinige\b|\beinmal\b|\bkeinem\b|\bin\b|\bohne\b|\bseinem\b|\bda\b|\bweg\b|\bweil\b|\bein\b|\bderer\b|\bgegen\b|\bseines\b|\bwill\b|\bjener\b|\bwaren\b|\bnur\b|\banderm\b|\baber\b|\bjenen\b|\bbin\b|\bweiter\b|\bwir\b|\bdeines\b|\bjeden\b|\bdiesen\b|\bkoennte\b|\bkeine\b|\bdiese\b|\bvom\b|\bwelchem\b|\bdessen\b|\baus\b|\bwerden\b|\beure\b|\bwirst\b|\banderr\b|\bjenem\b|\bso\b|\bwelches\b|\bmanchen\b|\bzwischen\b|\bes\b|\ballem\b|\bins\b|\beurer\b|\bunserem\b|\bmusste\b|\bnichts\b|\bdort\b|\bden\b|\bihre\b|\bjene\b|\banderem\b|\bdir\b|\bdemselben\b|\bmeines\b|\bdass\b|\beine\b|\bdieses\b|\bder\b|\bdazu\b|\bvon\b|\bwerde\b|\bmeine\b|\bich\b|\bseinen\b|\bwuerden\b|\bwollen\b|\bdies\b|\bseiner\b|\bwar\b|\bdeiner\b|\banders\b|\boder\b|\bindem\b|\bauch\b|\bbist\b|\buns\b|\bkeines\b|\bdieselbe\b|\bmein\b|\bihrem\b|\bderselben\b|\bdas\b|\bander\b|\beiniges\b|\bmachen\b|\bsonst\b|\bund\b|\bkann\b|\bsehr\b|\bdieser\b|\bihr\b|\bhab\b|\bbis\b|\bsein\b|\bunser\b|\bwaehrend\b|\banderen\b|\bauf\b|\bdesselben\b|\ballen\b|\bdeinen\b|\bwollte\b|\bkeiner\b|\ber\b|\bseine\b|\beinig\b|\bman\b|\balso\b|\bdiesem\b|\bdamit\b|\bjenes\b|\bmanche\b|\banderes\b|\bmuss\b|\beinem\b|\bdeine\b|\bdasselbe\b|\bsondern\b|\bhatte\b|\bvor\b|\beinigem\b|\bhaben\b|\bmeinem\b|\bhat\b|\bsoll\b|\bunsere\b|\bihrer\b|\balle\b|\bandern\b|\bdann\b|\bist\b|\bwenn\b|\bwie\b|\bzu\b|\bdoch\b|\bzwar\b|\bmanchem\b|\beuren\b|\bdich\b|\bwelchen\b|\bdeinem\b|\bdes\b|\beinigen\b|\bmir\b|\bhabe\b|\bmit\b|\bzur\b|\bdem\b|\beuch\b|\bhier\b|\beiner\b|\bkoennen\b|\bwarst\b|\bdie\b|\bsolchem\b|\bsind\b|\bwuerde\b|\bdurch\b|\bmeinen\b|\beures\b|\bsich\b|\bam\b|\beinen\b|\bjetzt\b|\bnun\b|\bnicht\b|\bihnen\b|\ban\b|\bsolcher\b|\bsolchen\b|\bdenselben\b|\bdieselben\b|\bunter\b|\banderer\b|\bbei\b|\beuer\b|\bueber\b|\bandere\b|\bwo\b|\bdenn\b|\bum\b|\bhin\b|\bunseren\b|\bjedem\b|\baller\b|\bfuer\b|\bsolche\b|\bjedes\b|\bmanches\b|\bunseres\b|\bwelche\b|\bihn\b|\bjede\b|\bihm\b'
-# with  open(list_dir + "stopwords.csv", "r") as file:
-# todo: join stopwords to raw string above
-
-
-def read_words_from_file(filename):
+def read_csv(filename):
     path = list_dir + filename
     # check for local override
     if os.path.isfile(path + ".local.csv"):
         path += ".local"
     with open(path + ".csv", "r", encoding="utf-8") as file:
-        return set(file.readlines())
+        return file.readlines()
 
 
 # read word lists into variables
-b1 = read_words_from_file("names")
-b2 = read_words_from_file("abv")
-b3 = read_words_from_file("cities")
-b4 = read_words_from_file("edt")
-b5 = read_words_from_file("journals")
-b6 = read_words_from_file("publishers")
+stopw = r'\b' + (r'\b|\b'.join(read_csv("stopwords"))) + r'\b'
+b1 = set(read_csv("names"))
+b2 = set(read_csv("abv"))
+b3 = set(read_csv("cities"))
+b4 = set(read_csv("edt"))
+b5 = set(read_csv("journals"))
+b6 = set(read_csv("publishers"))
 
 
 # make text lower

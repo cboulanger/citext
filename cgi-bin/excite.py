@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 
-import json, os, cgi, shutil, subprocess, io, sys, tempfile, time
+import json, os, cgi, shutil, subprocess, io, sys, tempfile, time, traceback
 
-# todo use configs
-# from configs import *
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from configs import *
 
 print("Content-type: application/json")
 print()
@@ -12,29 +12,39 @@ form = cgi.FieldStorage()
 command = form.getvalue("command")
 filename = form.getvalue("file") # without extension!
 
-data_dir = os.getcwd() + "/Data"
-pdfs_no_ocr_dir = data_dir + "/0-pdfs_no_ocr/"
-pdfs_dir = data_dir + "/1-pdfs/"
-layout_dir = data_dir + "/2-layouts/"
-refs_dir = data_dir + "/3-refs/"
-refs_seg_dir = data_dir + "/3-refs_seg/"
-refs_dict_dir = data_dir + "/3-refs_seg_dict/"
-refs_prob_dir = data_dir + "/3-refs_seg_prob/"
-refs_bibtex_dir = data_dir + "/3-refs_seg_bibtex/"
 result_path = None
 
 # remove .gitkeep because cermine cannot deal with it
-gitkeep_file = pdfs_dir + ".gitkeep"
+gitkeep_file = config_url_pdfs() + ".gitkeep"
 try:
     os.remove(gitkeep_file)
 except:
     pass
 
-cleanup = []
+cleanup_dirs = [
+    config_url_pdfs_no_ocr(),
+    config_url_pdfs(),
+    config_url_Layouts(),
+    config_url_Refs(),
+    config_url_Refs_segment(),
+    config_url_Refs_segment_dict(),
+    config_url_Refs_segment_prob(),
+    config_url_Refs_bibtex(),
+    config_url_Refs_crossref()
+]
+
 result = {}
 run_docker_command = True
 
 try:
+
+    # cleanup folders without removing ".gitkeep"
+    for folder in cleanup_dirs:
+        for fname in os.listdir(folder):
+            file_path = os.path.join(folder, fname)
+            if os.path.isfile(file_path) and not fname.startswith("."):
+                os.unlink(file_path)
+
     if command is None:
         raise RuntimeError("No command")
     if filename is None and command != "train_extraction":
@@ -44,8 +54,8 @@ try:
     if command == "ocr":
         try:
             source = tempfile.gettempdir() + "/" + filename + ".pdf"
-            target = pdfs_no_ocr_dir + filename + ".pdf"
-            ocr_file = pdfs_dir + filename + ".pdf"
+            target = config_url_pdfs_no_ocr() + filename + ".pdf"
+            ocr_file = config_url_pdfs() + filename + ".pdf"
             shutil.move(source, target)
             run_docker_command = False
             # wait for OCR to complete
@@ -61,7 +71,7 @@ try:
 
     # Extract layout
     elif command == "layout":
-        target = pdfs_dir + filename + ".pdf"
+        target = config_url_pdfs() + filename + ".pdf"
         if not os.path.isfile(target):
             source = tempfile.gettempdir() + "/" + filename + ".pdf"
             try:
@@ -69,32 +79,21 @@ try:
             except FileNotFoundError as err:
                 raise RuntimeError(str(err))
 
-        cleanup.append(pdfs_dir + filename + ".pdf")
-        result_path = layout_dir + filename + ".csv"
+        result_path = config_url_Layouts() + filename + ".csv"
 
     # Identify citations
     elif command == "exparser":
-        result_path = refs_dir + filename + ".csv"
-        #cleanup.append(result_path)
-        # also clean up segmentation and bibtex data, which we will re-produce in a separate step
-        cleanup.append(refs_dict_dir + filename + ".csv")
-        cleanup.append(refs_prob_dir + filename + ".csv")
-        cleanup.append(refs_bibtex_dir + filename + ".bib")
+        result_path = config_url_Refs() + filename + ".csv"
 
     # Segment citations
     elif command == "segmentation":
         try:
             source = tempfile.gettempdir() + "/" + filename + ".csv"
-            target = refs_dir + filename + ".csv"
+            target = config_url_Refs() + filename + ".csv"
             shutil.move(source, target)
-            cleanup.append(target)
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
-        result_path = refs_seg_dir + filename + ".xml"
-       #cleanup.append(result_path)
-        cleanup.append(refs_dict_dir + filename + ".csv")
-        cleanup.append(refs_prob_dir + filename + ".csv")
-        #cleanup.append(refs_bibtex_dir + filename + ".bib")
+        result_path = config_url_Refs_segment() + filename + ".xml"
 
     elif command == "train_extraction":
         result_path = None
@@ -139,7 +138,7 @@ try:
             raise RuntimeError(str(err))
 
 except RuntimeError as err:
-    sys.stderr.write(str(err) + '\n')
+    sys.stderr.write(traceback.format_exc())
     result["error"] = str(err).strip('\n')
 
 except BaseException as err:
@@ -153,11 +152,3 @@ finally:
 
     # restore .gitkeep file
     open(gitkeep_file, 'a').close()
-
-    # clean up temporary files
-    for filepath in cleanup:
-        try:
-            os.remove(filepath)
-            pass
-        except OSError:
-            pass

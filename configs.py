@@ -1,5 +1,7 @@
-venue_address = '/app/'
-data_address = '/app/Data/'
+import os
+
+venue_address = '/app/' if os.path.isdir('/app/') else os.path.dirname(os.path.abspath(__file__))
+data_address = venue_address + '/Data/'
 
 
 def config_url_venu():
@@ -8,6 +10,10 @@ def config_url_venu():
 
 def config_url_log():
     return venue_address + '/logfile.log'
+
+
+def config_url_pdfs_no_ocr():
+    return data_address + '0-pdfs_no_ocr/'
 
 
 def config_url_pdfs():
