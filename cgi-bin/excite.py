@@ -24,7 +24,6 @@ except:
 cleanup_dirs = [
     config_url_pdfs_no_ocr(),
     config_url_pdfs(),
-    config_url_Layouts(),
     config_url_Refs(),
     config_url_Refs_segment(),
     config_url_Refs_segment_dict(),
@@ -32,6 +31,9 @@ cleanup_dirs = [
     config_url_Refs_bibtex(),
     config_url_Refs_crossref()
 ]
+
+if command != "exparser":
+    cleanup_dirs.append(config_url_Layouts())
 
 result = {}
 run_docker_command = True
