@@ -3,6 +3,12 @@ import os
 venue_address = '/app/' if os.path.isdir('/app/') else os.path.dirname(os.path.abspath(__file__))
 data_address = venue_address + '/Data/'
 
+version = "0.1.0"
+
+
+def get_version():
+    return version
+
 
 def config_url_venu():
     return venue_address

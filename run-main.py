@@ -1,18 +1,24 @@
 # -*- coding: utf-8 -*-
-import os
+import shutil
 import subprocess
 import sys
 import traceback
 from configs import *
 from progress.bar import Bar
 
-logf = open(config_url_venu() + 'logfile.log', "a")
+from EXparser.Training_Seg import train_segmentation
+from EXparser.Feature_Extraction import extract_features
+from EXparser.Txt2Vec import text_to_vec
+from EXparser.Training_Ext import train_extraction
+from run_segmentation import call_Exparser_segmentation
+from run_exparser import call_Exparser
 
+logf = open(config_url_venu() + 'logfile.log', "a")
 
 
 def run_command(command):
     logf.write(command)
-    progressbar = None;
+    progressbar = None
     currtask = ""
     proc = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
     while True:
@@ -62,22 +68,44 @@ def call_run_exmatcher():
     run_command('python3.6 run-crossref.py')
 
 
-def call_run_exparser():
-    run_command('python3.6 run-exparser.py')
+def call_run_exparser(model_name=None):
+    call_Exparser("EXparser/Models/" + get_version() + "/" + model_name)
 
 
-def call_segmentation():
-    run_command('python3.6 run-segmentation.py')
+def call_segmentation(model_name=None):
+    call_Exparser_segmentation("EXparser/Models/" + get_version() + "/" + model_name)
 
 
-def call_extraction_training():
-    for cmd in ["Feature_Extraction", "Txt2Vec", "Training_Ext"]:
-        run_command('python3.6 /app/EXparser/' + cmd + '.py')
+def call_extraction_training(model_name: str):
+    extract_features("EXparser/Dataset/" + model_name)
+    text_to_vec("EXparser/Dataset/" + model_name)
+    train_extraction("EXparser/Dataset/" + model_name,
+                     "EXparser/Models/" + get_version() + "/" + model_name)
 
 
-def call_segmentation_training():
-    for cmd in ["Feature_Extraction", "Txt2Vec", "Training_Seg"]:
-        run_command('python3.6 /app/EXparser/' + cmd + '.py')
+def call_segmentation_training(model_name: str):
+    extract_features("/app/EXparser/Dataset/" + model_name)
+    text_to_vec("/app/EXparser/Dataset/" + model_name)
+    train_segmentation("/app/EXparser/Dataset/" + model_name,
+                       "/app/EXparser/Models/" + get_version() + "/" + model_name)
+
+
+def create_model_folder(model_name: str):
+    path = "/app/EXparser/Models/" + get_version() + "/" + model_name
+    os.mkdir(path)
+
+    # todo: get rid of the copying if all models are trainabe
+    default_path = "/app/EXparser/Models/" + get_version() + "/default/"
+    src_files = os.listdir(default_path)
+    for file_name in src_files:
+        full_file_name = os.path.join(default_path, file_name)
+        if os.path.isfile(full_file_name) and "kde_" in file_name:
+            shutil.copy(full_file_name, path)
+
+    os.mkdir("/app/EXparser/Dataset/" + model_name)
+
+    sys.stdout.write("Please put the training data to: " + "/app/EXparser/Dataset/" + model_name
+                     + ". And perform the training.")
 
 
 if __name__ == "__main__":
@@ -88,15 +116,29 @@ if __name__ == "__main__":
         if func_name == 'layout':
             call_run_layout_extractor()
         elif func_name == 'exparser':
-            call_run_exparser()
+            if len(sys.argv) == 3:
+                call_run_exparser(sys.argv[2])
+            else:
+                call_run_exparser()
         elif func_name == 'segmentation':
-            call_segmentation()
+            if len(sys.argv) == 3:
+                call_segmentation(sys.argv[2])
+            else:
+                call_segmentation()
         elif func_name == 'exmatcher':
             call_run_exmatcher()
         elif func_name == "train_extraction":
-            call_extraction_training()
+            if len(sys.argv) < 3:
+                raise RuntimeError("Please provide a name for the model")
+            call_extraction_training(sys.argv[2])
         elif func_name == "train_segmentation":
-            call_segmentation_training()
+            if len(sys.argv) < 3:
+                raise RuntimeError("Please provide a name for the model")
+            call_segmentation_training(sys.argv[2])
+        elif func_name == "create_model":
+            if len(sys.argv) < 3:
+                raise RuntimeError("Please provide a name for the model")
+            create_model_folder(sys.argv[2])
         else:
             raise RuntimeError("Wrong input command: " + func_name)
     except KeyboardInterrupt:

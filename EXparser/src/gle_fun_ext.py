@@ -18,14 +18,20 @@ def isup(a):
 # this function extracts capital characters
 def get_cc(ln):  # [1]
     tmp = re.sub(r'[^A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ]', '', ln)
-    cc = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
+    ss = re.sub(r'[\s\b\t]+', '', ln)
+    if len(ss) == 0:
+        return 0
+    cc = 1.0 * len(tmp) / len(ss)
     return cc
 
 
 # this function extracts small characters
 def get_sc(ln):  # [2]
     tmp = re.sub(r'[^a-zäüöïèéçâîôêëùìòàãõñûß]', '', ln)
-    sc = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
+    ss = re.sub(r'[\s\b\t]+', '', ln)
+    if len(ss) == 0:
+        return 0
+    sc = 1.0 * len(tmp) / len(ss)
     return sc
 
 
@@ -62,37 +68,55 @@ def get_yr_re(ln):  # [5]   #re=reference extraction
 def get_qm(ln):  # [6]
     tmp = re.sub(r'[^"|“|”|‘|’|«|»]', '', ln)
     tmp2 = re.sub(r"[^']", '', ln)
-    qm = 1.0 * (len(tmp) + len(tmp2)) / len(re.sub(r'[\s\b\t]+', '', ln))
+    ss = re.sub(r'[\s\b\t]+', '', ln)
+    if len(ss) == 0:
+        return 0
+    qm = 1.0 * (len(tmp) + len(tmp2)) / len(ss)
     return qm
 
 
 def get_cl(ln):  # [7]
     tmp = re.sub(r'[^:]', '', ln)
-    cl = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
+    ss = re.sub(r'[\s\b\t]+', '', ln)
+    if len(ss) == 0:
+        return 0
+    cl = 1.0 * len(tmp) / len(ss)
     return cl
 
 
 def get_sl(ln):  # [8]
     tmp = re.sub(r'[^\\|/]', '', ln)
-    sl = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
+    ss = re.sub(r'[\s\b\t]+', '', ln)
+    if len(ss) == 0:
+        return 0
+    sl = 1.0 * len(tmp) / len(ss)
     return sl
 
 
 def get_bs(ln):  # [9,10]
     tmp = re.sub(r'[^\(|\)|\[|\]|\{|\}]', '', ln)
-    bs = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
+    ss = re.sub(r'[\s\b\t]+', '', ln)
+    if len(ss) == 0:
+        return 0
+    bs = 1.0 * len(tmp) / len(ss)
     return bs
 
 
 def get_dt(ln):  # [11]
     tmp = re.sub(r'[^\.]', '', ln)
-    dt = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
+    ss = re.sub(r'[\s\b\t]+', '', ln)
+    if len(ss) == 0:
+        return 0
+    dt = 1.0 * len(tmp) / len(ss)
     return dt
 
 
 def get_cm(ln):  # [12]
     tmp = re.sub(r'[^\,]', '', ln)
-    cm = 1.0 * len(tmp) / len(re.sub(r'[\s\b\t]+', '', ln))
+    ss = re.sub(r'[\s\b\t]+', '', ln)
+    if len(ss) == 0:
+        return 0
+    cm = 1.0 * len(tmp) / len(ss)
     return cm
 
 
@@ -139,7 +163,6 @@ def get_pg_re(ln):  # [16]   re=reference extraction
 
 
 def get_hc(hp, cl):  # [17]
-
     hc = (float(hp) - cl[0]) / (cl[1] - cl[0])
     return hc
 
