@@ -1,10 +1,4 @@
-EXparser/Utils/rf_de.pkl filter=lfs diff=lfs merge=lfs -text
-EXparser/Utils/rf_en.pkl filter=lfs diff=lfs merge=lfs -text
-EXparser/Utils/crf_model_de.pkl filter=lfs diff=lfs merge=lfs -text
-EXparser/Utils/crf_model_en.pkl filter=lfs diff=lfs merge=lfs -text
-EXparser/Utils/FSN.npy filter=lfs diff=lfs merge=lfs -text
-EXparser/Utils/SMN.npy filter=lfs diff=lfs merge=lfs -text
-gitEXparser/lists/abv.csv filter=lfs diff=lfs merge=lfs -text
+EXparser/lists/abv.csv filter=lfs diff=lfs merge=lfs -text
 EXparser/lists/cities.csv filter=lfs diff=lfs merge=lfs -text
 EXparser/lists/edt.csv filter=lfs diff=lfs merge=lfs -text
 EXparser/lists/journals.csv filter=lfs diff=lfs merge=lfs -text
