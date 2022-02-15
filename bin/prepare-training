@@ -1,9 +1,9 @@
 #! /bin/bash
-echo "This will download the Excite gold standard data training data. If you are on a Mac, run 'ulimit unlimited' beforehand."
+echo "This will download the default Excite gold standard data training data. If you are on a Mac, run 'ulimit unlimited' beforehand."
 read -r -p "Continue? [Y/n]" response
 response=${response:-y} # default
 if [[ $response =~ ^(Y|y| ) ]]; then
   git clone --depth 1 https://github.com/exciteproject/Exparser.git tmp
-  cp -a ./tmp/EXparser/Dataset/* ./Exparser/Dataset
+  cp -a ./tmp/EXparser/Dataset/* ./Exparser/Dataset/default
   echo "Downloaded/updated training data. To improve the model, add your own training data to the directories in Exparser/Dataset/"
 fi
