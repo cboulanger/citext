@@ -2,6 +2,8 @@
 
 import sys, json, os
 
+dataset_dir = "EXparser/Dataset"
+
 print("Content-type: application/json")
 print()
 
@@ -18,26 +20,30 @@ try:
     payload = json.loads(payload)
     data_type = payload["type"]
     data = payload["data"]
-    filename = payload["filename"]
+    file_name = payload["filename"]
+    model_name = payload["modelName"]
 
-    if filename == "":
+    if file_name == "":
         raise RuntimeError("No filename given")
 
-    filepath = os.getcwd() + "/Exparser/Dataset/"
+    if model_name == "":
+        raise RuntimeError("No model name given")
+
+    dir_name = os.path.join(os.getcwd(), dataset_dir, model_name)
 
     if data_type == "layout":
-        filepath += "LRT"
+        dir_name = os.path.join(dir_name, "LRT")
     elif data_type == "ref_xml":
-        filepath += "SEG"
+        dir_name = os.path.join(dir_name, "SEG")
     else:
         raise RuntimeError("Invalid type")
 
     data = data.encode("utf8")
 
-    if not os.path.exists(filepath):
-        os.makedirs(filepath)
+    if not os.path.exists(dir_name):
+        os.makedirs(dir_name)
 
-    file = open(filepath + "/" + filename, "wb")
+    file = open(os.path.join(dir_name, file_name), "wb")
     file.write(data)
     file.close()
 

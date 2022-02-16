@@ -50,10 +50,23 @@ and `Data/3-refs_bibtex`
 `docker run -v $(pwd):/app excite_toolchain exmatcher`. Any matched reference will be in 
 `Data/4-refs_crossref`
 
-## Training
+## Training a new model
 
-You can retrain the model, using your own training data. At the moment feature
-extraction is done before the model training. 
+In order to train a new model from scratch, you need to do the following:
+
+1) Run `./bin/run-command create_mdoel <model_name>`
+2) Put the PDFs with which you are going to train the model into `Data/1-pdfs` if they are native PDFs or contain an 
+OCR layer. If the PDFs consist of scanned pages without the OCR layer, put them into `0-pdfs_no_ocr` and wait for the
+OCR server to process them and move them to `Data/1-pdfs`
+3) Create the layout files with `./bin/run-command layout`
+4) Move files from `Data/2-layout` into `EXparser/Dataset/<model_name>/LYT`
+5) Use the web application to load and annotate the layout files from `EXparser/Dataset/<model_name>/LYT`. When you
+click on the "Save" button, they will be automatically
+6) annotate the files and place them into EXparser/Dataset/<model_name>/LRT
+7) run a script (tbd.) that extracts the refs and put them into EXparser/Dataset/mymodel/SEG
+8) run extraction training
+9) run segmentation training
+
 
 > If you want to use this feature, you need to have
 [git-lfs](https://www.atlassian.com/git/tutorials/git-lfs) installed **before** you

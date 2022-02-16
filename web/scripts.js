@@ -13,6 +13,7 @@ let versions = [];
 let displayMode;
 let lastDocument;
 let zoteroAttachmentFilepath;
+let modelName = "default"
 
 /* The url of the exparser backend */
 const SERVER_URL = "/cgi-bin/";
@@ -25,7 +26,8 @@ const LOCAL_STORAGE = {
   TEXT_FILE_NAME: "excite_text_file_name",
   PDF_IFRAME_SRC: "excite_pdf_iframe_source",
   DISPLAY_MODE: "excite_display_mode",
-  LAST_LOAD_URL: "excite_last_load_url"
+  LAST_LOAD_URL: "excite_last_load_url",
+  LAST_MODEL_NAME: "excite_last_model_name"
 }
 const DISPLAY_MODES = {
   DOCUMENT: "document",
@@ -626,8 +628,9 @@ class Actions {
         type = "ref_xml"
         break;
     }
+    if (!confirm(`Save training data to model '${modelName}?'`)) return
     GUI.showSpinner(`Saving training data.`);
-    let body = JSON.stringify({filename, type, data}) + "\n\n";
+    let body = JSON.stringify({filename, type, data, modelName}) + "\n\n";
     let result = await (await fetch(`${SERVER_URL}/save.py`, {
       method: 'post', body
     })).json();
@@ -649,14 +652,6 @@ class Actions {
     }
     localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
     localStorage.setItem(LOCAL_STORAGE.DISPLAY_MODE, displayMode);
-  }
-
-  static savePdfToZotero() {
-    alert("Not implemented")
-    // if (!pdfFile) {
-    //   alert("No PDF file to save");
-    //   return;
-    // }
   }
 
   static replaceSelection() {
@@ -720,6 +715,13 @@ class Actions {
     versions = [];
     $("#btn-undo").addClass("ui-state-disabled");
 
+  }
+
+  static changeModel(name) {
+    $("#btn-model-" + modelName).removeClass("btn-dropdown-radio-selected");
+    modelName = name;
+    $("#btn-model-" + modelName).addClass("btn-dropdown-radio-selected");
+    localStorage.setItem(LOCAL_STORAGE.LAST_MODEL_NAME, name);
   }
 }
 
@@ -1013,17 +1015,15 @@ class GUI {
         return;
       }
       $("#modal-help").show();
-
-
     });
 
     // save text before leaving the page
     window.onbeforeunload = Actions.saveToLocalStorage;
 
-    // check if we have a backend
+    // check if we have a backend and intialize UI
     fetch(SERVER_URL + "status.py")
       .then(response => response.json())
-      .then(result => $(".visible-if-backend").toggleClass("hidden", !Boolean(result.success)));
+      .then(result => GUI.configureStatus(result))
 
     // check if Zotero is running
     fetch(SERVER_URL + "zotero/proxy.py?connector/ping")
@@ -1037,6 +1037,15 @@ class GUI {
     source.onmessage = function (event) {
       console.log(event.data);
     };*/
+  }
+
+  static configureStatus(status) {
+    $(".visible-if-backend").toggleClass("hidden", false);
+    let model_name = localStorage.getItem(LOCAL_STORAGE.LAST_MODEL_NAME) || "default";
+    status.model_names
+      .reverse()
+      .forEach(name => $(`<li><a class="dropdown-item" href="#" id="btn-model-${name}" onclick="Actions.changeModel('${name}')">${name}</a></li>`).insertAfter($("#model-names")));
+    Actions.changeModel(model_name);
   }
 
   static _setupEventListeners() {
@@ -1295,10 +1304,10 @@ class GUI {
           $(".visible-if-pages").addClass("hidden");
         }
         // count references
-        const num_refs = text.split("<ref>").length-1;
+        const num_refs = text.split("<ref>").length - 1;
         let label = ""
         if (textFileName) {
-          label = textFileName +` (${num_refs} identified references)`;
+          label = textFileName + ` (${num_refs} identified references)`;
         }
         $("#text-label").html(label);
         break;

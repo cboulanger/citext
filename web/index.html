@@ -101,16 +101,12 @@
                 <i class="fas fa-save"></i><span class="button-label">Save</span>
             </button>
             <button data-toggle="dropdown"
-                    class="btn btn-primary dropdown-toggle hidden visible-if-backend"
+                    class="btn btn-primary dropdown-toggle hidden visible-if-backend ui-state-disabled enabled-if-refs"
                     aria-haspopup="true" aria-expanded="false">
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
-                <li><a id="btn-save-to-zotero"
-                       class="dropdown-item hidden visible-if-zotero-connection enabled-if-pdf"
-                       href="#"
-                       onclick="Actions.savePdfToZotero();">
-                    Save PDF to currently selected Zotero item</a></li>
+                <li class="dropdown-header" id="model-names">Select model</li>
             </ul>
         </div>
 

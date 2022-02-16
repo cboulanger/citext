@@ -66,6 +66,10 @@ nav {
     padding-right: 10px;
 }
 
+.btn-dropdown-radio-selected {
+    font-weight: bold !important;
+}
+
 .iframecss {
     border: 1px solid #779caf !important;
     height: 100%;
