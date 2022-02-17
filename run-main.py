@@ -32,15 +32,20 @@ class Commands(Enum):
 progressbar = None
 currtask = ""
 oldprint = builtins.print
-
+total = len(os.listdir(config_url_pdfs()))
+index = 0
 
 def progress_bar_print(string="", end="\n", file=None):
-    global progressbar, currtask, oldprint
+    global progressbar, currtask, oldprint, total, index
     # keep output that starts with ">" as a progress indicator message that has the form ">task:index/total"
-    if string.startswith(">"):
-        builtins.print = oldprint # progress bar needs the default "print"
-        [task, progress, *_] = string[1:].split(":")
-        [index, total] = progress.split("/")
+    builtins.print = oldprint  # progress bar needs the default "print"
+    if string.startswith(">") or string.startswith("processing"):
+        if string.startswith(">"):
+            [task, progress, *_] = string[1:].split(":")
+            [index, total] = progress.split("/")
+        else:
+            task = "Extracting layout features"
+            index = index + 1
         if not progressbar or task != currtask:
             if progressbar:
                 progressbar.finish()
@@ -50,14 +55,22 @@ def progress_bar_print(string="", end="\n", file=None):
                               max=int(total))
         progressbar.goto(int(index))
         if int(index) == int(total):
+            total = None
+            index = 0
             progressbar.finish()
-        builtins.print = progress_bar_print
+    elif string.startswith("Used memory is megabytes"):
+        # ignore cermine output
+        pass
     else:
         if progressbar:
             progressbar.finish()
             progressbar = None
+            total = None
+            index = 0
             sys.stdout.write("\n")
         sys.stdout.write(string + end)
+        logf.write(string + end)
+    builtins.print = progress_bar_print
 
 builtins.print = progress_bar_print
 
@@ -168,7 +181,7 @@ if __name__ == "__main__":
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +
                                ", ".join([c.value for c in Commands]) + "\n")
     except KeyboardInterrupt:
-        sys.stderr.write("\nAborted")
+        sys.stderr.write("\nAborted\n")
         logf.write("\nAborted")
         sys.exit(1)
     except:

@@ -35,13 +35,23 @@ def train_extraction(data_dir: str, model_dir: str):
         sys.stdout.flush()
         if fdir[u].startswith("."):
             continue
-        with open(data_dir + "/Features/" + fdir[u]) as file:
-            reader = str(file.read())
+        try:
+            fpath = os.path.join(data_dir, "Features", fdir[u])
+            with open(fpath) as file:
+                reader = str(file.read())
+        except FileNotFoundError:
+            print(fpath + " does not exist, skipping...")
+            continue
         reader = re.sub(r'[\r\n]+', '\r', reader)
         reader = reader.split('\r')
         reader = reader[0:-1] if reader[-1] == '' else reader
-        with open(data_dir + "/RefLD/" + fdir[u]) as file:
-            reader2 = str(file.read())
+        try:
+            fpath = os.path.join(data_dir, "RefLD", fdir[u])
+            with open(fpath) as file:
+                reader2 = str(file.read())
+        except FileNotFoundError:
+            print(fpath + " does not exist, skipping...")
+            continue
         reader2 = re.sub(r'[\r\n]+', '|', reader2)
         reader2 = reader2.split('|')
         reader2 = reader2[0:-1] if reader2[-1] == '' else reader2
@@ -49,26 +59,28 @@ def train_extraction(data_dir: str, model_dir: str):
         Fs = np.empty((0, 50 * 3), float)  # feature space
         Sm = np.empty((0, 1), float)  # feature space
         for uu in range(len(reader)):
-            row2 = reader2[uu]
-            r_2 = int(float(row2[0]))
-            Sm = np.append(Sm, [[r_2]], 0)
-
-            row = reader[uu]
-            r = np.array(row.split(' ')).astype(float)
-            if uu == 0:
-                r1 = np.array(reader[uu + 1].split(' ')).astype(float)
-                r2 = np.array([0] * 65)
-            elif uu == (len(reader) - 1):
-                r1 = np.array([0] * 65)
-                r2 = np.array(reader[uu - 1].split(' ')).astype(float)
-            else:
-                r1 = np.array(reader[uu + 1].split(' ')).astype(float)
-                r2 = np.array(reader[uu - 1].split(' ')).astype(float)
-            r = r[idxx]
-            r1 = r1[idxx]
-            r2 = r2[idxx]
-            r = np.concatenate((r, r1, r2))
-            Fs = np.append(Fs, [r], 0)
+            try:
+                row2 = reader2[uu]
+                r_2 = int(float(row2[0]))
+                Sm = np.append(Sm, [[r_2]], 0)
+                row = reader[uu]
+                r = np.array(row.split(' ')).astype(float)
+                if uu == 0:
+                    r1 = np.array(reader[uu + 1].split(' ')).astype(float)
+                    r2 = np.array([0] * 65)
+                elif uu == (len(reader) - 1):
+                    r1 = np.array([0] * 65)
+                    r2 = np.array(reader[uu - 1].split(' ')).astype(float)
+                else:
+                    r1 = np.array(reader[uu + 1].split(' ')).astype(float)
+                    r2 = np.array(reader[uu - 1].split(' ')).astype(float)
+                r = r[idxx]
+                r1 = r1[idxx]
+                r2 = r2[idxx]
+                r = np.concatenate((r, r1, r2))
+                Fs = np.append(Fs, [r], 0)
+            except IndexError:
+                continue
 
         Fs[np.isinf(Fs)] = 1
         # Uncomment for Normalisation

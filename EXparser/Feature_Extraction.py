@@ -7,19 +7,23 @@ from .src.gle_fun import *
 from .src.gle_fun_ext import *
 
 
+
 def extract_features(data_dir: str):
-    if not os.path.isdir(data_dir + '/Features/tmp'):
-        os.makedirs(data_dir + '/Features/tmp')
-    fold = data_dir + "/LYT"
+    tmp_dir = os.path.join(data_dir, "Features", "tmp")
+    if not os.path.isdir(tmp_dir):
+        os.makedirs(tmp_dir)
+    fold = os.path.join(data_dir, "LYT")
     fdir = os.listdir(fold)
     total = str(len(fdir))
     for u in range(0, len(fdir)):
-        if fdir[u].startswith("."):
-            continue
+        curr_file = fdir[u]
         print('>Feature extraction:' + str(u + 1) + '/' + total)
-        if not os.path.isfile(data_dir + '/Features/tmp/' + fdir[u] + '.npy'):
-            np.save(data_dir + '/Features/tmp/' + fdir[u] + '.npy', 0)
-            fname = fold + "/" + fdir[u]
+        if curr_file.startswith(".") or not curr_file.endswith(".csv"):
+            continue
+        npy_file = os.path.join(tmp_dir, curr_file + '.npy')
+        if not os.path.isfile(npy_file):
+            np.save(npy_file, 0)
+            fname = os.path.join(fold, curr_file)
             file = open(fname)
             reader = file.read()
             file.close()
@@ -40,8 +44,6 @@ def extract_features(data_dir: str):
             rfidx = [0, 0, 'font', 0]
             for row in reader:
                 row = row.split('\t')
-                row[0] = row[0]
-                # print row
                 if len(row[0]) > 1:
                     lh = lh + list(map(len, row[0].split()))
                     tmp = np.asarray([i for i, c in enumerate(row[0]) if isup(c)]) + 1
@@ -165,13 +167,8 @@ def extract_features(data_dir: str):
                                     [f28], [f29], [f30], [f31], [f32], f14n, f15n, [f33], [f34], [f35], [f36], [f37],
                                     [f38], [f39], [f40], [f41], [f42], [f43], [f44], [f45], [f46], [f47], [f48]))]
                 tp[0][np.isnan(tp[0])] = 0
-
                 FS = np.append(FS, tp, 0)
                 del tp
-            # print time.time()-t
-            np.savetxt(data_dir + '/Features/' + fdir[u], FS)
+            np.savetxt(os.path.join(data_dir, 'Features', curr_file), FS)
             file.close()
-
-
-# extract_features()
 
