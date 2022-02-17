@@ -57,3 +57,4 @@ segment the references.
 When you are finished, click on "Save" or "Export" to save your changes to the
 training backend or to your computer. You can also export the citation data to
 Zotero using the "Export to Zotero" button in the dropdown menu.
+

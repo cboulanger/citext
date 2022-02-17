@@ -67,7 +67,6 @@ def progress_bar_print(string="", end="\n", file=None):
             progressbar = None
             total = None
             index = 0
-            #print()
         print(string, end = end)
         logf.write(string + end)
     builtins.print = progress_bar_print

@@ -60,12 +60,11 @@ OCR layer. If the PDFs consist of scanned pages without the OCR layer, put them 
 OCR server to process them and move them to `Data/1-pdfs`
 3) Create the layout files with `./bin/run-command layout`
 4) Move files from `Data/2-layout` into `EXparser/Dataset/<model_name>/LYT`
-5) Use the web application to load and annotate the layout files from `EXparser/Dataset/<model_name>/LYT`. When you
-click on the "Save" button, they will be automatically
-6) annotate the files and place them into EXparser/Dataset/<model_name>/LRT
-7) run a script (tbd.) that extracts the refs and put them into EXparser/Dataset/mymodel/SEG
-8) run extraction training
-9) run segmentation training
+5) Load the web application and choose your new model from the "Model" dropdown
+6) Use the web application to load and annotate the layout files from `EXparser/Dataset/<model_name>/LYT`  in the
+identification and segmentation views. "Save" the training files after each annotation, they will be stored in the model
+directory
+7) On the command line, run `./bin/run-command training <model_name>`
 
 
 > If you want to use this feature, you need to have
