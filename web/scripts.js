@@ -354,7 +354,7 @@ class Actions {
     // reference identification
     if (command === "exparser") {
       GUI.showSpinner("Identifying references, this will take a while...");
-      url = `${SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}`
+      url = `${SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}&model_name=${modelName}`
       try {
         result = this.checkResult(await (await fetch(url)).json());
       } catch (e) {
@@ -369,7 +369,7 @@ class Actions {
     // segmentation
     if (command === "segmentation") {
       GUI.showSpinner("Segmenting references...");
-      url = `${SERVER_URL}/excite.py?command=segmentation&file=${filenameNoExt}`;
+      url = `${SERVER_URL}/excite.py?command=segmentation&file=${filenameNoExt}&model_name=${modelName}`;
       try {
         result = await (await fetch(url)).json();
         this.checkResult(result)
@@ -1023,7 +1023,7 @@ class GUI {
     // check if we have a backend and intialize UI
     fetch(SERVER_URL + "status.py")
       .then(response => response.json())
-      .then(result => GUI.configureStatus(result))
+      .then(result => GUI._configureStatus(result))
 
     // check if Zotero is running
     fetch(SERVER_URL + "zotero/proxy.py?connector/ping")
@@ -1039,12 +1039,15 @@ class GUI {
     };*/
   }
 
-  static configureStatus(status) {
+  static _configureStatus(status) {
     $(".visible-if-backend").toggleClass("hidden", false);
     let model_name = localStorage.getItem(LOCAL_STORAGE.LAST_MODEL_NAME) || "default";
-    status.model_names
+    if (status.model_names.length > 1) {
+      $("#btn-model").removeClass("hidden");
+      status.model_names
       .reverse()
-      .forEach(name => $(`<li><a class="dropdown-item" href="#" id="btn-model-${name}" onclick="Actions.changeModel('${name}')">${name}</a></li>`).insertAfter($("#model-names")));
+      .forEach(name =>$("#model-names").append($(`<li><a class="dropdown-item" href="#" id="btn-model-${name}" onclick="Actions.changeModel('${name}')">${name}</a></li>`)));
+    }
     Actions.changeModel(model_name);
   }
 

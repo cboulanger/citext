@@ -19,14 +19,18 @@ logf = open(config_url_venu() + 'logfile.log', "a")
 dataset_dir = "Exparser/Dataset"
 model_dir = "Exparser/Models"
 
+# monkey-patch print to support progress bar output
 progressbar = None
 currtask = ""
-def progress_bar_print(line):
-    global progressbar
-    global currtask
-    # keep output that starts with ">" as a progress indicator message ">task:index/total"
-    if line.startswith(">"):
-        [task, progress, *_] = line[1:].split(":")
+oldprint = builtins.print
+
+
+def progress_bar_print(string="", end="\n", file=None):
+    global progressbar, currtask, oldprint
+    # keep output that starts with ">" as a progress indicator message that has the form ">task:index/total"
+    if string.startswith(">"):
+        builtins.print = oldprint # progress bar needs the default "print"
+        [task, progress, *_] = string[1:].split(":")
         [index, total] = progress.split("/")
         if not progressbar or task != currtask:
             if progressbar:
@@ -38,14 +42,14 @@ def progress_bar_print(line):
         progressbar.goto(int(index))
         if int(index) == int(total):
             progressbar.finish()
+        builtins.print = progress_bar_print
     else:
         if progressbar:
             progressbar.finish()
             progressbar = None
-            print()
-        print(line)
+            sys.stdout.write("\n")
+        sys.stdout.write(string + end)
 
-# monkey-patch print to support progress bar output
 builtins.print = progress_bar_print
 
 def run_command(command):

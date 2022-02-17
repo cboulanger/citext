@@ -40,6 +40,21 @@
         <input type="file" id="btn-upload" style="display:none"
                onchange="Actions.load(); this.value=null; return false;"
                accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
+        <!-- save -->
+        <div class="btn-group">
+            <button id="btn-model"
+                    class="btn btn-primary hidden dropdown-toggle"
+                    data-toggle="dropdown"
+                    aria-haspopup="true" aria-expanded="false"
+                    type="button">
+                <i class="fas fa-brain"></i>
+                <span class="button-label">Model</span>
+                <span class="caret"></span>
+            </button>
+            <ul class="dropdown-menu" aria-labelledby="btn-model" id="model-names">
+            </ul>
+        </div>
+
         <!-- document view -->
         <div class="btn-group">
             <button id="btn-identification" type="button" class="btn btn-primary enabled-if-document"
@@ -100,6 +115,7 @@
                     onclick="Actions.save();">
                 <i class="fas fa-save"></i><span class="button-label">Save</span>
             </button>
+            <!--
             <button data-toggle="dropdown"
                     class="btn btn-primary dropdown-toggle hidden visible-if-backend ui-state-disabled enabled-if-refs"
                     aria-haspopup="true" aria-expanded="false">
@@ -108,6 +124,7 @@
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
                 <li class="dropdown-header" id="model-names">Select model</li>
             </ul>
+            -->
         </div>
 
         <!-- export -->

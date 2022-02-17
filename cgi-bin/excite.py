@@ -11,6 +11,7 @@ print()
 form = cgi.FieldStorage()
 command = form.getvalue("command")
 filename = form.getvalue("file") # without extension!
+model_name = form.getvalue("model_name") or ""
 
 result_path = None
 
@@ -55,9 +56,9 @@ try:
     # OCR
     if command == "ocr":
         try:
-            source = tempfile.gettempdir() + "/" + filename + ".pdf"
-            target = config_url_pdfs_no_ocr() + filename + ".pdf"
-            ocr_file = config_url_pdfs() + filename + ".pdf"
+            source = os.path.join(tempfile.gettempdir(), filename + ".pdf")
+            target = os.path.join(config_url_pdfs_no_ocr(), filename + ".pdf")
+            ocr_file = os.path.join(config_url_pdfs(), filename + ".pdf")
             shutil.move(source, target)
             run_docker_command = False
             # wait for OCR to complete
@@ -75,27 +76,27 @@ try:
     elif command == "layout":
         target = config_url_pdfs() + filename + ".pdf"
         if not os.path.isfile(target):
-            source = tempfile.gettempdir() + "/" + filename + ".pdf"
+            source = os.path.join(tempfile.gettempdir(), filename + ".pdf")
             try:
                 shutil.move(source, target)
             except FileNotFoundError as err:
                 raise RuntimeError(str(err))
 
-        result_path = config_url_Layouts() + filename + ".csv"
+        result_path = os.path.join(config_url_Layouts(), filename + ".csv")
 
     # Identify citations
     elif command == "exparser":
-        result_path = config_url_Refs() + filename + ".csv"
+        result_path = os.path.join(config_url_Refs(), filename + ".csv")
 
     # Segment citations
     elif command == "segmentation":
         try:
-            source = tempfile.gettempdir() + "/" + filename + ".csv"
-            target = config_url_Refs() + filename + ".csv"
+            source = os.path.join(tempfile.gettempdir(), filename + ".csv")
+            target = os.path.join(config_url_Refs(), filename + ".csv")
             shutil.move(source, target)
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
-        result_path = config_url_Refs_segment() + filename + ".xml"
+        result_path = os.path.join(config_url_Refs_segment(), filename + ".xml")
 
     elif command == "train_extraction":
         result_path = None
@@ -106,7 +107,7 @@ try:
     # only call docker command if file doesn't already exist
     if run_docker_command and (result_path is None or not os.path.isfile(result_path)):
         # run docker command and write output to server output
-        args = ['docker', 'run', '--rm', '-v' + os.getcwd() + ':/app', 'excite_toolchain', command]
+        args = ['docker', 'run', '--rm', '-v' + os.getcwd() + ':/app', 'excite_toolchain', command, model_name]
         sys.stderr.write(" ".join(args) + "\n")
         proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
