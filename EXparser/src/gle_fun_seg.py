@@ -11,7 +11,7 @@ asc = 'a-zäüöïèéçâîôêëùìòàãõñûß'  # all small characters
 ftag = ['given-names', 'surname', 'year', 'title', 'editor', 'source', 'publisher', 'other', 'page', 'volume',
         'author', 'fpage', 'lpage', 'issue', 'url', 'identifier']  # full name of tags
 atag = ['FN', 'LN', 'YR', 'AT', 'ED', 'SR', 'PB', 'OT', 'PG', 'VL', 'AR', 'FP', 'LP', 'IS', 'UR',
-        'ID']  # Abreviated tags
+        'ID']  # Abbreviated tags
 
 
 # preproces the line with tag
@@ -117,7 +117,7 @@ def get_pos(i, l):
 
 
 def get_len(w):
-    ln = 1.0 / len(re.sub(r'\b\s', '', w))
+    ln = 1.0 / max(1,  len(re.sub(r'\b\s', '', w)))
     return ln
 
 
@@ -132,20 +132,17 @@ def get_rce(w):  # ratio character to everything
 
 
 def get_rse(w):  # ratio special character to everything
-    rse = 1.0 * len(re.findall(r'[^0-9' + acc + asc + ']+', w)) / max(1, len(re.sub(
-        r'\b\s', '', w)))
+    rse = 1.0 * len(re.findall(r'[^0-9' + acc + asc + ']+', w)) / max(1, len(re.sub(r'\b\s', '', w)))
     return rse
 
 
 def get_rca(w):  # ratio capital letter to all letters
-    rca = 1.0 * len(re.findall(r'[A' + acc + ']+', w)) / max(1, len(re.findall(
-        r'[' + acc + asc + ']', w)))
+    rca = 1.0 * len(re.findall(r'[A' + acc + ']+', w)) / max(1, len(re.findall(r'[' + acc + asc + ']', w)))
     return rca
 
 
 def get_rsa(w):  # ratio small letter to all letters
-    rsa = 1.0 * len(re.findall(r'[a' + asc + ']+', w)) / max(1, len(re.findall(
-        r'[' + acc + asc + ']', w)))
+    rsa = 1.0 * len(re.findall(r'[a' + asc + ']+', w)) / max(1, len(re.findall(r'[' + acc + asc + ']', w)))
     return rsa
 
 

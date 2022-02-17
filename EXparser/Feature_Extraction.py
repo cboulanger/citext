@@ -7,7 +7,6 @@ from .src.gle_fun import *
 from .src.gle_fun_ext import *
 
 
-
 def extract_features(data_dir: str):
     tmp_dir = os.path.join(data_dir, "Features", "tmp")
     if not os.path.isdir(tmp_dir):

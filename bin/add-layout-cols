@@ -10,7 +10,6 @@ answer = input("Proceed? [y/n] ").lower()
 if answer != "y":
     sys.exit(0)
 
-counter= 0
 for file_name in os.listdir(source_dir):
     if file_name.startswith(".") or not file_name.endswith(".csv"):
         continue
@@ -38,11 +37,15 @@ for file_name in os.listdir(source_dir):
     num_tgt_lines = len(target_rows)
     ti = 0
     for si in range(0, num_src_lines):
-        cmp_src_col0 = source_rows[si][0]
-        cmp_tgt_col0 = target_rows[ti][0].replace("<ref>","").replace("</ref>","")
-        cmp_tgt_col1 = target_rows[ti][0]
-        cmp_src_col1 = source_rows[si][0][0:len(cmp_tgt_col1)]
-        if cmp_src_col0 != cmp_tgt_col0 and cmp_src_col1 != cmp_src_col1:
+        err = False
+        try:
+            cmp_src_col0 = source_rows[si][0]
+            cmp_tgt_col0 = target_rows[ti][0].replace("<ref>","").replace("</ref>","")
+            cmp_tgt_col1 = target_rows[ti][0]
+            cmp_src_col1 = source_rows[si][0][0:len(cmp_tgt_col1)]
+        except IndexError:
+            err = True
+        if err or (cmp_src_col0 != cmp_tgt_col0 and cmp_src_col1 != cmp_src_col1):
             if si == num_src_lines - 1 and ti < num_tgt_lines - 1:
                 print("Cannot find match for line " + str(ti) + " of " + str(num_tgt_lines) + " in " + target_file)
                 sys.exit(0)

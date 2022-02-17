@@ -1,7 +1,5 @@
 # -*- coding: UTF-8 -*- 
 import csv
-import os
-import re
 import time
 import pickle
 import sklearn_crfsuite
