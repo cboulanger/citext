@@ -19,6 +19,15 @@ logf = open(config_url_venu() + 'logfile.log', "a")
 dataset_dir = "Exparser/Dataset"
 model_dir = "Exparser/Models"
 
+class Commands(Enum):
+    LAYOUT = "layout"
+    EXPARSER = "exparser"
+    SEGMENTATION = "segmentation"
+    EXMATCHER = "exmatcher"
+    TRAIN_EXTRACTION = "train_extraction"
+    TRAIN_SEGMENTATION = "train_segmentation"
+    CREATE_MODEL = "create_model"
+
 # monkey-patch print to support progress bar output
 progressbar = None
 currtask = ""

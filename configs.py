@@ -70,14 +70,7 @@ def config_url_layout_extractor():
 def config_layout_extractor_function_name():
     return 'gesis.cermine.layout.extractor.CermineLineLayoutExtractor'
 
-class Commands(Enum):
-    LAYOUT = "layout"
-    EXPARSER = "exparser"
-    SEGMENTATION = "segmentation"
-    EXMATCHER = "exmatcher"
-    TRAIN_EXTRACTION = "train_extraction"
-    TRAIN_SEGMENTATION = "train_segmentation"
-    CREATE_MODEL = "create_model"
+
 
 class DatasetDirs(Enum):
     FEATURES = "Features"

@@ -3,10 +3,10 @@
 
 import os
 
-list_dir = '/app/Exparser/lists/'
+list_dir = '/app/Exparser/Lists'
 
 def read_csv(filename):
-    path = list_dir + filename
+    path = os.path.join(list_dir, filename)
     # check for local override
     if os.path.isfile(path + ".local.csv"):
         path += ".local"

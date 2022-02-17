@@ -71,15 +71,17 @@ def train_segmentation(data_dir: str, model_dir: str):
                 train_feat[len(train_feat) - 1] = add2feat(train_feat[len(train_feat) - 1], i)
             toc = time.time()
         # print 'processing time = '+ str(toc - tic)
-
         file.close()
+    print("sklearn_crfsuite.CRF")
     crf = sklearn_crfsuite.CRF(
         algorithm='pa',
         # c2=0.8,
         all_possible_transitions=True,
         all_possible_states=True
     )
+    print("crf.fit")
     crf.fit(train_feat, train_label)
+    print("Saving segmentation model")
     with open(model_dir + '/crf_model.pkl', 'wb') as fid:
         pickle.dump(crf, fid)
 
