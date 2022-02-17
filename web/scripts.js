@@ -411,7 +411,8 @@ class Actions {
     for (let match of tmp.matchAll(/<ref>(.*?)<\/ref>/g)) {
       textLines.push(match[1]);
     }
-    let text = textLines.join("\n");
+    let text = textLines.filter(line => Boolean(line.trim())).join("\n");
+    // redundant?
     while (text.match(/\n\n/)) {
       text = text.replace(/\n\n/g, "\n");
     }
