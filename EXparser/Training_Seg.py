@@ -25,6 +25,8 @@ def train_segmentation(data_dir: str, model_dir: str):
         for row in reader:
             tic = time.time()
             ln = row[0]
+            if ln.strip() == "":
+                continue
             ln = re.sub(r'<author>|</author>', '', ln)  # remove author tag
             ln = re.sub(r'</fpage>|<lpage>', '', ln)  # change page tag
             ln = re.sub(r'<fpage>', '<page>', ln)  # change page tag
