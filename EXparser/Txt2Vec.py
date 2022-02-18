@@ -24,18 +24,21 @@ def check_eref(ln):
 
 
 def text_to_vec(data_dir: str):
-    fold = data_dir + "/LRT"
+    fold = os.path.join(data_dir, "LRT")
     fdir = os.listdir(fold)
     total = str(len(fdir))
     for u in range(0, len(fdir)):
-        if fdir[u].startswith("."):
+        curr_file = fdir[u]
+        if curr_file.startswith(".") or not curr_file.endswith(".csv"):
             continue
-        print('>Text to Vec:' + str(u + 1) + '/' + total)
-        if not os.path.isfile(data_dir + "/RefLD/" + fdir[u]):
-            if not os.path.isdir(data_dir + '/RefLD'):
-                os.makedirs(data_dir + '/RefLD')
+        print('>Text to Vec:' + str(u + 1) + '/' + total + ":" + curr_file)
+        refld_dir = os.path.join(data_dir, "RefLD")
+        refld_file = os.path.join(refld_dir, curr_file)
+        if not os.path.isfile(refld_file):
+            if not os.path.isdir(refld_dir):
+                os.makedirs(refld_dir)
 
-            fname = fold + "/" + fdir[u]
+            fname = os.path.join(fold, curr_file)
             file = open(fname)
             reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)
 
@@ -63,7 +66,4 @@ def text_to_vec(data_dir: str):
                         ref = 1
                         i = 0
                     R = np.append(R, [[ref]], 0)
-            np.savetxt(data_dir + '/RefLD/' + fdir[u], R)
-
-
-# text_to_vec()
+            np.savetxt(refld_file, R)

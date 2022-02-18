@@ -18,7 +18,7 @@ def extract_features(data_dir: str):
         curr_file = fdir[u]
         if curr_file.startswith(".") or not curr_file.endswith(".csv"):
             continue
-        print('>Feature extraction:' + str(u + 1) + '/' + total)
+        print('>Feature extraction:' + str(u + 1) + '/' + total + ":" + curr_file)
         npy_file = os.path.join(tmp_dir, curr_file + '.npy')
         if not os.path.isfile(npy_file):
             np.save(npy_file, 0)
