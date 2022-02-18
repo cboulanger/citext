@@ -31,10 +31,9 @@ def train_extraction(data_dir: str, model_dir: str):
     total = str(len(fdir))
     for u in range(len(fdir)):
         curr_file = fdir[u]
-        print('>Extraction training:' + str(u + 1) + '/' + total + ":" + curr_file)
-        sys.stdout.flush()
-        if curr_file.startswith("."):
+        if curr_file.startswith(".") or not curr_file.endswith(".csv"):
             continue
+        print('>Extraction training:' + str(u + 1) + '/' + total + ":" + curr_file)
         try:
             fpath = os.path.join(data_dir, "Features", curr_file)
             with open(fpath) as file:

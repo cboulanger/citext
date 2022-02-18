@@ -17,9 +17,9 @@ def train_segmentation(data_dir: str, model_dir: str):
     total = str(len(fdir))
     for u in range(len(fdir)):
         curr_file = fdir[u]
-        print('>Segmentation training:' + str(u + 1) + '/' + total + ":" + curr_file )
-        if curr_file.startswith("."):
+        if curr_file.startswith(".") or not curr_file.endswith(".xml"):
             continue
+        print('>Segmentation training:' + str(u + 1) + '/' + total + ":" + curr_file)
         fname = os.path.join(fold, curr_file)
         file = open(fname, encoding="utf-8")
         reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)  # , quotechar='|'
