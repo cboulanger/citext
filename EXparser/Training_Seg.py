@@ -16,10 +16,11 @@ def train_segmentation(data_dir: str, model_dir: str):
     train_label = []
     total = str(len(fdir))
     for u in range(len(fdir)):
-        print('>Segmentation training:' + str(u + 1) + '/' + total)
-        if fdir[u].startswith("."):
+        curr_file = fdir[u]
+        print('>Segmentation training:' + str(u + 1) + '/' + total + ":" + curr_file )
+        if curr_file.startswith("."):
             continue
-        fname = fold + "/" + fdir[u]
+        fname = os.path.join(fold, curr_file)
         file = open(fname, encoding="utf-8")
         reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)  # , quotechar='|'
         for row in reader:

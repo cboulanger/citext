@@ -28,15 +28,15 @@ def train_extraction(data_dir: str, model_dir: str):
     SM = np.empty((0, 1), float)  # feature space
     fold = data_dir + "/LYT"
     fdir = os.listdir(fold)
-    validator = 1
     total = str(len(fdir))
     for u in range(len(fdir)):
-        print('>Extraction training:' + str(u + 1) + '/' + total)
+        curr_file = fdir[u]
+        print('>Extraction training:' + str(u + 1) + '/' + total + ":" + curr_file)
         sys.stdout.flush()
-        if fdir[u].startswith("."):
+        if curr_file.startswith("."):
             continue
         try:
-            fpath = os.path.join(data_dir, "Features", fdir[u])
+            fpath = os.path.join(data_dir, "Features", curr_file)
             with open(fpath) as file:
                 reader = str(file.read())
         except FileNotFoundError:

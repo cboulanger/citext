@@ -37,12 +37,12 @@ index = 0
 
 def progress_bar_print(string="", end="\n", file=None):
     global progressbar, currtask, oldprint, total, index
-    # keep output that starts with ">" as a progress indicator message that has the form ">task:index/total"
+    # keep output that starts with ">" as a progress indicator message that has the form ">task:index/total:additional_text_for_logfile"
     builtins.print = oldprint  # progress bar needs the default "print"
     if string.startswith(">") or string.startswith("processing"):
         if string.startswith(">"):
-            [task, progress, *_] = string[1:].split(":")
-            [index, total] = progress.split("/")
+            task, progress, *_ = string[1:].split(":")
+            index, total = progress.split("/")
         else:
             task = "Extracting layout features"
             index = index + 1
@@ -68,7 +68,7 @@ def progress_bar_print(string="", end="\n", file=None):
             total = None
             index = 0
         print(string, end = end)
-        logf.write(string + end)
+    logf.write(string + end)
     builtins.print = progress_bar_print
 
 builtins.print = progress_bar_print
