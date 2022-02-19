@@ -18,4 +18,4 @@ while ! docker logs excite-app 2>&1 | grep -q 'Serving'; do
     sleep 1
 done
 
-echo "To access EXcite tools, open http://localhost:$PORT/index.html"
+echo "To access EXcite tools, open http://localhost:$EXCITE_PORT/index.html"
