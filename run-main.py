@@ -14,6 +14,7 @@ from EXparser.Training_Ext import train_extraction
 from run_segmentation import call_Exparser_segmentation
 from run_exparser import call_Exparser
 
+
 logf = open(config_url_venu() + 'logfile.log', "a")
 
 dataset_dir = "Exparser/Dataset"
@@ -27,6 +28,7 @@ class Commands(Enum):
     TRAIN_EXTRACTION = "train_extraction"
     TRAIN_SEGMENTATION = "train_segmentation"
     CREATE_MODEL = "create_model"
+    START_SERVER = "start_server"
 
 # monkey-patch print to support progress bar output
 progressbar = None
@@ -145,6 +147,12 @@ def create_model_folder(model_name: str):
                      + " and then run the training commands.\n")
 
 
+def call_start_server(port):
+    # todo: make server multi-threaded: https://stackoverflow.com/a/46224191
+    from http.server import HTTPServer, CGIHTTPRequestHandler, test
+    test(CGIHTTPRequestHandler, HTTPServer, port=port)
+
+
 if __name__ == "__main__":
     func_name = ''
     if len(sys.argv) > 1:
@@ -176,6 +184,12 @@ if __name__ == "__main__":
             if len(sys.argv) < 3:
                 raise RuntimeError("Please provide a name for the model")
             create_model_folder(sys.argv[2])
+        elif func_name == Commands.START_SERVER.value:
+            port = 8000
+            if len(sys.argv) == 3:
+                port = sys.argv[2]
+            call_start_server(port)
+
         else:
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +
                                ", ".join([c.value for c in Commands]) + "\n")

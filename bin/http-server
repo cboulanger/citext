@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+
+# configuration
+EXCITE_PORT=${EXCITE_PORT:-8000}
+
+docker run -d -it \
+  -p 8000:$EXCITE_PORT \
+  -v $(pwd):/app \
+  --name excite-app \
+  excite_toolchain start_server > /dev/null
+
+echo "Waiting for webserver to start..."
+
+# wait for end of OCR container setup
+while ! docker logs excite-app 2>&1 | grep -q 'Serving'; do
+    sleep 1
+done
+
+echo "To access EXcite tools, open http://localhost:$PORT/index.html"

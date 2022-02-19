@@ -1,0 +1,5 @@
+#! /bin/bash
+
+# start servers if not already running
+[ ! "$(docker ps -a | grep 'ocrmypdf-auto')" ] && ./bin/ocr-server
+[ ! "$(docker ps -a | grep 'excite-app')" ] && ./bin/http-server

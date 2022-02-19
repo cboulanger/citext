@@ -8,14 +8,16 @@ content_length = os.environ.get('CONTENT_LENGTH')
 content_type = os.environ.get('CONTENT_TYPE')
 endpoint = os.environ.get('QUERY_STRING')
 
-zotero_connector_url = "http://127.0.0.1:23119/"
+docker_host = "host.docker.internal" # works for Windows & Mac
+# docker_host = "172.17.0.1" # this is for linux hosts, but how to know when to use this?
+zotero_connector_url = "http://" + docker_host + ":23119/"
 endpoint_url = zotero_connector_url + endpoint
-
-os.environ['no_proxy'] = '127.0.0.1,localhost'
 
 try:
     if request_method == "GET":
-        response = requests.get(endpoint_url, timeout=10)
+        response = requests.get(endpoint_url, timeout=10, headers={
+            "Host": "localhost"
+        })
     elif request_method == "POST":
         if content_length != "" and int(content_length) > 0:
             payload = sys.stdin.readline(int(content_length))
@@ -23,6 +25,7 @@ try:
             raise RuntimeError("No data")
         print("===> " + str(payload), file=sys.stderr)
         response = requests.post(url=endpoint_url, data=payload.encode('utf-8'), headers={
+            "Host": "localhost",
             "Content-type": content_type
         })
         print("<=== " + str(response.text), file=sys.stderr)
