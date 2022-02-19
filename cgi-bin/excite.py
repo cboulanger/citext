@@ -107,8 +107,8 @@ try:
     # only call docker command if file doesn't already exist
     if run_docker_command and (result_path is None or not os.path.isfile(result_path)):
         # run docker command and write output to server output
-        args = ['docker', 'run', '--rm', '-v' + os.getcwd() + ':/app', 'excite_toolchain', command, model_name]
-        sys.stderr.write(" ".join(args) + "\n")
+        args = ['python3', '/app/run-main.py', command, model_name]
+        sys.stderr.write("Executing " + " ".join(args) + "\n")
         proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         # check for process completion and copy output to stderr
@@ -133,9 +133,15 @@ try:
     else:
         # return result of excite command
         try:
-            result_file = io.open(result_path, mode="r", encoding="utf-8")
-            result["success"] = result_file.read()
-            result_file.close()
+            with open(result_path, "r") as result_file:
+                content = result_file.read()
+                result["success"] = content
+                if command == "layout" and model_name:
+                    lyt_dir = os.path.join("/app/EXparser/Dataset", model_name, "LYT")
+                    sys.stderr.write(lyt_dir)
+                    if os.path.isdir(lyt_dir):
+                        with open(os.path.join(lyt_dir, filename + ".csv"), "w") as lyt_file:
+                            lyt_file.write(content)
 
         except Exception as err:
             raise RuntimeError(str(err))

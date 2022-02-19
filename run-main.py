@@ -31,6 +31,7 @@ class Commands(Enum):
     START_SERVER = "start_server"
 
 # monkey-patch print to support progress bar output
+# todo encapsulate into class
 progressbar = None
 currtask = ""
 oldprint = builtins.print
@@ -73,8 +74,6 @@ def progress_bar_print(string="", end="\n", file=None):
     logf.write(string + end)
     builtins.print = progress_bar_print
 
-builtins.print = progress_bar_print
-
 def run_command(command):
     logf.write(command)
     proc = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
@@ -84,7 +83,8 @@ def run_command(command):
             break
         line = str(proc.stdout.readline()).strip()
         if line != "":
-            print(line)
+            progress_bar_print(line)
+    builtins.print = oldprint
     # subprocess returned with error
     if return_code != 0:
         lines = [line.strip('\n') for line in proc.stderr.readlines() if line.strip('\n')]
@@ -114,17 +114,21 @@ def call_segmentation(model_name=None):
 
 
 def call_extraction_training(model_name: str):
+    builtins.print = progress_bar_print
     extract_features(os.path.join(dataset_dir,  model_name))
     text_to_vec(os.path.join(dataset_dir, model_name))
     train_extraction(os.path.join(dataset_dir, model_name),
                      os.path.join(model_dir, get_version(), model_name))
+    builtins.print = oldprint
 
 
 def call_segmentation_training(model_name: str):
+    builtins.print = progress_bar_print
     extract_features(os.path.join(dataset_dir, model_name))
     text_to_vec(os.path.join(dataset_dir, model_name))
     train_segmentation(os.path.join(dataset_dir, model_name),
                        os.path.join(model_dir, get_version(), model_name))
+    builtins.print = oldprint
 
 
 def create_model_folder(model_name: str):

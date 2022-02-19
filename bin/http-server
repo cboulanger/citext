@@ -2,9 +2,11 @@
 
 # configuration
 EXCITE_PORT=${EXCITE_PORT:-8000}
+ZOTERO_STORAGE_PATH=${ZOTERO_STORAGE_PATH:-~/Zotero/storage}
 
 docker run -d -it \
   -p 8000:$EXCITE_PORT \
+  -v ${ZOTERO_STORAGE_PATH}:/zotero-storage \
   -v $(pwd):/app \
   --name excite-app \
   excite_toolchain start_server > /dev/null

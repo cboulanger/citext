@@ -3,20 +3,21 @@ import json, cgi, shutil,  sys, tempfile, urllib.request, os
 
 form = cgi.FieldStorage()
 url = form.getvalue("url")
+tmpdir = None
 
 try:
-
     if not url:
         raise RuntimeError("No URL given")
 
-    filename = url.rsplit('/', 1)[1]
-
-    if url.startswith("file:/"):
+    if url.startswith("file://zotero-storage/"):
         filepath = url[6:]
+        filename = url.split("/").pop()
+        if not os.path.isfile(filepath):
+            raise Exception(filepath + " does not exist.")
     else:
+        filename = url.rsplit('/', 1)[1]
         tmpdir = tempfile.gettempdir()
         filepath = tmpdir + "/" + filename
-        # download
         urllib.request.urlretrieve(url, filepath)
 
     print("Content-type: application/octet-stream")
@@ -27,7 +28,7 @@ try:
     with open(filepath, 'rb') as file:
         shutil.copyfileobj(file, sys.stdout.buffer)
 
-    if not url.startswith("file:/"):
+    if tmpdir:
         os.remove(filepath)
 
 except BaseException as err:

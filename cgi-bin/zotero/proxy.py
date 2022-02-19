@@ -15,7 +15,7 @@ endpoint_url = zotero_connector_url + endpoint
 
 try:
     if request_method == "GET":
-        response = requests.get(endpoint_url, timeout=10, headers={
+        response = requests.get(endpoint_url, timeout=60, headers={
             "Host": "localhost"
         })
     elif request_method == "POST":

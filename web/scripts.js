@@ -77,7 +77,7 @@ class Actions {
     }
   }
 
-  static async loadFromUrl(url) {
+  static async loadFromUrl(url, filename) {
     url = url || prompt(
       "Please enter a URL from which to load the file:",
       localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL) || "");
@@ -92,7 +92,7 @@ class Actions {
       res = await fetch(`/cgi-bin/load-from-url.py?url=${url}`)
     }
     let blob = await res.blob();
-    let filename = url.split("/").pop();
+    filename = filename || url.split("/").pop();
     let file = new File([blob], filename, {lastModified: 1534584790000});
     this.loadFile(file);
   }
@@ -109,8 +109,10 @@ class Actions {
       let firstSelectedItem = selectedItems[0];
       /** @type {{filepath, title, editor, fpage, lpage}} **/
       let attachment;
+      let filename;
       if (firstSelectedItem.itemType === "attachment") {
         attachment = firstSelectedItem;
+        filename = attachment.key + ".pdf"
       } else {
         let key = firstSelectedItem.key;
         let attachments = await Zotero.getItemAttachments(libraryID, [key]);
@@ -121,12 +123,18 @@ class Actions {
         if (!attachments) {
           throw new Error(`The item titled "${firstSelectedItem.title}" has no PDF attachment`);
         }
+        if (firstSelectedItem.DOI) {
+          filename = firstSelectedItem.DOI.replace(/\//g,"_") + ".pdf"
+        } else {
+          filename = attachment.key + ".pdf"
+        }
       }
       if (!attachment.filepath) {
         throw new Error(`Attachment ${attachment.title} has not been downloaded`);
       }
-      zoteroAttachmentFilepath = attachment.filepath;
-      await this.loadFromUrl("file:/" + attachment.filepath)
+      let s = attachment.filepath.split("/");
+      zoteroAttachmentFilepath = s.slice(s.indexOf("storage")+1).join("/");
+      await this.loadFromUrl("file://zotero-storage/" + zoteroAttachmentFilepath, filename)
     } catch (e) {
       alert(e.message);
     } finally {
@@ -330,7 +338,7 @@ class Actions {
     // layout
     if (command === "layout" || command === "exparser" || command === "ocr") {
       GUI.showSpinner("Analyzing Layout...");
-      url = `${SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}`
+      url = `${SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}&model_name=${modelName}`
       try {
         result = this.checkResult(await (await fetch(url)).json());
       } catch (e) {
