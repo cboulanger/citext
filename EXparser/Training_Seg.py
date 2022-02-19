@@ -70,9 +70,10 @@ def train_segmentation(data_dir: str, model_dir: str):
             except IndexError as err:
                 print(curr_file + ", line " + str(linenum) + ": problem parsing " + row[0])
                 continue
-            linenum += 1
+            finally:
+                linenum += 1
         file.close()
-    print("Learning, this will take a while...")
+    print("Training, this will take a while...")
     crf = sklearn_crfsuite.CRF(
         algorithm='pa',
         # c2=0.8,
