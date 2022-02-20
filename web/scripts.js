@@ -1467,7 +1467,6 @@ class GUI {
   }
 
   static addAuthorTag(markedUpText) {
-    //console.log(markedUpText);
     let startTag = "<author>";
     let endTag = "</author>";
     let firstStartTagMatch = null;
@@ -1745,6 +1744,17 @@ class GUI {
     $("#btn-undo").removeClass("ui-state-disabled")
   }
 
+  static switchSurnameGivenNames() {
+    if (displayMode !== DISPLAY_MODES.REFERENCES) {
+      return;
+    }
+    this.saveState();
+    $("#text-content").html($("#text-content").html()
+      .replace(/data-tag="surname"/g,'data-tag2="given-names"')
+      .replace(/data-tag="given-names"/g,'data-tag="surname"')
+      .replace(/data-tag2/g,'data-tag')
+    );
+  }
 }
 
 // start

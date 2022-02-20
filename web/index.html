@@ -40,7 +40,7 @@
         <input type="file" id="btn-upload" style="display:none"
                onchange="Actions.load(); this.value=null; return false;"
                accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
-        <!-- save -->
+        <!-- model -->
         <div class="btn-group">
             <button id="btn-model"
                     class="btn btn-primary hidden dropdown-toggle"
@@ -101,6 +101,11 @@
                        href="#"
                        onclick="Actions.run_excite_command('segmentation');">
                     Auto-segmentation</a></li>
+                <li><a id="btn-switch-surname-given-names"
+                       class="dropdown-item ui-state-disabled enabled-if-refs"
+                       href="#"
+                       onclick="GUI.switchSurnameGivenNames();">
+                    Switch firstname &amp; lastname</a></li>
                 <li><a id="btn-view-citation-data"
                        class="dropdown-item ui-state-disabled enabled-if-refs"
                        href="#"
