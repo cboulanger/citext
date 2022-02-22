@@ -144,6 +144,8 @@ class Actions {
 
   static loadFile(file) {
     let filename = file.name;
+    // FIXME ad-hoc filename fix to remave ".pdfa" infix, needs to be configurable
+    filename = filename.replace(/\.pdfa\./,".")
     let type = file.type;
     let fileExt;
     if (filename) {
