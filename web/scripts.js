@@ -132,7 +132,15 @@ class Actions {
       if (!attachment.filepath) {
         throw new Error(`Attachment ${attachment.title} has not been downloaded`);
       }
-      let s = attachment.filepath.split("/");
+      let filepath = attachment.filepath;
+      let s;
+      if (filepath.match(/\\/)) {
+        // windows filepath
+        s = filepath.split(/\\/)
+      } else {
+        // linux/mac
+        s = filepath.split("/");
+      }
       zoteroAttachmentFilepath = s.slice(s.indexOf("storage")+1).join("/");
       await this.loadFromUrl("file://zotero-storage/" + zoteroAttachmentFilepath, filename)
     } catch (e) {

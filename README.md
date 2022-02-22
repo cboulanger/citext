@@ -37,6 +37,10 @@ running, the webapp will enable additional commands that let you retrieve the
 PDF attachment(s) of the currently selected item/collection, extract references
 from them and store them with the citing item.
 
+If the Zotero storage folder is not located in `~/Zotero/storage`, you need to
+set the ZOTERO_STORAGE_PATH environment variable to the exact path before starting
+the servers.
+
 ## Run extraction via CLI
 
 You can also use this image as a CLI tool to extract references from a batch of
