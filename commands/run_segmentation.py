@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sys
 import time
 import traceback
@@ -6,14 +5,11 @@ from langdetect import detect
 from EXparser.Segment_F1 import *
 from JsonParser import *
 from configs import *
-
-
-logf = open(config_url_venu() + 'logfile.log', "a")
+from lib.logger import *
 
 
 def call_Exparser_segmentation(model_dir: str):
     load_model(model_dir)
-
     try:
         subfolder = '/'
         dir_list = os.listdir(config_url_Refs() + subfolder)
@@ -23,8 +19,8 @@ def call_Exparser_segmentation(model_dir: str):
                 list_of_files.append(os.path.splitext(item)[0])
     except:
         sys.stderr.write(traceback.format_exc())
-        logf.write(traceback.format_exc())
-        logf.write('*' * 50 + '\n')
+        log(traceback.format_exc())
+        log('*' * 50 + '\n')
         sys.exit(1)
 
     t1 = time.time()
@@ -108,13 +104,13 @@ def call_Exparser_segmentation(model_dir: str):
             json_dict = json.dumps(data, ensure_ascii=False)
             wf_ref_dic.write("%s\n" % json_dict)
             j += 1
-        logf.write('Segmentation is done for: ' + filename)
+        log('Segmentation is done for: ' + filename)
         i += 1
         t22 = time.time()
         temp = t22 - t11
         list_of_time.append(temp)
     t2 = time.time()
-    logf.write('Sum time: %s' % (t2 - t1))
+    log('Sum time: %s' % (t2 - t1))
     if len(list_of_time) > 0:
-        logf.write('Average time: %s' % (sum(list_of_time) / float(len(list_of_time))))
+        log('Average time: %s' % (sum(list_of_time) / float(len(list_of_time))))
 

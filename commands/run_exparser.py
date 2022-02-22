@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import sys
 import time
 import traceback
@@ -6,9 +5,7 @@ from langdetect import detect
 from EXparser.Segment_F1 import *
 from JsonParser import *
 from configs import *
-
-
-logf = open(config_url_venu() + 'logfile.log', "a")
+from lib.logger import *
 
 
 def call_Exparser(model_dir: str):
@@ -22,8 +19,8 @@ def call_Exparser(model_dir: str):
                 list_of_files.append(os.path.splitext(item)[0])
     except:
         sys.stderr.write(traceback.format_exc())
-        logf.write(traceback.format_exc())
-        logf.write('*' * 50 + '\n')
+        log(traceback.format_exc())
+        log('*' * 50 + '\n')
         sys.exit(1)
 
     t1 = time.time()
@@ -47,7 +44,7 @@ def call_Exparser(model_dir: str):
         try:
             lng = detect(reader)
         except:
-            logf.write("Cannot extract language from " + path_layout)
+            log("Cannot extract language from " + path_layout)
             lng = ""
         finally:
             file.close()
@@ -57,7 +54,7 @@ def call_Exparser(model_dir: str):
         reslt, refstr, retex = sg_ref(txt, refs, 2)
 
         # result: segmented references # refstr: refstr references # retex: bibtex
-        logf.write('Number of references: ' + str(len(refstr)))
+        log('Number of references: ' + str(len(refstr)))
         # create references file
         wf = open(path_refs, 'w')
         for item in refstr:
@@ -96,13 +93,13 @@ def call_Exparser(model_dir: str):
             json_dict = json.dumps(data, ensure_ascii=False)
             wf_ref_dic.write("%s\n" % json_dict)
             j += 1
-        logf.write('Process is done for: ' + filename)
-        logf.write('-' * 100)
+        log('Process is done for: ' + filename)
+        log('-' * 100)
         i += 1
         t22 = time.time()
         temp = t22 - t11
         list_of_time.append(temp)
     t2 = time.time()
-    logf.write('Sum time: %s' % (t2 - t1))
+    log('Sum time: %s' % (t2 - t1))
     if len(list_of_time) > 0:
-        logf.write('Average Time: %s' % (sum(list_of_time) / float(len(list_of_time))))
+        log('Average Time: %s' % (sum(list_of_time) / float(len(list_of_time))))
