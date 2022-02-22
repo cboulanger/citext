@@ -1,21 +1,10 @@
-# -*- coding: utf-8 -*-
 import os.path
 import shutil
 import subprocess
 import sys
 import traceback
-import builtins
-from progress.bar import Bar
-from configs import *
-from EXparser.Training_Seg import train_segmentation
-from EXparser.Feature_Extraction import extract_features
-from EXparser.Txt2Vec import text_to_vec
-from EXparser.Training_Ext import train_extraction
-from run_segmentation import call_Exparser_segmentation
-from run_exparser import call_Exparser
-
-
-logf = open(config_url_venu() + 'logfile.log', "a")
+from lib.pogressbar import *
+from lib.logger import *
 
 dataset_dir = "Exparser/Dataset"
 model_dir = "Exparser/Models"
@@ -30,52 +19,9 @@ class Commands(Enum):
     CREATE_MODEL = "create_model"
     START_SERVER = "start_server"
 
-# monkey-patch print to support progress bar output
-# todo encapsulate into class
-progressbar = None
-currtask = ""
-oldprint = builtins.print
-total = len(os.listdir(config_url_pdfs()))
-index = 0
-
-def progress_bar_print(string="", end="\n", file=None):
-    global progressbar, currtask, oldprint, total, index
-    # keep output that starts with ">" as a progress indicator message that has the form ">task:index/total:additional_text_for_logfile"
-    builtins.print = oldprint  # progress bar needs the default "print"
-    if string.startswith(">") or string.startswith("processing"):
-        if string.startswith(">"):
-            task, progress, *_ = string[1:].split(":")
-            index, total = progress.split("/")
-        else:
-            task = "Extracting layout features"
-            index = index + 1
-        if not progressbar or task != currtask:
-            if progressbar:
-                progressbar.finish()
-            currtask = task
-            progressbar = Bar(task, bar_prefix=' [', bar_suffix='] ', empty_fill='.',
-                              suffix='%(index)d/%(max)d: %(eta_td)s remaining...',
-                              max=int(total))
-        progressbar.goto(int(index))
-        if int(index) == int(total):
-            total = None
-            index = 0
-            progressbar.finish()
-    elif string.startswith("Used memory is megabytes"):
-        # ignore cermine output
-        pass
-    else:
-        if progressbar:
-            progressbar.finish()
-            progressbar = None
-            total = None
-            index = 0
-        print(string, end = end)
-    logf.write(string + end)
-    builtins.print = progress_bar_print
 
 def run_command(command):
-    logf.write(command)
+    log(command)
     proc = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
     while True:
         return_code = proc.poll()
@@ -83,8 +29,8 @@ def run_command(command):
             break
         line = str(proc.stdout.readline()).strip()
         if line != "":
-            progress_bar_print(line)
-    builtins.print = oldprint
+            progress_print(line)
+    progress_disable()
     # subprocess returned with error
     if return_code != 0:
         lines = [line.strip('\n') for line in proc.stderr.readlines() if line.strip('\n')]
@@ -106,29 +52,37 @@ def call_run_exmatcher():
 
 
 def call_run_exparser(model_name=None):
+    from commands.run_exparser import call_Exparser
     call_Exparser(os.path.join(model_dir, get_version(), model_name))
 
 
 def call_segmentation(model_name=None):
+    from commands.run_segmentation import call_Exparser_segmentation
     call_Exparser_segmentation(os.path.join(model_dir, get_version(), model_name))
 
 
 def call_extraction_training(model_name: str):
-    builtins.print = progress_bar_print
+    from EXparser.Feature_Extraction import extract_features
+    from EXparser.Txt2Vec import text_to_vec
+    from EXparser.Training_Ext import train_extraction
+    progress_enable()
     extract_features(os.path.join(dataset_dir,  model_name))
     text_to_vec(os.path.join(dataset_dir, model_name))
     train_extraction(os.path.join(dataset_dir, model_name),
                      os.path.join(model_dir, get_version(), model_name))
-    builtins.print = oldprint
+    progress_disable()
 
 
 def call_segmentation_training(model_name: str):
-    builtins.print = progress_bar_print
+    from EXparser.Training_Seg import train_segmentation
+    from EXparser.Feature_Extraction import extract_features
+    from EXparser.Txt2Vec import text_to_vec
+    progress_enable()
     extract_features(os.path.join(dataset_dir, model_name))
     text_to_vec(os.path.join(dataset_dir, model_name))
     train_segmentation(os.path.join(dataset_dir, model_name),
                        os.path.join(model_dir, get_version(), model_name))
-    builtins.print = oldprint
+    progress_disable()
 
 
 def create_model_folder(model_name: str):
