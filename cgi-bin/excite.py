@@ -74,13 +74,18 @@ try:
 
     # Extract layout
     elif command == "layout":
-        target = config_url_pdfs() + filename + ".pdf"
+        target = os.path.join(config_url_pdfs(), filename + ".pdf")
         if not os.path.isfile(target):
             source = os.path.join(tempfile.gettempdir(), filename + ".pdf")
             try:
-                shutil.move(source, target)
+                shutil.copy(source, target)
             except FileNotFoundError as err:
                 raise RuntimeError(str(err))
+            except PermissionError:
+                # works around Windows WSL issue
+                pass
+            finally:
+                os.remove(source)
 
         result_path = os.path.join(config_url_Layouts(), filename + ".csv")
 
