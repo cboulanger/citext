@@ -12,6 +12,7 @@ load_dotenv()
 dataset_dir = "Exparser/Dataset"
 model_dir = "Exparser/Models"
 
+
 class Commands(Enum):
     LAYOUT = "layout"
     EXPARSER = "exparser"
@@ -20,14 +21,19 @@ class Commands(Enum):
     TRAIN_EXTRACTION = "train_extraction"
     TRAIN_SEGMENTATION = "train_segmentation"
     CREATE_MODEL = "create_model"
+    DELETE_MODEL = "delete_model"
+    LIST_MODELS = "list_models"
     START_SERVER = "start_server"
     UPLOAD_MODEL = "upload_model"
     DOWNLOAD_MODEL = "download_model"
+    LIST_PACKAGES = "list_packages"
+    DELETE_PACKAGE = "delete_package"
 
 
 def run_command(command):
     log(command)
-    proc = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+    proc = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
+                            shell=True)
     while True:
         return_code = proc.poll()
         if return_code is not None:
@@ -71,7 +77,7 @@ def call_extraction_training(model_name: str):
     from EXparser.Txt2Vec import text_to_vec
     from EXparser.Training_Ext import train_extraction
     progress_enable()
-    extract_features(os.path.join(dataset_dir,  model_name))
+    extract_features(os.path.join(dataset_dir, model_name))
     text_to_vec(os.path.join(dataset_dir, model_name))
     train_extraction(os.path.join(dataset_dir, model_name),
                      os.path.join(model_dir, get_version(), model_name))
@@ -89,7 +95,8 @@ def call_segmentation_training(model_name: str):
                        os.path.join(model_dir, get_version(), model_name))
     progress_disable()
 
-def copy_kde_files(model_dir):
+
+def copy_kde_files(model_name):
     # todo: get rid of the copying if all models are trainable
     path = os.path.join(model_dir, get_version(), model_name)
     default_path = os.path.join(model_dir, get_version(), "default")
@@ -99,19 +106,67 @@ def copy_kde_files(model_dir):
         if os.path.isfile(full_file_name) and "kde_" in file_name:
             shutil.copy(full_file_name, path)
 
-def create_model_folder(model_name: str):
-    path = os.path.join(model_dir, get_version(), model_name)
-    os.mkdir(path)
-    os.mkdir(os.path.join(dataset_dir, model_name))
-    copy_kde_files(model_dir)
+
+def create_model_folders(model_name: str):
+    model_dir_path = os.path.join(model_dir, get_version(), model_name)
+    if not os.path.isdir(model_dir_path):
+        os.mkdir(model_dir_path)
+    copy_kde_files(model_name)
+    dataset_dir_path = os.path.join(dataset_dir, model_name)
+    if not os.path.isdir(dataset_dir_path):
+        os.mkdir(dataset_dir_path)
     for subdir in DatasetDirs:
-        os.mkdir(os.path.join(dataset_dir, model_name, subdir.value))
+        subdir_path = os.path.join(dataset_dir, model_name, subdir.value)
+        if not os.path.isdir(subdir_path):
+            os.mkdir(subdir_path)
+
+
+def list_models():
+    models = []
+    curr_model_dir = os.path.join(model_dir, get_version())
+    for file in os.listdir(curr_model_dir):
+        if os.path.isdir(os.path.join(curr_model_dir, file)):
+            models.append(file)
+    return models
+
+
+def delete_model_folders(model_name):
+    model_dir_path = os.path.join(model_dir, get_version(), model_name)
+    if not os.path.isdir(model_dir_path):
+        raise RuntimeError(f'Model "{model_name}" does not exist.')
+    shutil.rmtree(model_dir_path, ignore_errors=True)
+    dataset_dir_path = os.path.join(dataset_dir, model_name)
+    shutil.rmtree(dataset_dir_path, ignore_errors=True)
 
 
 def call_start_server(port):
     # todo: make server multi-threaded: https://stackoverflow.com/a/46224191
     from http.server import HTTPServer, CGIHTTPRequestHandler, test
     test(CGIHTTPRequestHandler, HTTPServer, port=port)
+
+
+def call_upload_model():
+    num_args = len(sys.argv)
+    if num_args < 3:
+        raise RuntimeError("Please provide a name for the model")
+    model_name = sys.argv[2]
+    package_name = sys.argv[3] if num_args > 3 else model_name
+    kwargs = {}
+    if num_args > 4:
+        for i in range(4, num_args):
+            kwargs[sys.argv[i]] = True
+    from commands.model_storage import upload_model
+    upload_model(model_name, package_name, **kwargs)
+
+
+def call_download_model():
+    if len(sys.argv) < 3:
+        raise RuntimeError("Please provide a name for the model")
+    model_name = sys.argv[2]
+    package_name = sys.argv[3] if len(sys.argv) == 4 else model_name
+    from commands.model_storage import download_model
+    create_model_folders(model_name)
+    download_model(model_name, package_name)
 
 
 if __name__ == "__main__":
@@ -121,49 +176,73 @@ if __name__ == "__main__":
     try:
         if func_name == Commands.LAYOUT.value:
             call_run_layout_extractor()
+
         elif func_name == Commands.EXPARSER.value:
             if len(sys.argv) == 3:
                 call_run_exparser(sys.argv[2])
             else:
                 call_run_exparser()
+
         elif func_name == Commands.SEGMENTATION.value:
             if len(sys.argv) == 3:
                 call_segmentation(sys.argv[2])
             else:
                 call_segmentation()
+
         elif func_name == Commands.EXMATCHER.value:
             call_run_exmatcher()
+
         elif func_name == Commands.TRAIN_EXTRACTION.value:
             if len(sys.argv) < 3:
                 raise RuntimeError("Please provide a name for the model")
             call_extraction_training(sys.argv[2])
+
         elif func_name == Commands.TRAIN_SEGMENTATION.value:
             if len(sys.argv) < 3:
                 raise RuntimeError("Please provide a name for the model")
             call_segmentation_training(sys.argv[2])
+
         elif func_name == Commands.CREATE_MODEL.value:
             if len(sys.argv) < 3:
                 raise RuntimeError("Please provide a name for the model")
-            create_model_folder(sys.argv[2])
+            create_model_folders(sys.argv[2])
             sys.stdout.write("Please put the training data to: " + os.path.join(dataset_dir, model_name)
                              + " and then run the training commands.\n")
+
+        elif func_name == Commands.DELETE_MODEL.value:
+            if len(sys.argv) < 3:
+                raise RuntimeError("Please provide a name for the model")
+            model_name = sys.argv[2]
+            if model_name == "default":
+                raise RuntimeError("Default model cannot be deleted")
+            delete_model_folders(model_name)
+
+        elif func_name == Commands.LIST_MODELS.value:
+            print("\n".join(list_models()))
+
         elif func_name == Commands.START_SERVER.value:
             port = 8000
             if len(sys.argv) == 3:
                 port = sys.argv[2]
             call_start_server(port)
+
         elif func_name == Commands.UPLOAD_MODEL.value:
-            if len(sys.argv) < 3:
-                raise RuntimeError("Please provide a name for the model")
-            from commands.model_storage import upload_model
-            upload_model(sys.argv[2])
+            call_upload_model()
+
         elif func_name == Commands.DOWNLOAD_MODEL.value:
+            call_download_model()
+
+        elif func_name == Commands.LIST_PACKAGES.value:
+            from commands.model_storage import list_packages
+            print("\n".join(list_packages()))
+
+        elif func_name == Commands.DELETE_PACKAGE.value:
             if len(sys.argv) < 3:
-                raise RuntimeError("Please provide a name for the model")
-            from commands.model_storage import download_model
-            model_name = sys.argv[2]
-            create_model_folder(model_name)
-            download_model(model_name)
+                raise RuntimeError("No package name given")
+            package_name = sys.argv[2]
+            from commands.model_storage import delete_package
+            delete_package(package_name)
+
         else:
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +
                                ", ".join([c.value for c in Commands]) + "\n")

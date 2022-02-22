@@ -107,3 +107,35 @@ Models/<model_name>/SMN.npy
 Models/<model_name>/FSN.npy
 Models/<model_name>/rf.pkl - the model
 ```
+
+## CLI
+
+... to be done ...
+
+`./bin/run-command <command>`
+
+layout, exparser, segmentation, exmatcher, train_extraction, train_segmentation, create_model, delete_model, list_models, sta
+rt_server, upload_model, download_model, list_packages, delete_package
+
+### WebDAV model storage
+
+You can store model and training data on a WebDAV server, which is particularly
+useful for sharing data and collaborative training. To enable this, rename `/.env.dist`
+to `.env` and configure the required environment variables.
+
+To upload training or model data to the WebDAV server, do the following
+
+```shell
+./bin/run-command upload_model <model name> <package name> [model|training|extraction|segmentation|all]
+```
+The `package_name` is an arbitrary string which should express the content of the package, such as 
+`mymodel-training-segmentation`. After the package name, you can either add "all" to upload the
+complete set of data, including both model and training data, or specify parts that you want to 
+include, such as "training extraction segmentation" (to have both extraction and segmentation 
+training data) or "model" to just upload the model data. 
+
+You can then later `download_model other_model_name package_name` to load the package contents
+into the new model.
+
+Display the list of locally available models with `list_models` and that of the remotely stored
+packages with `list_packages`.
