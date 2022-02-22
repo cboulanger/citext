@@ -10,16 +10,17 @@ def get_progress_bar(task, max):
                       max=max)
     return progressbar
 
-
+client = None
 def get_client():
-    if get_client.client is None:
+    global client
+    if client is None:
         options = {
             'webdav_hostname': os.environ.get("EXCITE_WEBDAV_URL"),
             'webdav_login': os.environ.get("EXCITE_WEBDAV_USER"),
             'webdav_password': os.environ.get("EXCITE_WEBDAV_PASSWORD")
         }
-        get_client.client = Client(options)
-    return get_client.client
+        client = Client(options)
+    return client
 
 
 def get_package_dir():
