@@ -136,6 +136,10 @@ def get_lh(ln, bins, alh):  # [14]
     tmp = map(len, ln.split())
     tmp2 = [np.argmin(abs(np.array(bins) - x)) for x in tmp]
     lh = np.array([tmp2.count(x) for x in range(len(bins))])
+
+    if sum(lh) == 0:
+        return lh, lh
+
     lh2 = 1.0 * lh / sum(lh)
     lh = [x for _, x in sorted(zip(alh, lh), reverse=True)]
     lh = 1.0 * np.array(lh) / sum(lh)
