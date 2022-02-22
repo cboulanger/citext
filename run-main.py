@@ -153,11 +153,11 @@ if __name__ == "__main__":
                                ", ".join([c.value for c in Commands]) + "\n")
     except KeyboardInterrupt:
         sys.stderr.write("\nAborted\n")
-        logf.write("\nAborted")
+        log("\nAborted")
         sys.exit(1)
     except:
         sys.stderr.write(traceback.format_exc())
-        logf.write(traceback.format_exc())
+        log(traceback.format_exc())
         sys.exit(1)
     finally:
-        logf.write('\n' + ('*' * 50) + '\n')
+        log('\n' + ('*' * 50) + '\n')
