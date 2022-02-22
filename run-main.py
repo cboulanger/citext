@@ -5,6 +5,9 @@ import sys
 import traceback
 from lib.pogressbar import *
 from lib.logger import *
+from dotenv import load_dotenv
+
+load_dotenv()
 
 dataset_dir = "Exparser/Dataset"
 model_dir = "Exparser/Models"
@@ -18,6 +21,8 @@ class Commands(Enum):
     TRAIN_SEGMENTATION = "train_segmentation"
     CREATE_MODEL = "create_model"
     START_SERVER = "start_server"
+    UPLOAD_MODEL = "upload_model"
+    DOWNLOAD_MODEL = "download_model"
 
 
 def run_command(command):
@@ -84,12 +89,9 @@ def call_segmentation_training(model_name: str):
                        os.path.join(model_dir, get_version(), model_name))
     progress_disable()
 
-
-def create_model_folder(model_name: str):
-    path = os.path.join(model_dir, get_version(), model_name)
-    os.mkdir(path)
-
+def copy_kde_files(model_dir):
     # todo: get rid of the copying if all models are trainable
+    path = os.path.join(model_dir, get_version(), model_name)
     default_path = os.path.join(model_dir, get_version(), "default")
     src_files = os.listdir(default_path)
     for file_name in src_files:
@@ -97,12 +99,13 @@ def create_model_folder(model_name: str):
         if os.path.isfile(full_file_name) and "kde_" in file_name:
             shutil.copy(full_file_name, path)
 
+def create_model_folder(model_name: str):
+    path = os.path.join(model_dir, get_version(), model_name)
+    os.mkdir(path)
     os.mkdir(os.path.join(dataset_dir, model_name))
+    copy_kde_files(model_dir)
     for subdir in DatasetDirs:
         os.mkdir(os.path.join(dataset_dir, model_name, subdir.value))
-
-    sys.stdout.write("Please put the training data to: " + os.path.join(dataset_dir,  model_name)
-                     + " and then run the training commands.\n")
 
 
 def call_start_server(port):
@@ -142,12 +145,25 @@ if __name__ == "__main__":
             if len(sys.argv) < 3:
                 raise RuntimeError("Please provide a name for the model")
             create_model_folder(sys.argv[2])
+            sys.stdout.write("Please put the training data to: " + os.path.join(dataset_dir, model_name)
+                             + " and then run the training commands.\n")
         elif func_name == Commands.START_SERVER.value:
             port = 8000
             if len(sys.argv) == 3:
                 port = sys.argv[2]
             call_start_server(port)
-
+        elif func_name == Commands.UPLOAD_MODEL.value:
+            if len(sys.argv) < 3:
+                raise RuntimeError("Please provide a name for the model")
+            from commands.model_storage import upload_model
+            upload_model(sys.argv[2])
+        elif func_name == Commands.DOWNLOAD_MODEL.value:
+            if len(sys.argv) < 3:
+                raise RuntimeError("Please provide a name for the model")
+            from commands.model_storage import download_model
+            model_name = sys.argv[2]
+            create_model_folder(model_name)
+            download_model(model_name)
         else:
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +
                                ", ".join([c.value for c in Commands]) + "\n")

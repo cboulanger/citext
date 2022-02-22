@@ -14,3 +14,5 @@ patool==1.12
 langdetect==1.0.7
 progress
 requests
+python-dotenv
+webdavclient3
