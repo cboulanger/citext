@@ -89,7 +89,7 @@ In order to train a new model from scratch, you need to do the following:
    [the reference parsing model](https://exparser.readthedocs.io/en/latest/ReferenceParsing/).
 7. "Save" the training files after each annotation, they will be stored
    in the model directory
-8. On the command line, run `./bin/run-command training <model_name>`. If
+8. On the command line, run `./bin/training <model_name>`. If
 you want to train extraction and segmentation models separately, use
 `./bin/run-command train_extraction <model_name>` or `train_segmentation
 <model_name>`
