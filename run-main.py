@@ -9,8 +9,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-dataset_dir = "Exparser/Dataset"
-model_dir = "Exparser/Models"
+dataset_dir = "EXparser/Dataset"
+model_dir = "EXparser/Models"
 
 
 class Commands(Enum):

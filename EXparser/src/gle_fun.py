@@ -3,7 +3,7 @@
 
 import os
 
-list_dir = '/app/Exparser/Lists'
+list_dir = '/app/EXparser/Lists'
 
 def read_csv(filename):
     path = os.path.join(list_dir, filename)

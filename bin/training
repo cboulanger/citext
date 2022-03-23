@@ -4,7 +4,7 @@ trap 'exit 130' INT
 
 MODEL_NAME=${1:-default}
 
-if [[ ! -d Exparser/Dataset/$MODEL_NAME/Features ]]; then
+if [[ ! -d EXparser/Dataset/$MODEL_NAME/Features ]]; then
     echo "No training data exists. To use the default model, run ./bin/prepare-training first."
     exit 1
 fi

@@ -94,7 +94,7 @@ you want to train extraction and segmentation models separately, use
 `./bin/run-command train_extraction <model_name>` or `train_segmentation
 <model_name>`
 
-Training data lives in the `Exparser/Dataset/<model_name>`
+Training data lives in the `EXparser/Dataset/<model_name>`
 folder. For details, see [here](./EXparser/Dataset/README.md).
 
 For training, you need to populate the following folders with training data:
