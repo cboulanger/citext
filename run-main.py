@@ -7,7 +7,7 @@ from lib.pogressbar import *
 from lib.logger import *
 from dotenv import load_dotenv
 
-from evalution import compare_output_to_gold
+from evaluation import compare_output_to_gold
 
 load_dotenv()
 
