@@ -7,6 +7,8 @@ from lib.pogressbar import *
 from lib.logger import *
 from dotenv import load_dotenv
 
+from evalution import compare_output_to_gold
+
 load_dotenv()
 
 dataset_dir = "EXparser/Dataset"
@@ -28,6 +30,7 @@ class Commands(Enum):
     DOWNLOAD_MODEL = "download_model"
     LIST_PACKAGES = "list_packages"
     DELETE_PACKAGE = "delete_package"
+    EVALUATE = "eval"
 
 
 def run_command(command):
@@ -243,6 +246,12 @@ if __name__ == "__main__":
             from commands.model_storage import delete_package
             delete_package(package_name)
 
+        elif func_name == Commands.EVALUATE.value:
+            if len(sys.argv) < 2:
+                raise RuntimeError("Two arguments are expected: gold folder and model output folder")
+            gold_folder = sys.argv[2]
+            model_out_folder = sys.argv[3]
+            compare_output_to_gold(gold_folder, model_out_folder)
         else:
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +
                                ", ".join([c.value for c in Commands]) + "\n")
