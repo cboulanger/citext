@@ -248,10 +248,11 @@ if __name__ == "__main__":
 
         elif func_name == Commands.EVALUATE.value:
             if len(sys.argv) < 2:
-                raise RuntimeError("Two arguments are expected: gold folder and model output folder")
+                raise RuntimeError("Three arguments are expected: gold folder, model output folder and mode: seg or extr")
             gold_folder = sys.argv[2]
             model_out_folder = sys.argv[3]
-            compare_output_to_gold(gold_folder, model_out_folder)
+            mode = sys.argv[4]
+            compare_output_to_gold(gold_folder, model_out_folder, mode)
         else:
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +
                                ", ".join([c.value for c in Commands]) + "\n")
