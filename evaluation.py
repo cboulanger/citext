@@ -25,10 +25,12 @@ def eval_extraction(gold_folder, out_folder):
 
     nums = []
     for file in os.listdir(out_folder):
+        if not file.endswith(".csv"):
+            continue
+
         gold_file_name = file.replace(".csv", ".xml")
         if os.path.exists(os.path.join(gold_folder, gold_file_name)):
-            with open(os.path.join(out_folder, file)) as in_f, open(
-                    os.path.join(gold_folder, gold_file_name)) as gold_f:
+            with open(os.path.join(out_folder, file)) as in_f, open(os.path.join(gold_folder, gold_file_name)) as gold_f:
                 gold_lines = gold_f.read()
                 # todo: look into other punctuation
                 gold_no_tags = re.sub('<[^<]+>', "", gold_lines).replace(" ", "").replace(",", "").replace(".", "")
@@ -75,7 +77,11 @@ def eval_segmentation(gold_folder, out_folder):
     to model output files of the same structure.
     File names should be the same."""
 
+    nums = []
     for file in os.listdir(out_folder):
+        if not file.endswith(".xml"):
+            continue
+
         if os.path.exists(os.path.join(gold_folder, file)):
             with open(os.path.join(out_folder, file)) as in_f, open(os.path.join(gold_folder, file)) as gold_f:
                 # token-to-tags maps
@@ -100,7 +106,12 @@ def eval_segmentation(gold_folder, out_folder):
                                 correct_value_tag_pairs += 1
                     acc_per_line.append(correct_value_tag_pairs / gold_value_tag_pairs)
 
-                print("Average accuracy: " + str(sum(acc_per_line) / len(acc_per_line)))
+                print("Average accuracy for " + file + ": " + str(sum(acc_per_line) / len(acc_per_line)))
+                nums.append(sum(acc_per_line) / len(acc_per_line))
+        else:
+            print("The gold file is missing for: " + file)
+
+    print("Average for all files: " + str(sum(nums) / len(nums)))
 
 
 # for test
