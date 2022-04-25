@@ -70,6 +70,3 @@ echo
 
 docker run -it --rm -v $(pwd):/app excite_toolchain eval ./Exparser/Dataset/${MODEL_NAME}/SEG/ ./Data/3-refs_seg/ seg
 
-for file in $EVAL_FILES ; do
-  rm "./Data/2-layouts/$file"
-done
