@@ -62,6 +62,24 @@ echo
 
 docker run -it --rm -v $(pwd):/app excite_toolchain eval ./Exparser/Dataset/${MODEL_NAME}/SEG/ ./Data/3-refs/ extr
 
+echo "Creating input for segmentation without tags..."
+if [ ! -d "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/" ];
+then
+  mkdir -p "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/";
+  for filename in ./Exparser/Dataset/${MODEL_NAME}/SEG/*; do
+    out_name=$(basename $filename)
+    sed 's/<[^>]*>//g' $filename > "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/${out_name}"
+  done
+fi
+
+echo
+echo "=========================================================================================="
+echo "Running segmentation on correctly extracted lines, please wait..."
+echo "=========================================================================================="
+echo
+
+docker run -v $(pwd):/app excite_toolchain segmentation $MODEL_NAME ./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/
+
 echo
 echo "=========================================================================================="
 echo "Evaluating segmentation, please wait..."

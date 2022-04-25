@@ -8,11 +8,14 @@ from configs import *
 from lib.logger import *
 
 
-def call_Exparser_segmentation(model_dir: str):
+def call_Exparser_segmentation(model_dir: str, input_dir=None):
     load_model(model_dir)
     try:
         subfolder = '/'
-        dir_list = os.listdir(config_url_Refs() + subfolder)
+        if input_dir is None:
+            dir_list = os.listdir(config_url_Refs() + subfolder)
+        else:
+            dir_list = os.listdir(input_dir + subfolder)
         list_of_files = []
         for item in dir_list:
             if not item.startswith('.') and item.endswith('.csv'):

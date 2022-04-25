@@ -70,9 +70,9 @@ def call_run_exparser(model_name=None):
     call_Exparser(os.path.join(model_dir, get_version(), model_name))
 
 
-def call_segmentation(model_name=None):
+def call_segmentation(model_name=None, input_dir=None):
     from commands.run_segmentation import call_Exparser_segmentation
-    call_Exparser_segmentation(os.path.join(model_dir, get_version(), model_name))
+    call_Exparser_segmentation(os.path.join(model_dir, get_version(), model_name), input_dir)
 
 
 def call_extraction_training(model_name: str):
@@ -189,6 +189,8 @@ if __name__ == "__main__":
         elif func_name == Commands.SEGMENTATION.value:
             if len(sys.argv) == 3:
                 call_segmentation(sys.argv[2])
+            elif len(sys.argv) == 4:
+                call_segmentation(sys.argv[2], sys.argv[3])
             else:
                 call_segmentation()
 
