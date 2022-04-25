@@ -1,6 +1,48 @@
 #!/bin/bash
 
 MODEL_NAME=${1:-default}
+MODEL_DIR="./EXparser/Dataset/${MODEL_NAME}"
+
+if ! [[ -d "${MODEL_DIR}" ]]; then
+  echo "Model $MODEL_NAME does not exist"
+  exit 1
+fi
+
+LRT_DIR="${MODEL_DIR}/LRT"
+LYT_DIR="${MODEL_DIR}/LYT"
+
+# clean subfolders
+find ./Data/ -type f -not -name '.*' -exec rm {} +
+
+if ! [[ -d "$LYT_DIR" ]]; then
+  echo "Model $MODEL_NAME has no layout data to use for evaluation"
+  exit 1
+fi
+
+if ! [[ -d "$LRT_DIR" ]] || ! [[ -d "${MODEL_DIR}/SEG" ]] ; then
+  echo "Model $MODEL_NAME has no LRT and/or SEG gold standard data for training"
+  exit 1
+fi
+
+# select 20% of layout files for evaluation
+NUM_FILES=$(($(ls $LRT_DIR | wc -l) / 20))
+EVAL_FILES=$(ls $LRT_DIR | shuf -n $NUM_FILES)
+MISSING_FILES=""
+for file in $EVAL_FILES ; do
+  if ! [[ -f "${LYT_DIR}/$file" ]] ; then
+    if [[ "$MISSING_FILES" == "" ]] ; then
+      MISSING_FILES="$file"
+    else
+      MISSING_FILES="$MISSING_FILES, $file"
+    fi
+  else
+    cp "${LYT_DIR}/$file" ./Data/2-layouts
+  fi
+done
+if [[ "$MISSING_FILES" != "" ]] ; then
+  echo "Please provide a matching layout file without annotation in ${LYT_DIR} for $MISSING_FILES."
+  exit 1
+fi
 
 bash bin/training $MODEL_NAME
 
@@ -27,3 +69,7 @@ echo "==========================================================================
 echo
 
 docker run -it --rm -v $(pwd):/app excite_toolchain eval ./Exparser/Dataset/${MODEL_NAME}/SEG/ ./Data/3-refs_seg/ seg
+
+for file in $EVAL_FILES ; do
+  rm "./Data/2-layouts/$file"
+done
