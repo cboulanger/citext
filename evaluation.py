@@ -93,6 +93,11 @@ def eval_segmentation(gold_folder, out_folder):
                 for l in gold_f:
                     gold_maps.append(get_value_tag_map(l))
 
+                if len(out_maps) != len(gold_maps):
+                    print("Segmentation evaluation: different number of lines for: " + file)
+                    print("The file will be skipped")
+                    continue
+
                 acc_per_line = []
                 for i in range(len(gold_maps)):
                     out_map = out_maps[i]
