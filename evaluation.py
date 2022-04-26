@@ -113,6 +113,9 @@ def eval_segmentation(gold_folder, out_folder):
                         out_map = out_maps[i]
                         gold_map = gold_maps[i]
 
+                        if len (out_map.keys()) == 0 or len(gold_map.keys()) == 0:
+                            continue
+
                         correct_value_tag_pairs = 0
                         gold_value_tag_pairs = len(gold_map.keys())
                         for k, v in gold_map.items():
