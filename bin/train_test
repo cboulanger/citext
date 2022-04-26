@@ -62,7 +62,11 @@ echo
 
 docker run -it --rm -v $(pwd):/app excite_toolchain eval ./Exparser/Dataset/${MODEL_NAME}/SEG/ ./Data/3-refs/ extr
 
+echo
+echo "=========================================================================================="
 echo "Creating input for segmentation without tags..."
+echo "=========================================================================================="
+echo
 if [ ! -d "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/" ];
 then
   mkdir -p "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/";
