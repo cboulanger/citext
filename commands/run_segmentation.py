@@ -14,12 +14,15 @@ def call_Exparser_segmentation(model_dir: str, input_dir=None):
         subfolder = '/'
         if input_dir is None:
             dir_list = os.listdir(config_url_Refs() + subfolder)
+            input_dir = config_url_Refs()
         else:
             dir_list = os.listdir(input_dir + subfolder)
         list_of_files = []
         for item in dir_list:
-            if not item.startswith('.') and item.endswith('.csv'):
-                list_of_files.append(os.path.splitext(item)[0])
+            if not item.startswith('.'):
+                # todo: why did they remove the extension?
+                # list_of_files.append(os.path.splitext(item)[0])
+                list_of_files.append(item)
     except:
         sys.stderr.write(traceback.format_exc())
         log(traceback.format_exc())
@@ -36,8 +39,8 @@ def call_Exparser_segmentation(model_dir: str, input_dir=None):
 
         t11 = time.time()
         # path_layout = config_url_Layouts() + subfolder + filename + '.csv'
-        path_refs = config_url_Refs() + subfolder + filename + '.csv'
-        path_segs = config_url_Refs_segment() + subfolder + filename + '.xml'
+        path_refs = input_dir + subfolder + filename
+        path_segs = config_url_Refs_segment() + subfolder + filename
         path_refs_and_bibtex = config_url_Refs_bibtex() + subfolder + filename + '.bib'
         path_segs_prob = config_url_Refs_segment_prob() + subfolder + filename + '.csv'
         path_segs_ditc = config_url_Refs_segment_dict() + subfolder + filename + '.csv'
@@ -57,13 +60,13 @@ def call_Exparser_segmentation(model_dir: str, input_dir=None):
         txt = []
         for row in reader:
             row = row.split('\t')
-            row[0] = row[0]
             txt.append(row[0])
 
         valid = [1] * len(txt)
         ref_prob0 = [(0, 1, 0, 0)] * len(txt)
 
-        refs = segment(txt, ref_prob0, valid)
+        # refs = segment(txt, ref_prob0, valid)
+        refs = list(range(0, len(txt)))
         reslt, refstr, retex = sg_ref(txt, refs, 2)
 
         # reslt: segmented references # refstr: refstr references # retex: bibtex

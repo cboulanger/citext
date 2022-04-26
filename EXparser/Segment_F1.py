@@ -480,7 +480,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
 
 def sg_ref(txt, refs, opt):
     tmp = np.unique(refs, return_index=True)
-    Z = [x for _, x in sorted(zip(tmp[1], tmp[0]))][1::]
+    Z = [x for _, x in sorted(zip(tmp[1], tmp[0]))]
     # refs=np.array(refs)
     refstr = []
     reslt = []
