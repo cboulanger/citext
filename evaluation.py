@@ -10,21 +10,23 @@ class Modes(Enum):
     SEGMENTATION = "seg"
 
 
-def compare_output_to_gold(gold_folder, out_folder, mode):
+def compare_output_to_gold(gold_folder, out_folder, mode, log_folder=""):
     if mode == Modes.EXTRACTION.value:
-        eval_extraction(gold_folder, out_folder)
+        eval_extraction(gold_folder, out_folder, log_folder)
     elif mode == Modes.SEGMENTATION.value:
-        eval_segmentation(gold_folder, out_folder)
+        eval_segmentation(gold_folder, out_folder, log_folder)
 
 
-def eval_extraction(gold_folder, out_folder):
+def eval_extraction(gold_folder, out_folder, log_folder=""):
     """Compares gold files with files with extracted references.
     Finds longest common sequence between each extracted reference and the whole gold file
     represented as a single string.
 
     Gold and model output's file names should be the same (except for the last extension)."""
-
-    with open("extraction_evaluation_" + datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p") + ".txt", "w") as o:
+    date_string = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+    logfile = os.path.join(log_folder, f"extraction_evaluation_{date_string}.txt")
+    csvfile = os.path.join(log_folder, f"extraction_evaluation_{date_string}.csv")
+    with open(logfile, "w") as o, open(csvfile, "w") as c:
         o.write("Gold folder: " + gold_folder + ", Results folder: " + out_folder)
 
         nums = []
@@ -46,20 +48,18 @@ def eval_extraction(gold_folder, out_folder):
                         o_line_no_spaces = o_line.replace(" ", "").replace(",", "").replace(".", "")
                         match = SequenceMatcher(None, o_line_no_spaces, gold_no_tags).find_longest_match(0, len(
                             o_line_no_spaces), 0, len(gold_no_tags))
-                        print(file + ": Longest common sequence with the gold: " + o_line_no_spaces[
-                                                                                   match.a:match.a + match.size])
                         o.write(file + ": Longest common sequence with the gold: " + o_line_no_spaces[
                                                                                    match.a:match.a + match.size])
 
                         num = len(o_line_no_spaces[match.a:match.a + match.size]) / len(o_line_no_spaces)
-                        print(str(num))
                         file_nums.append(num)
                     nums.append(sum(file_nums) / len(file_nums))
             else:
                 print("The gold file is missing for: " + file)
 
-        print("Average: " + str(sum(nums) / len(nums)))
-        o.write("Average: " + str(sum(nums) / len(nums)))
+        accuracy = sum(nums) / len(nums)
+        o.write(f"Average accuracy for {file}: " + str(accuracy))
+        c.write(f'"{file}",{accuracy}\n')
 
 
 tags = ["surname", "given-names", "title", "source", "year", "editor", "publisher", "volume", "issue", "other"]
@@ -78,13 +78,16 @@ def get_value_tag_map(ref_string):
     return value_tag_map
 
 
-def eval_segmentation(gold_folder, out_folder):
+def eval_segmentation(gold_folder, out_folder, log_folder=""):
     """Compares gold files with segmented references
     e.g. <author><surname>Aron</surname>, <given-names>Raymond</given-names>...
     to model output files of the same structure.
     File names should be the same."""
 
-    with open("segmentation_evaluation_" + datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p") + ".txt", "w") as o:
+    date_string = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
+    logfile = os.path.join(log_folder, f"segmentation_evaluation_{date_string}.txt")
+    csvfile = os.path.join(log_folder, f"segmentation_evaluation_{date_string}.csv")
+    with open(logfile, "w") as o, open(csvfile, "w") as c:
         o.write("Gold folder: " + gold_folder + ", Results folder: " + out_folder)
 
         nums = []
@@ -124,8 +127,9 @@ def eval_segmentation(gold_folder, out_folder):
                                     correct_value_tag_pairs += 1
                         acc_per_line.append(correct_value_tag_pairs / gold_value_tag_pairs)
 
-                    print("Average accuracy for " + file + ": " + str(sum(acc_per_line) / len(acc_per_line)))
-                    o.write("Average accuracy for " + file + ": " + str(sum(acc_per_line) / len(acc_per_line)))
+                    accuracy = sum(acc_per_line) / len(acc_per_line)
+                    o.write("Average accuracy for " + file + ": " + str(accuracy))
+                    c.write(f'"{file}",{accuracy}\n')
                     nums.append(sum(acc_per_line) / len(acc_per_line))
             else:
                 print("The gold file is missing for: " + file)

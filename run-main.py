@@ -254,7 +254,8 @@ if __name__ == "__main__":
             gold_folder = sys.argv[2]
             model_out_folder = sys.argv[3]
             mode = sys.argv[4]
-            compare_output_to_gold(gold_folder, model_out_folder, mode)
+            log_folder = sys.argv[5]
+            compare_output_to_gold(gold_folder, model_out_folder, mode, log_folder)
         else:
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +
                                ", ".join([c.value for c in Commands]) + "\n")

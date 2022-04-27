@@ -6,7 +6,14 @@ from EXparser.Segment_F1 import *
 from JsonParser import *
 from configs import *
 from lib.logger import *
+from progress.bar import Bar
 
+
+def get_progress_bar(task, max):
+    progressbar = Bar(task, bar_prefix=' [', bar_suffix='] ', empty_fill='.',
+                      suffix='%(index)d/%(max)d',
+                      max=max)
+    return progressbar
 
 def call_Exparser_segmentation(model_dir: str, input_dir=None):
     load_model(model_dir)
@@ -31,11 +38,13 @@ def call_Exparser_segmentation(model_dir: str, input_dir=None):
 
     t1 = time.time()
     i = 1
-    count = len(list_of_files)
+    total = len(list_of_files)
     list_of_time = []
-
+    progress_bar = get_progress_bar("Segmenting", total)
+    counter = 0
     for filename in list_of_files:
-        print(">Segmenting:%s/%s:%s" % (i, count,filename))
+        counter += 1
+        progress_bar.goto(int((counter / total) * 100))
 
         t11 = time.time()
         # path_layout = config_url_Layouts() + subfolder + filename + '.csv'

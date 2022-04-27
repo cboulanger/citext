@@ -20,7 +20,7 @@ if ! [[ -d "$LYT_DIR" ]]; then
 fi
 
 if ! [[ -d "$LRT_DIR" ]] || ! [[ -d "${MODEL_DIR}/SEG" ]] ; then
-  echo "Model $MODEL_NAME has no LRT and/or SEG gold standard data for training"
+  echo "Model $MODEL_NAME has no LRT and/or SEG gold standard data"
   exit 1
 fi
 
@@ -44,8 +44,6 @@ if [[ "$MISSING_FILES" != "" ]] ; then
   exit 1
 fi
 
-bash bin/training $MODEL_NAME
-
 echo
 echo "=========================================================================================="
 echo "Running Exparser, please wait..."
@@ -60,7 +58,7 @@ echo "Evaluating extraction, please wait..."
 echo "=========================================================================================="
 echo
 
-docker run -it --rm -v $(pwd):/app excite_toolchain eval ./Exparser/Dataset/${MODEL_NAME}/SEG/ ./Data/3-refs/ extr
+docker run -it --rm -v $(pwd):/app excite_toolchain eval ./Exparser/Dataset/${MODEL_NAME}/SEG/ ./Data/3-refs/ extr ./Exparser/Dataset/${MODEL_NAME}
 
 echo
 echo "=========================================================================================="
@@ -90,4 +88,5 @@ echo "Evaluating segmentation, please wait..."
 echo "=========================================================================================="
 echo
 
-docker run -it --rm -v $(pwd):/app excite_toolchain eval ./Exparser/Dataset/${MODEL_NAME}/SEG/ ./Data/3-refs_seg/ seg
+docker run -it --rm -v $(pwd):/app excite_toolchain eval ./Exparser/Dataset/${MODEL_NAME}/SEG/ ./Data/3-refs_seg/ seg ./Exparser/Dataset/${MODEL_NAME}
+echo "Logfiles and CSV data have been written to ./Exparser/Dataset/${MODEL_NAME}"
