@@ -17,12 +17,14 @@ def compare_output_to_gold(gold_folder, out_folder, mode, log_folder=""):
         eval_segmentation(gold_folder, out_folder, log_folder)
 
 
-def eval_extraction(gold_folder, out_folder, log_folder=""):
+def eval_extraction(gold_folder: str, out_folder:str, log_folder="") -> str:
     """Compares gold files with files with extracted references.
     Finds longest common sequence between each extracted reference and the whole gold file
     represented as a single string.
 
-    Gold and model output's file names should be the same (except for the last extension)."""
+    Gold and model output's file names should be the same (except for the last extension).
+    :returns Path to the CSV file that contains a list of file names and accuracies
+    """
     date_string = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
     logfile = os.path.join(log_folder, f"extraction_evaluation_{date_string}.txt")
     csvfile = os.path.join(log_folder, f"extraction_evaluation_{date_string}.csv")
@@ -31,35 +33,41 @@ def eval_extraction(gold_folder, out_folder, log_folder=""):
 
         nums = []
         for file in os.listdir(out_folder):
-            if not file.endswith(".csv"):
+            if not file.startswith(".") or not file.endswith(".csv"):
                 continue
 
-            gold_file_name = file.replace(".csv", ".xml")
-            if os.path.exists(os.path.join(gold_folder, gold_file_name)):
-                with open(os.path.join(out_folder, file)) as in_f, open(os.path.join(gold_folder, gold_file_name)) as gold_f:
-                    gold_lines = gold_f.read()
-                    # todo: look into other punctuation
-                    gold_no_tags = re.sub('<[^<]+>', "", gold_lines).replace(" ", "").replace(",", "").replace(".", "")
-
-                    out_lines = in_f.readlines()
-
-                    file_nums = []
-                    for o_line in out_lines:
-                        o_line_no_spaces = o_line.replace(" ", "").replace(",", "").replace(".", "")
-                        match = SequenceMatcher(None, o_line_no_spaces, gold_no_tags).find_longest_match(0, len(
-                            o_line_no_spaces), 0, len(gold_no_tags))
-                        o.write(file + ": Longest common sequence with the gold: " + o_line_no_spaces[
-                                                                                   match.a:match.a + match.size])
-
-                        num = len(o_line_no_spaces[match.a:match.a + match.size]) / len(o_line_no_spaces)
-                        file_nums.append(num)
-                    nums.append(sum(file_nums) / len(file_nums))
-            else:
+            eval_file_path = os.path.join(out_folder, file)
+            gold_file_name = file.replace(".csv",".xml")
+            gold_file_path = os.path.join(gold_folder, gold_file_name)
+            if not os.path.exists(gold_file_path):
                 print("The gold file is missing for: " + file)
+                continue
 
-        accuracy = sum(nums) / len(nums)
-        o.write(f"Average accuracy for {file}: " + str(accuracy))
-        c.write(f'"{file}",{accuracy}\n')
+            with open(eval_file_path) as in_f, open(gold_file_path) as gold_f:
+                gold_lines = gold_f.read()
+                # todo: look into other punctuation
+                gold_no_tags = re.sub('<[^<]+>', "", gold_lines).replace(" ", "").replace(",", "").replace(".", "")
+
+                out_lines = in_f.readlines()
+
+                file_nums = []
+                for o_line in out_lines:
+                    o_line_no_spaces = o_line.replace(" ", "").replace(",", "").replace(".", "")
+                    match = SequenceMatcher(None, o_line_no_spaces, gold_no_tags).find_longest_match(0, len(
+                        o_line_no_spaces), 0, len(gold_no_tags))
+                    o.write(file + ": Longest common sequence with the gold: " + o_line_no_spaces[
+                                                                               match.a:match.a + match.size])
+
+                    num = len(o_line_no_spaces[match.a:match.a + match.size]) / len(o_line_no_spaces)
+                    file_nums.append(num)
+                nums.append(sum(file_nums) / len(file_nums))
+        if len(nums) == 0:
+            print(f"No accuracy information for files in {gold_folder}")
+        else:
+            accuracy = sum(nums) / len(nums)
+            o.write(f"Average accuracy for {file}: {str(accuracy)}\n")
+            c.write(f'"{file}",{accuracy}\n')
+    return csvfile
 
 
 tags = ["surname", "given-names", "title", "source", "year", "editor", "publisher", "volume", "issue", "other"]
@@ -78,11 +86,14 @@ def get_value_tag_map(ref_string):
     return value_tag_map
 
 
-def eval_segmentation(gold_folder, out_folder, log_folder=""):
+def eval_segmentation(gold_folder: str, out_folder: str, log_folder="") -> str:
     """Compares gold files with segmented references
     e.g. <author><surname>Aron</surname>, <given-names>Raymond</given-names>...
     to model output files of the same structure.
-    File names should be the same."""
+    File names should be the same.
+
+    :returns Path to the CSV file that contains a list of file names and accuracies
+    """
 
     date_string = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
     logfile = os.path.join(log_folder, f"segmentation_evaluation_{date_string}.txt")
@@ -92,11 +103,13 @@ def eval_segmentation(gold_folder, out_folder, log_folder=""):
 
         nums = []
         for file in os.listdir(out_folder):
-            if not file.endswith(".xml"):
+            if file.startswith(".") or not file.endswith(".xml"):
                 continue
 
             if os.path.exists(os.path.join(gold_folder, file)):
-                with open(os.path.join(out_folder, file)) as in_f, open(os.path.join(gold_folder, file)) as gold_f:
+                extracted_file_path = os.path.join(out_folder, file)
+                gold_file_path = os.path.join(gold_folder, file)
+                with open(extracted_file_path) as in_f, open(gold_file_path) as gold_f:
                     # token-to-tags maps
                     out_maps = []
                     for l in in_f:
@@ -104,11 +117,12 @@ def eval_segmentation(gold_folder, out_folder, log_folder=""):
 
                     gold_maps = []
                     for l in gold_f:
+                        if l.startswith("<?xml") or l.startswith("<seganno>") or l.startswith("</seganno>"):
+                            continue
                         gold_maps.append(get_value_tag_map(l))
 
                     if len(out_maps) != len(gold_maps):
-                        print("Segmentation evaluation: different number of lines for: " + file)
-                        print("The file will be skipped")
+                        print(f"Skipping {file} for segmentation evaluation: different number of lines in extracted an gold file." )
                         continue
 
                     acc_per_line = []
@@ -127,6 +141,10 @@ def eval_segmentation(gold_folder, out_folder, log_folder=""):
                                     correct_value_tag_pairs += 1
                         acc_per_line.append(correct_value_tag_pairs / gold_value_tag_pairs)
 
+                    if len(acc_per_line) == 0:
+                        print(f"{file} does not contain any accuracy information")
+                        continue
+
                     accuracy = sum(acc_per_line) / len(acc_per_line)
                     o.write("Average accuracy for " + file + ": " + str(accuracy))
                     c.write(f'"{file}",{accuracy}\n')
@@ -134,9 +152,9 @@ def eval_segmentation(gold_folder, out_folder, log_folder=""):
             else:
                 print("The gold file is missing for: " + file)
 
-        print("Average for all files: " + str(sum(nums) / len(nums)))
-        o.write("Average for all files: " + str(sum(nums) / len(nums)))
-
+        print("Average accuracy for all files: " + str(sum(nums) / len(nums)))
+        o.write(f"Average accuracy for all files: {str(sum(nums) / len(nums))}\n")
+        return csvfile
 
 # for test
 if __name__ == '__main__':

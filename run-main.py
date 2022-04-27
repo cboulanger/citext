@@ -210,7 +210,8 @@ if __name__ == "__main__":
         elif func_name == Commands.CREATE_MODEL.value:
             if len(sys.argv) < 3:
                 raise RuntimeError("Please provide a name for the model")
-            create_model_folders(sys.argv[2])
+            model_name = sys.argv[2]
+            create_model_folders(model_name)
             sys.stdout.write("Please put the training data to: " + os.path.join(dataset_dir, model_name)
                              + " and then run the training commands.\n")
 

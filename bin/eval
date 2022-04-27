@@ -70,7 +70,7 @@ then
   mkdir -p "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/";
   for filename in ./Exparser/Dataset/${MODEL_NAME}/SEG/*; do
     out_name=$(basename $filename)
-    sed 's/<[^>]*>//g' $filename > "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/${out_name}"
+    sed 's/<[^>]*>//g' $filename | sed '/^$/d' > "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/${out_name}"
   done
 fi
 
