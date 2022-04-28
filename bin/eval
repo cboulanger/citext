@@ -39,7 +39,7 @@ echo "Evaluating extraction, please wait..."
 echo "=========================================================================================="
 echo
 
-docker run -it --rm -v $(pwd):/app excite_toolchain eval $TEST_SEG_DIR $EXPARSER_SEG_INPUT_DIR extr $MODEL_DIR
+docker run -it --rm -v $(pwd):/app excite_toolchain eval $TEST_SEG_DIR $EXPARSER_LYT_INPUT_DIR extr $MODEL_DIR
 
 echo
 echo "=========================================================================================="
@@ -47,7 +47,7 @@ echo "Running segmentation on correctly extracted lines, please wait..."
 echo "=========================================================================================="
 echo
 
-docker run -v $(pwd):/app excite_toolchain segmentation $MODEL_NAME
+docker run -v $(pwd):/app excite_toolchain segmentation $MODEL_NAME $EXPARSER_SEG_INPUT_DIR
 
 echo
 echo "=========================================================================================="
