@@ -31,6 +31,7 @@ class Commands(Enum):
     LIST_PACKAGES = "list_packages"
     DELETE_PACKAGE = "delete_package"
     EVALUATE = "eval"
+    MERGE = "merge"
 
 
 def run_command(command):
@@ -171,6 +172,9 @@ def call_download_model():
     create_model_folders(model_name)
     download_model(model_name, package_name)
 
+def merge_models(target_model_name: str, models:list):
+    pass
+
 
 if __name__ == "__main__":
     func_name = ''
@@ -250,13 +254,21 @@ if __name__ == "__main__":
             delete_package(package_name)
 
         elif func_name == Commands.EVALUATE.value:
-            if len(sys.argv) < 2:
+            if len(sys.argv) < 4:
                 raise RuntimeError("Three arguments are expected: gold folder, model output folder and mode: seg or extr")
             gold_folder = sys.argv[2]
             model_out_folder = sys.argv[3]
             mode = sys.argv[4]
             log_folder = sys.argv[5]
             compare_output_to_gold(gold_folder, model_out_folder, mode, log_folder)
+
+        elif func_name == Commands.MERGE.value:
+            if len(sys.argv) < 3:
+                raise RuntimeError("At least two model names are expected, the first is the target model name that will be created, the remaining names are those of models that will be merged into the target model")
+            target_model_name = sys.argv[2]
+            model_names = sys.argv[3:]
+            merge_models(target_model_name, model_names)
+
         else:
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +
                                ", ".join([c.value for c in Commands]) + "\n")

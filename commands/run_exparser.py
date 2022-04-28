@@ -38,7 +38,7 @@ def call_Exparser(model_dir: str):
     counter = 0
     for filename in list_of_files:
         counter += 1
-        progress_bar.goto(int((counter / total) * 100))
+        progress_bar.goto(counter)
         log(f"Extracting references from {filename}")
         t11 = time.time()
         path_layout = config_url_Layouts() + subfolder + filename + '.csv'
@@ -59,7 +59,11 @@ def call_Exparser(model_dir: str):
         finally:
             file.close()
         # todo: pass one model: rf as we have one model now for extraction for de and en
-        txt, valid, _, ref_prob0 = ref_ext(reader, lng, idxx, rf, rf)
+        try:
+            txt, valid, _, ref_prob0 = ref_ext(reader, lng, idxx, rf, rf)
+        except RuntimeWarning as warning:
+            log(warning)
+            continue
         refs = segment(txt, ref_prob0, valid)
         reslt, refstr, retex = sg_ref(txt, refs, 2)
 
@@ -103,7 +107,6 @@ def call_Exparser(model_dir: str):
             json_dict = json.dumps(data, ensure_ascii=False)
             wf_ref_dic.write("%s\n" % json_dict)
             j += 1
-        log('Process is done for: ' + filename)
         log('-' * 100)
         i += 1
         t22 = time.time()

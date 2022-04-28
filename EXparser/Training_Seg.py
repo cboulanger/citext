@@ -3,7 +3,13 @@ import pickle
 import sklearn_crfsuite
 from .src.gle_fun import *
 from .src.gle_fun_seg import *
+from progress.bar import Bar
 
+def get_progress_bar(task, max):
+    progressbar = Bar(task, bar_prefix=' [', bar_suffix='] ', empty_fill='.',
+                      suffix='%(index)d/%(max)d',
+                      max=max)
+    return progressbar
 
 def train_segmentation(data_dir: str, model_dir: str):
     # preparing training data
@@ -12,12 +18,16 @@ def train_segmentation(data_dir: str, model_dir: str):
     train_sents = []
     train_feat = []
     train_label = []
-    total = str(len(fdir))
-    for u in range(len(fdir)):
+    total = len(fdir)
+    counter = 0
+    progress_bar = get_progress_bar("Segmentation training", total)
+    for u in range(total):
+        counter += 1
+        progress_bar.goto(int((counter / total) * 100))
         curr_file = fdir[u]
         if curr_file.startswith(".") or not curr_file.endswith(".xml"):
             continue
-        print('>Segmentation training:' + str(u + 1) + '/' + total + ":" + curr_file)
+        log(f"Segmenting training with {curr_file}")
         fname = os.path.join(fold, curr_file)
         file = open(fname, encoding="utf-8")
         reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)  # , quotechar='|'

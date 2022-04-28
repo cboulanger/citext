@@ -1,0 +1,89 @@
+#!/usr/bin/env bash
+
+set -o errexit
+
+MODEL_NAME=${1:-default}
+EVAL_MODEL_NAME="${2:-${MODEL_NAME}_eval_$(date +%s)}"
+
+# check input model
+MODEL_DIR="./EXparser/Dataset/${MODEL_NAME}"
+if ! [[ -d "${MODEL_DIR}" ]]; then
+  echo "Model $MODEL_NAME does not exist"
+  exit 1
+fi
+
+# model directories
+LRT_DIR="${MODEL_DIR}/LRT"
+LYT_DIR="${MODEL_DIR}/LYT"
+SEG_DIR="${MODEL_DIR}/SEG"
+
+if ! [[ -d "$LRT_DIR" ]] || ! [[ -d "$SEG_DIR" ]] ; then
+  echo "Model $MODEL_NAME has no LRT and/or SEG gold standard data"
+  exit 1
+fi
+
+echo
+echo "=========================================================================================="
+echo " Creating new model '$EVAL_MODEL_NAME' with split training / evaluation data "
+echo "=========================================================================================="
+echo
+
+docker run -it --rm -v $(pwd):/app excite_toolchain create_model $EVAL_MODEL_NAME > /dev/null
+
+EVAL_MODEL_DIR="./EXparser/Dataset/${EVAL_MODEL_NAME}"
+EVAL_LRT_DIR="${EVAL_MODEL_DIR}/LRT"
+EVAL_LYT_DIR="${EVAL_MODEL_DIR}/LYT"
+EVAL_SEG_DIR="${EVAL_MODEL_DIR}/SEG"
+EVAL_TEST_LYT_DIR="${EVAL_MODEL_DIR}/TEST_LYT"
+EVAL_TEST_SEG_DIR="${EVAL_MODEL_DIR}/TEST_SEG"
+
+# select 20%, or at least 5 of layout files for evaluation
+NUM_FILES=$(ls $LRT_DIR | wc -l)
+if [[ $NUM_FILES -lt 20 ]] ; then
+  echo "You need at least 20 training documents"
+  exit 1
+fi
+NUM_EVAL_FILES=$(($NUM_FILES / 20))
+NUM_EVAL_FILES=$((NUM_EVAL_FILES < 5 ? 5 : NUM_EVAL_FILES))
+EVAL_FILES=$(ls $LRT_DIR | shuf -n $NUM_EVAL_FILES)
+mkdir -p $EVAL_TEST_SEG_DIR
+mkdir -p $EVAL_TEST_LYT_DIR
+echo "Using $NUM_EVAL_FILES files for evaluation, and $(($NUM_FILES - $NUM_EVAL_FILES)) for training."
+
+# copy split data for training and evaluation
+for lrt_file_path in $LRT_DIR/* ; do
+  found=0
+  file_name=$(basename $lrt_file_path)
+  seg_file_name=${file_name/\.csv/.xml}
+  seg_file_path="$SEG_DIR/${seg_file_name}"
+  # generate LYT data if it does not exist
+  lyt_file_path="$LYT_DIR/$file_name"
+  if [[ -f "$lyt_file_path" ]] ; then
+    cp $lyt_file_path $EVAL_LYT_DIR
+  else
+    sed -E 's/<\/?(ref|oth)>//g' $lrt_file_path > $EVAL_LYT_DIR/$file_name
+  fi
+  for eval_file_name in $EVAL_FILES; do
+    if [[ "$file_name" == "$eval_file_name" ]]; then
+      # move LYT data from training to evaluation
+      mv $EVAL_LYT_DIR/$file_name $EVAL_TEST_LYT_DIR
+      # generate segmentation evaluation data from SEG gold
+      if ! [[ -f $seg_file_path ]]; then
+        echo "Segmentation gold file $seg_file_path is missing for evaluation"
+      else
+        sed 's/<[^>]*>//g' $seg_file_path | sed '/^$/d' > $EVAL_TEST_SEG_DIR/$seg_file_name
+      fi
+      found=1
+      break
+    fi
+  done
+  if [[ $found == 0 ]] ; then
+    # copy LRT and SEG data for training
+    cp $lrt_file_path $EVAL_LRT_DIR
+    if ! [[ -f $seg_file_path ]]; then
+      echo "Segmentation gold file $seg_file_path is missing for training"
+    else
+      cp $seg_file_path $EVAL_SEG_DIR
+    fi
+  fi
+done

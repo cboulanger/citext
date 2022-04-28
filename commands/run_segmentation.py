@@ -27,7 +27,6 @@ def call_Exparser_segmentation(model_dir: str, input_dir=None):
         list_of_files = []
         for item in dir_list:
             if not item.startswith('.'):
-                # todo: why did they remove the extension?
                 # list_of_files.append(os.path.splitext(item)[0])
                 list_of_files.append(item)
     except:
@@ -44,7 +43,7 @@ def call_Exparser_segmentation(model_dir: str, input_dir=None):
     counter = 0
     for filename in list_of_files:
         counter += 1
-        progress_bar.goto(int((counter / total) * 100))
+        progress_bar.goto(counter)
         log(f"Segmenting references from {filename}")
         t11 = time.time()
         # path_layout = config_url_Layouts() + subfolder + filename + '.csv'
@@ -123,7 +122,6 @@ def call_Exparser_segmentation(model_dir: str, input_dir=None):
             json_dict = json.dumps(data, ensure_ascii=False)
             wf_ref_dict.write("%s\n" % json_dict)
             j += 1
-        log('Segmentation is done for: ' + filename)
         i += 1
         t22 = time.time()
         temp = t22 - t11

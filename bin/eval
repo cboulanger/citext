@@ -30,16 +30,9 @@ echo
 # clean subfolders and copy layout evaluation data
 find ./Data/ -type f -not -name '.*' -exec rm {} +
 cp $TEST_LYT_DIR/* $EXPARSER_LYT_INPUT_DIR
+
 # run exparser to produce extracted references
-docker run -v $(pwd):/app excite_toolchain exparser $MODEL_NAME
-
-echo
-echo "=========================================================================================="
-echo "Evaluating extraction, please wait..."
-echo "=========================================================================================="
-echo
-
-docker run -it --rm -v $(pwd):/app excite_toolchain eval $TEST_SEG_DIR $EXPARSER_LYT_INPUT_DIR extr $MODEL_DIR
+docker run -it --rm -v $(pwd):/app excite_toolchain exparser $MODEL_NAME
 
 echo
 echo "=========================================================================================="
@@ -47,7 +40,16 @@ echo "Running segmentation on correctly extracted lines, please wait..."
 echo "=========================================================================================="
 echo
 
-docker run -v $(pwd):/app excite_toolchain segmentation $MODEL_NAME $EXPARSER_SEG_INPUT_DIR
+docker run -it --rm -v $(pwd):/app excite_toolchain segmentation $MODEL_NAME $EXPARSER_SEG_INPUT_DIR
+
+echo
+echo "=========================================================================================="
+echo "Evaluating extraction, please wait..."
+echo "=========================================================================================="
+echo
+
+#  gold: SEG files without tags, input: exparser extraction output
+docker run -it --rm -v $(pwd):/app excite_toolchain eval $TEST_SEG_DIR $EXPARSER_SEG_INPUT_DIR extr $MODEL_DIR
 
 echo
 echo "=========================================================================================="
@@ -55,6 +57,7 @@ echo "Evaluating segmentation, please wait..."
 echo "=========================================================================================="
 echo
 
-docker run -it --rm -v $(pwd):/app excite_toolchain eval $TEST_SEG_DIR $EXPARSER_SEG_OUTPUT_DIR seg $MODEL_DIR
+# gold: original SEG files, input: output of exparser segmentation
+docker run -it --rm -v $(pwd):/app excite_toolchain eval $SEG_DIR $EXPARSER_SEG_OUTPUT_DIR seg $MODEL_DIR
 
 echo "Logfiles and CSV data have been written to ./Exparser/Dataset/${MODEL_NAME}"
