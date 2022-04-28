@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -o errexit
+
 MODEL_NAME=${1:-default}
 MODEL_DIR="./EXparser/Dataset/${MODEL_NAME}"
 
@@ -8,48 +10,16 @@ if ! [[ -d "${MODEL_DIR}" ]]; then
   exit 1
 fi
 
-LRT_DIR="${MODEL_DIR}/LRT"
-LYT_DIR="${MODEL_DIR}/LYT"
+TEST_LYT_DIR="${MODEL_DIR}/TEST_LYT"
+TEST_SEG_DIR="${MODEL_DIR}/TEST_SEG"
+EXPARSER_LYT_INPUT_DIR=./Data/2-layouts
+EXPARSER_SEG_INPUT_DIR=./Data/3-refs
+EXPARSER_SEG_OUTPUT_DIR=./Data/3-refs_seg
 
-# clean subfolders
-find ./Data/ -type f -not -name '.*' -exec rm {} +
-
-if ! [[ -d "$LRT_DIR" ]] || ! [[ -d "${MODEL_DIR}/SEG" ]] ; then
-  echo "Model $MODEL_NAME has no LRT and/or SEG gold standard data"
+if ! [[ -d "$TEST_LYT_DIR" ]] || ! [[ -d "${TEST_SEG_DIR}" ]] ; then
+  echo "Model $MODEL_NAME is missing the TEST_LYT and/or TEST_SEG folders"
   exit 1
 fi
-
-if ! [[ -d "$LYT_DIR" ]]; then
-  mkdir -p "$LYT_DIR"
-fi
-
-# re-create LYT file if it does not exist
-for LRT_FILE in $LRT_DIR/* ; do
-  LYT_FILE="$LYT_DIR/$(basename $LRT_FILE)"
-  if ! [[ -f "$LYT_FILE" ]] ; then
-    sed -E 's/<\/?(ref|oth)>//g' $LRT_FILE > $LYT_FILE
-  fi
-done
-
-# select 20% of layout files for evaluation
-NUM_FILES=$(($(ls $LRT_DIR | wc -l) / 20))
-NUM_FILES=$(($NUM_FILES < 5 ? 5 : $NUM_FILES))
-EVAL_FILES=$(ls $LRT_DIR | shuf -n $NUM_FILES)
-echo "Using $NUM_FILES files from $LRT_DIR for evaluation."
-for file in $EVAL_FILES ; do
-    cp "${LYT_DIR}/$file" ./Data/2-layouts
-done
-
-echo "Copy corresponding SEG files to TEST_SEG"
-if [ ! -d "./Exparser/Dataset/${MODEL_NAME}/TEST_SEG/" ];
-then
-  mkdir -p "./Exparser/Dataset/${MODEL_NAME}/TEST_SEG/";
-fi
-
-for file in $EVAL_FILES ; do
-    seg_file=$(basename $file .csv).xml
-    cp "./Exparser/Dataset/${MODEL_NAME}/SEG/$seg_file" "./Exparser/Dataset/${MODEL_NAME}/TEST_SEG/$seg_file"
-done
 
 echo
 echo "=========================================================================================="
@@ -57,6 +27,10 @@ echo "Running Exparser, please wait..."
 echo "=========================================================================================="
 echo
 
+# clean subfolders and copy layout evaluation data
+find ./Data/ -type f -not -name '.*' -exec rm {} +
+cp $TEST_LYT_DIR/* $EXPARSER_LYT_INPUT_DIR
+# run exparser to produce extracted references
 docker run -v $(pwd):/app excite_toolchain exparser $MODEL_NAME
 
 echo
@@ -65,21 +39,7 @@ echo "Evaluating extraction, please wait..."
 echo "=========================================================================================="
 echo
 
-docker run -it --rm -v $(pwd):/app excite_toolchain eval ./Exparser/Dataset/${MODEL_NAME}/SEG/ ./Data/3-refs/ extr ./Exparser/Dataset/${MODEL_NAME}
-
-echo
-echo "=========================================================================================="
-echo "Creating input for segmentation without tags..."
-echo "=========================================================================================="
-echo
-if [ ! -d "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/" ];
-then
-  mkdir -p "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/";
-  for filename in ./Exparser/Dataset/${MODEL_NAME}/TEST_SEG/*; do
-    out_name=$(basename $filename)
-    sed 's/<[^>]*>//g' $filename | sed '/^$/d' > "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/${out_name}"
-  done
-fi
+docker run -it --rm -v $(pwd):/app excite_toolchain eval $TEST_SEG_DIR $EXPARSER_SEG_INPUT_DIR extr $MODEL_DIR
 
 echo
 echo "=========================================================================================="
@@ -87,7 +47,7 @@ echo "Running segmentation on correctly extracted lines, please wait..."
 echo "=========================================================================================="
 echo
 
-docker run -v $(pwd):/app excite_toolchain segmentation $MODEL_NAME ./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/
+docker run -v $(pwd):/app excite_toolchain segmentation $MODEL_NAME
 
 echo
 echo "=========================================================================================="
@@ -95,5 +55,6 @@ echo "Evaluating segmentation, please wait..."
 echo "=========================================================================================="
 echo
 
-docker run -it --rm -v $(pwd):/app excite_toolchain eval ./Exparser/Dataset/${MODEL_NAME}/SEG/ ./Data/3-refs_seg/ seg ./Exparser/Dataset/${MODEL_NAME}
+docker run -it --rm -v $(pwd):/app excite_toolchain eval $TEST_SEG_DIR $EXPARSER_SEG_OUTPUT_DIR seg $MODEL_DIR
+
 echo "Logfiles and CSV data have been written to ./Exparser/Dataset/${MODEL_NAME}"

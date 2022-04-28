@@ -3,10 +3,22 @@ set -o errexit
 trap 'exit 130' INT
 
 MODEL_NAME=${1:-default}
+MODEL_DIR="./EXparser/Dataset/${MODEL_NAME}"
 
-if [[ ! -d EXparser/Dataset/$MODEL_NAME/Features ]]; then
-    echo "No training data exists. To use the default model, run ./bin/prepare-training first."
-    exit 1
+# check input model
+if ! [[ -d "${MODEL_DIR}" ]]; then
+  echo "Model $MODEL_NAME does not exist"
+  exit 1
+fi
+
+# model directories
+LRT_DIR="${MODEL_DIR}/LRT"
+LYT_DIR="${MODEL_DIR}/LYT"
+SEG_DIR="${MODEL_DIR}/SEG"
+
+if ! [[ -d "$LRT_DIR" ]] || ! [[ -d "${SEG_DIR}" ]] || ! [[ -d "${LYT_DIR}" ]] ; then
+  echo "Model $MODEL_NAME is missing LRT, LYT and/or SEG data"
+  exit 1
 fi
 
 echo
