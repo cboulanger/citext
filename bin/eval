@@ -76,7 +76,7 @@ echo
 if [ ! -d "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/" ];
 then
   mkdir -p "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/";
-  for filename in ./Exparser/Dataset/${MODEL_NAME}/SEG/*; do
+  for filename in ./Exparser/Dataset/${MODEL_NAME}/TEST_SEG/*; do
     out_name=$(basename $filename)
     sed 's/<[^>]*>//g' $filename | sed '/^$/d' > "./Exparser/Dataset/${MODEL_NAME}/CLEAN_SEG/${out_name}"
   done
