@@ -40,6 +40,18 @@ for file in $EVAL_FILES ; do
     cp "${LYT_DIR}/$file" ./Data/2-layouts
 done
 
+echo "Copy corresponding SEG files to TEST_SEG"
+if [ ! -d "./Exparser/Dataset/${MODEL_NAME}/TEST_SEG/" ];
+then
+  mkdir -p "./Exparser/Dataset/${MODEL_NAME}/TEST_SEG/";
+fi
+
+for file in $EVAL_FILES ; do
+    seg_file=$(basename $file .csv).xml
+    echo $seg_file
+    cp "./Exparser/Dataset/${MODEL_NAME}/SEG/$seg_file" "./Exparser/Dataset/${MODEL_NAME}/TEST_SEG/$seg_file"
+done
+
 echo
 echo "=========================================================================================="
 echo "Running Exparser, please wait..."
