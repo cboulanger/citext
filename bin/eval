@@ -48,7 +48,6 @@ fi
 
 for file in $EVAL_FILES ; do
     seg_file=$(basename $file .csv).xml
-    echo $seg_file
     cp "./Exparser/Dataset/${MODEL_NAME}/SEG/$seg_file" "./Exparser/Dataset/${MODEL_NAME}/TEST_SEG/$seg_file"
 done
 
