@@ -391,7 +391,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
 
     ZZ = []
     tmp = np.unique(ref_id, return_index=True)
-    Z = [x for _, x in sorted(zip(tmp[1], tmp[0]))][1::]
+    Z = [x for _, x in sorted(zip(tmp[1], tmp[0]))]
     tmp3 = [tmp2 for tmp2 in Z if tmp2 not in ZZ]
     # ii=random.randint(0,len(Z)-1)
     while bool(tmp3):
@@ -472,7 +472,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                 ref_id[np.where(ref_id == Z[ii + 1])[0]] = Z[ii]
 
         tmp = np.unique(ref_id, return_index=True)
-        Z = [x for _, x in sorted(zip(tmp[1], tmp[0]))][1::]
+        Z = [x for _, x in sorted(zip(tmp[1], tmp[0]))]
         tmp3 = [tmp2 for tmp2 in Z if tmp2 not in ZZ]
     ##################################################
     return ref_id
