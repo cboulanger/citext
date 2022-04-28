@@ -14,35 +14,31 @@ LYT_DIR="${MODEL_DIR}/LYT"
 # clean subfolders
 find ./Data/ -type f -not -name '.*' -exec rm {} +
 
-if ! [[ -d "$LYT_DIR" ]]; then
-  echo "Model $MODEL_NAME has no layout data to use for evaluation"
-  exit 1
-fi
-
 if ! [[ -d "$LRT_DIR" ]] || ! [[ -d "${MODEL_DIR}/SEG" ]] ; then
   echo "Model $MODEL_NAME has no LRT and/or SEG gold standard data"
   exit 1
 fi
 
-# select 20% of layout files for evaluation
-NUM_FILES=$(($(ls $LRT_DIR | wc -l) / 20))
-EVAL_FILES=$(ls $LRT_DIR | shuf -n $NUM_FILES)
-MISSING_FILES=""
-for file in $EVAL_FILES ; do
-  if ! [[ -f "${LYT_DIR}/$file" ]] ; then
-    if [[ "$MISSING_FILES" == "" ]] ; then
-      MISSING_FILES="$file"
-    else
-      MISSING_FILES="$MISSING_FILES, $file"
-    fi
-  else
-    cp "${LYT_DIR}/$file" ./Data/2-layouts
+if ! [[ -d "$LYT_DIR" ]]; then
+  mkdir -p "$LYT_DIR"
+fi
+
+# re-create LYT file if it does not exist
+for LRT_FILE in $LRT_DIR/* ; do
+  LYT_FILE="$LYT_DIR/$(basename $LRT_FILE)"
+  if ! [[ -f "$LYT_FILE" ]] ; then
+    sed -E 's/<\/?(ref|oth)>//g' $LRT_FILE > $LYT_FILE
   fi
 done
-if [[ "$MISSING_FILES" != "" ]] ; then
-  echo "Please provide a matching layout file without annotation in ${LYT_DIR} for $MISSING_FILES."
-  exit 1
-fi
+
+# select 20% of layout files for evaluation
+NUM_FILES=$(($(ls $LRT_DIR | wc -l) / 20))
+NUM_FILES=$(($NUM_FILES < 5 ? 5 : $NUM_FILES))
+EVAL_FILES=$(ls $LRT_DIR | shuf -n $NUM_FILES)
+echo "Using $NUM_FILES files from $LRT_DIR for evaluation."
+for file in $EVAL_FILES ; do
+    cp "${LYT_DIR}/$file" ./Data/2-layouts
+done
 
 echo
 echo "=========================================================================================="

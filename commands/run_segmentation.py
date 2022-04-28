@@ -45,19 +45,23 @@ def call_Exparser_segmentation(model_dir: str, input_dir=None):
     for filename in list_of_files:
         counter += 1
         progress_bar.goto(int((counter / total) * 100))
-
+        log(f"Segmenting references from {filename}")
         t11 = time.time()
         # path_layout = config_url_Layouts() + subfolder + filename + '.csv'
         path_refs = input_dir + subfolder + filename
         path_segs = config_url_Refs_segment() + subfolder + filename
         path_refs_and_bibtex = config_url_Refs_bibtex() + subfolder + filename + '.bib'
         path_segs_prob = config_url_Refs_segment_prob() + subfolder + filename + '.csv'
-        path_segs_ditc = config_url_Refs_segment_dict() + subfolder + filename + '.csv'
+        path_segs_dict = config_url_Refs_segment_dict() + subfolder + filename + '.csv'
 
         file = open(path_refs)
         reader = str(file.read())
+        # what do we need language detection for, anyways?
         global lng
-        lng = detect(reader)
+        try:
+            lng = detect(reader)
+        except:
+            print(f"Cannot detect language in {path_refs}")
         file.close()
 
         # txt, valid, _, ref_prob0 = ref_ext(reader)
@@ -106,8 +110,8 @@ def call_Exparser_segmentation(model_dir: str, input_dir=None):
         reslt, refstr, retex = sg_ref(txt, refs, 1)
         # reslt: ref_seg_prob
         wf_seg_prob = open(path_segs_prob, 'w')
-        wf_ref_dic = open(path_segs_ditc, 'w')
-        len_of_ref_list = len(refstr)
+        wf_ref_dict = open(path_segs_dict, 'w')
+        #len_of_ref_list = len(refstr)
         j = 0
         for item in reslt:
             wf_seg_prob.write("%s\n" % item)
@@ -117,7 +121,7 @@ def call_Exparser_segmentation(model_dir: str, input_dir=None):
             ref_text_x = refstr[j]
             data["ref_text_x"] = ref_text_x
             json_dict = json.dumps(data, ensure_ascii=False)
-            wf_ref_dic.write("%s\n" % json_dict)
+            wf_ref_dict.write("%s\n" % json_dict)
             j += 1
         log('Segmentation is done for: ' + filename)
         i += 1

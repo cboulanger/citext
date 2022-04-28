@@ -26,22 +26,26 @@ def eval_extraction(gold_folder: str, out_folder:str, log_folder="") -> str:
     :returns Path to the CSV file that contains a list of file names and accuracies
     """
     date_string = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
-    logfile = os.path.join(log_folder, f"extraction_evaluation_{date_string}.txt")
-    csvfile = os.path.join(log_folder, f"extraction_evaluation_{date_string}.csv")
+    logfile = os.path.join(log_folder, f"{date_string}_extraction_evaluation.txt")
+    csvfile = os.path.join(log_folder, f"{date_string}_extraction_evaluation.csv")
     with open(logfile, "w") as o, open(csvfile, "w") as c:
         o.write("Gold folder: " + gold_folder + ", Results folder: " + out_folder)
 
         nums = []
-        for file in os.listdir(out_folder):
-            if not file.startswith(".") or not file.endswith(".csv"):
+        for filename in os.listdir(out_folder):
+            if filename.startswith(".") or not filename.endswith(".csv"):
+                print(f"Ignoring {filename}")
                 continue
 
-            eval_file_path = os.path.join(out_folder, file)
-            gold_file_name = file.replace(".csv",".xml")
+            eval_file_path = os.path.join(out_folder, filename)
+            gold_file_name = filename.replace(".csv",".xml")
             gold_file_path = os.path.join(gold_folder, gold_file_name)
+
             if not os.path.exists(gold_file_path):
-                print("The gold file is missing for: " + file)
+                print("The gold file is missing for: " + filename)
                 continue
+
+            o.write(f"Comparing {eval_file_path} with gold {gold_file_path}: \n  - longest common sequence:")
 
             with open(eval_file_path) as in_f, open(gold_file_path) as gold_f:
                 gold_lines = gold_f.read()
@@ -55,18 +59,17 @@ def eval_extraction(gold_folder: str, out_folder:str, log_folder="") -> str:
                     o_line_no_spaces = o_line.replace(" ", "").replace(",", "").replace(".", "")
                     match = SequenceMatcher(None, o_line_no_spaces, gold_no_tags).find_longest_match(0, len(
                         o_line_no_spaces), 0, len(gold_no_tags))
-                    o.write(file + ": Longest common sequence with the gold: " + o_line_no_spaces[
-                                                                               match.a:match.a + match.size])
-
+                    o.write(o_line_no_spaces[match.a:match.a + match.size] + "\n")
                     num = len(o_line_no_spaces[match.a:match.a + match.size]) / len(o_line_no_spaces)
                     file_nums.append(num)
                 nums.append(sum(file_nums) / len(file_nums))
+
         if len(nums) == 0:
             print(f"No accuracy information for files in {gold_folder}")
         else:
             accuracy = sum(nums) / len(nums)
-            o.write(f"Average accuracy for {file}: {str(accuracy)}\n")
-            c.write(f'"{file}",{accuracy}\n')
+            o.write(f"Average accuracy for {filename}: {str(accuracy)}\n")
+            c.write(f'"{filename}",{accuracy}\n')
     return csvfile
 
 
@@ -96,8 +99,8 @@ def eval_segmentation(gold_folder: str, out_folder: str, log_folder="") -> str:
     """
 
     date_string = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
-    logfile = os.path.join(log_folder, f"segmentation_evaluation_{date_string}.txt")
-    csvfile = os.path.join(log_folder, f"segmentation_evaluation_{date_string}.csv")
+    logfile = os.path.join(log_folder, f"{date_string}_segmentation_evaluation.txt")
+    csvfile = os.path.join(log_folder, f"{date_string}_segmentation_evaluation.csv")
     with open(logfile, "w") as o, open(csvfile, "w") as c:
         o.write("Gold folder: " + gold_folder + ", Results folder: " + out_folder)
 
@@ -122,7 +125,7 @@ def eval_segmentation(gold_folder: str, out_folder: str, log_folder="") -> str:
                         gold_maps.append(get_value_tag_map(l))
 
                     if len(out_maps) != len(gold_maps):
-                        print(f"Skipping {file} for segmentation evaluation: different number of lines in extracted an gold file." )
+                        print(f"Skipping {file} for segmentation evaluation: different number of lines in extracted vs. gold file." )
                         continue
 
                     acc_per_line = []
