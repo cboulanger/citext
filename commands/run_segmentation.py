@@ -77,8 +77,8 @@ def call_Exparser_segmentation(model_dir: str, input_dir=None):
         valid = [1] * len(txt)
         ref_prob0 = [(0, 1, 0, 0)] * len(txt)
 
-        # refs = segment(txt, ref_prob0, valid)
-        refs = list(range(0, len(txt)))
+        refs = segment(txt, ref_prob0, valid)
+        # refs = list(range(0, len(txt)))
         reslt, refstr, retex = sg_ref(txt, refs, 2)
 
         # reslt: segmented references # refstr: refstr references # retex: bibtex
