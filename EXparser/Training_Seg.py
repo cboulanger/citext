@@ -4,6 +4,8 @@ import sklearn_crfsuite
 from .src.gle_fun import *
 from .src.gle_fun_seg import *
 from progress.bar import Bar
+from lib.logger import *
+
 
 def get_progress_bar(task, max):
     progressbar = Bar(task, bar_prefix=' [', bar_suffix='] ', empty_fill='.',
