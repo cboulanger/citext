@@ -8,6 +8,7 @@ from lib.pogressbar import *
 from lib.logger import *
 from dotenv import load_dotenv
 import argparse
+from configs import *
 
 from evaluation import compare_output_to_gold
 
@@ -16,7 +17,7 @@ load_dotenv()
 dataset_dir = "EXparser/Dataset"
 model_dir = "EXparser/Models"
 
-
+# legacy commands, see below for new argparse implementations
 class Commands(Enum):
     LAYOUT = "layout"
     EXPARSER = "exparser"
@@ -24,9 +25,6 @@ class Commands(Enum):
     EXMATCHER = "exmatcher"
     TRAIN_EXTRACTION = "train_extraction"
     TRAIN_SEGMENTATION = "train_segmentation"
-    CREATE_MODEL = "create_model"
-    DELETE_MODEL = "delete_model"
-    LIST_MODELS = "list_models"
     START_SERVER = "start_server"
     UPLOAD_MODEL = "upload_model"
     DOWNLOAD_MODEL = "download_model"
@@ -101,48 +99,6 @@ def call_segmentation_training(model_name: str):
     progress_disable()
 
 
-def copy_kde_files(model_name):
-    # todo: get rid of the copying if all models are trainable
-    path = os.path.join(model_dir, get_version(), model_name)
-    default_path = os.path.join(model_dir, get_version(), "default")
-    src_files = os.listdir(default_path)
-    for file_name in src_files:
-        full_file_name = os.path.join(default_path, file_name)
-        if os.path.isfile(full_file_name) and "kde_" in file_name:
-            shutil.copy(full_file_name, path)
-
-
-def create_model_folders(model_name: str):
-    model_dir_path = os.path.join(model_dir, get_version(), model_name)
-    if not os.path.isdir(model_dir_path):
-        os.mkdir(model_dir_path)
-    copy_kde_files(model_name)
-    dataset_dir_path = os.path.join(dataset_dir, model_name)
-    if not os.path.isdir(dataset_dir_path):
-        os.mkdir(dataset_dir_path)
-    for subdir in DatasetDirs:
-        subdir_path = os.path.join(dataset_dir, model_name, subdir.value)
-        if not os.path.isdir(subdir_path):
-            os.mkdir(subdir_path)
-
-
-def list_models():
-    models = []
-    curr_model_dir = os.path.join(model_dir, get_version())
-    for file in os.listdir(curr_model_dir):
-        if os.path.isdir(os.path.join(curr_model_dir, file)):
-            models.append(file)
-    return models
-
-
-def delete_model_folders(model_name):
-    model_dir_path = os.path.join(model_dir, get_version(), model_name)
-    if not os.path.isdir(model_dir_path):
-        raise RuntimeError(f'Model "{model_name}" does not exist.')
-    shutil.rmtree(model_dir_path, ignore_errors=True)
-    dataset_dir_path = os.path.join(dataset_dir, model_name)
-    shutil.rmtree(dataset_dir_path, ignore_errors=True)
-
 
 def call_start_server(port):
     # todo: make server multi-threaded: https://stackoverflow.com/a/46224191
@@ -180,18 +136,39 @@ if __name__ == "__main__":
 
     # https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser(description='Run exparser tools.')
-    subparsers = parser.add_subparsers()
+    subcommands = parser.add_subparsers()
 
-    # merge
-    merge_parser = subparsers.add_parser("merge", help="Merge one or more models into a new model")
-    merge_parser.add_argument("target", type=str, help="The name of the model into which the other models will be merged. Will be created if it does not exist.")
-    merge_parser.add_argument("models", metavar="model", type=str, nargs="+", help="The name of the model which will be merged into the target model.")
-    merge_parser.set_defaults(command="merge")
+    model_parser = subcommands.add_parser("model", help="Tools to work with models")
+    model_subcommands = model_parser.add_subparsers()
+
+    # model create
+    model_create_parser = model_subcommands.add_parser("create", help="Create a new model")
+    model_create_parser.add_argument("model_name", type=str, help="The name of the model to be created.")
+    model_create_parser.set_defaults(command="model_create")
+
+    # model delete
+    model_delete_parser = model_subcommands.add_parser("delete", help="Delete one or more models")
+    model_delete_parser.add_argument("model_names",
+                                    metavar="model", type=str, nargs="+",
+                                    help="The name of the model to be deleted. If a model name ends with \"*\", it is used as a prefix and all models starting with this prefix are selected for deletion")
+    model_delete_parser.set_defaults(command="model_delete")
+
+    # model list
+    model_list_parser = model_subcommands.add_parser("list", help="List all available models")
+    model_list_parser.set_defaults(command="model_list")
+
+    # model merge
+    model_merge_parser = model_subcommands.add_parser("merge", help="Merge one or more models into a new model")
+    model_merge_parser.add_argument("target", type=str, help="The name of the model into which the other models will be merged. Will be created if it does not exist.")
+    model_merge_parser.add_argument("models",
+                                    metavar="model", type=str, nargs="+",
+                                    help="The name of the model which will be merged into the target model. If a model name ends with \"*\", it is used as a prefix and all models starting with this prefix are selected")
+    model_merge_parser.set_defaults(command="model_merge")
 
     # add legacy commands
     parsers = []
     for data in Commands:
-        cmd = subparsers.add_parser(data.value, help=f"Run the {data.value} command")
+        cmd = subcommands.add_parser(data.value, help=f"Run the {data.value} command")
         cmd.set_defaults(command=data.value)
         parsers.append(cmd)
 
@@ -204,7 +181,7 @@ if __name__ == "__main__":
             del kwargs['command']
             command.execute(**kwargs)
             sys.exit(0)
-    except ModuleNotFoundError:
+    except ModuleNotFoundError as err:
         # it's a legacy command
         pass
 
@@ -242,25 +219,6 @@ if __name__ == "__main__":
                 raise RuntimeError("Please provide a name for the model")
             call_segmentation_training(sys.argv[2])
 
-        elif func_name == Commands.CREATE_MODEL.value:
-            if len(sys.argv) < 3:
-                raise RuntimeError("Please provide a name for the model")
-            model_name = sys.argv[2]
-            create_model_folders(model_name)
-            sys.stdout.write("Please put the training data to: " + os.path.join(dataset_dir, model_name)
-                             + " and then run the training commands.\n")
-
-        elif func_name == Commands.DELETE_MODEL.value:
-            if len(sys.argv) < 3:
-                raise RuntimeError("Please provide a name for the model")
-            model_name = sys.argv[2]
-            if model_name == "default":
-                raise RuntimeError("Default model cannot be deleted")
-            delete_model_folders(model_name)
-
-        elif func_name == Commands.LIST_MODELS.value:
-            print("\n".join(list_models()))
-
         elif func_name == Commands.START_SERVER.value:
             port = 8000
             if len(sys.argv) == 3:
@@ -292,8 +250,6 @@ if __name__ == "__main__":
             mode = sys.argv[4]
             log_folder = sys.argv[5]
             compare_output_to_gold(gold_folder, model_out_folder, mode, log_folder)
-
-
 
         else:
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +

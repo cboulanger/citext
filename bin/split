@@ -28,7 +28,7 @@ echo " Creating new model '$EVAL_MODEL_NAME' with split training / evaluation da
 echo "=========================================================================================="
 echo
 
-docker run -it --rm -v $(pwd):/app excite_toolchain create_model $EVAL_MODEL_NAME > /dev/null
+docker run -it --rm -v $(pwd):/app excite_toolchain create-model $EVAL_MODEL_NAME > /dev/null
 
 EVAL_MODEL_DIR="./EXparser/Dataset/${EVAL_MODEL_NAME}"
 EVAL_LRT_DIR="${EVAL_MODEL_DIR}/LRT"

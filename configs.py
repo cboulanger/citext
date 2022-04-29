@@ -70,7 +70,11 @@ def config_url_layout_extractor():
 def config_layout_extractor_function_name():
     return 'gesis.cermine.layout.extractor.CermineLineLayoutExtractor'
 
+def dataset_dir():
+    return "EXparser/Dataset"
 
+def model_dir():
+    return "EXparser/Models"
 
 class DatasetDirs(Enum):
     FEATURES = "Features"

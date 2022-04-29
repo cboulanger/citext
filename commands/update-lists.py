@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-
 import sys, os, json, requests, re
 import urllib.parse
 
