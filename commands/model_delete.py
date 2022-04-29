@@ -1,6 +1,6 @@
 import os, sys, shutil
 from configs import *
-from commands.model_list import list_models
+from commands.model_list import get_models_with_prefix
 
 def delete_model_folders(model_name:str):
     """
@@ -15,13 +15,7 @@ def delete_model_folders(model_name:str):
     dataset_dir_path = os.path.join(dataset_dir(), model_name)
     shutil.rmtree(dataset_dir_path, ignore_errors=True)
 
-def get_models_with_prefix(prefix:str):
-    """
-    Given a prefix, return all model names that match the prefix
-    :param prefix:str
-    :return:list
-    """
-    return [ m for m in list_models() if m[:len(prefix)] == prefix]
+
 
 def execute(model_names):
     models = []

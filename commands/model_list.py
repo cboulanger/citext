@@ -1,6 +1,14 @@
 import os
 from configs import *
 
+def get_models_with_prefix(prefix:str):
+    """
+    Given a prefix, return all model names that match the prefix
+    :param prefix:str
+    :return:list
+    """
+    return [ m for m in list_models() if m[:len(prefix)] == prefix]
+
 def list_models():
     models = []
     curr_model_dir = os.path.join(model_dir(), get_version())
