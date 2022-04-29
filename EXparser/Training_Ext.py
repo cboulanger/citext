@@ -87,7 +87,10 @@ def train_extraction(data_dir: str, model_dir: str):
         Fs[np.isnan(Fs)] = 1
 
         tmp = Fs[np.where(Sm == 0)[0]]
-        kmeans = KMeans(n_clusters=min([len(tmp) - 1, 8 * (len(Fs) - len(tmp))])).fit(tmp)
+        n_clus = min([len(tmp) - 1, 8 * (len(Fs) - len(tmp))])
+        if n_clus < 1:
+            n_clus = 1
+        kmeans = KMeans(n_clusters=n_clus).fit(tmp)
         Fs = Fs[np.where(Sm != 0)[0]]
         Sm = Sm[np.where(Sm != 0)[0]]
         tmp2 = kmeans.labels_
