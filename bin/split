@@ -28,25 +28,28 @@ echo " Creating new model '$EVAL_MODEL_NAME' with split training / evaluation da
 echo "=========================================================================================="
 echo
 
-docker run -it --rm -v $(pwd):/app excite_toolchain create-model $EVAL_MODEL_NAME > /dev/null
+docker run -it --rm -v $(pwd):/app excite_toolchain model create $EVAL_MODEL_NAME
 
 EVAL_MODEL_DIR="./EXparser/Dataset/${EVAL_MODEL_NAME}"
 EVAL_LRT_DIR="${EVAL_MODEL_DIR}/LRT"
 EVAL_LYT_DIR="${EVAL_MODEL_DIR}/LYT"
 EVAL_SEG_DIR="${EVAL_MODEL_DIR}/SEG"
 EVAL_TEST_LYT_DIR="${EVAL_MODEL_DIR}/TEST_LYT"
+EVAL_TEST_REFS_DIR="${EVAL_MODEL_DIR}/TEST_REFS"
 EVAL_TEST_SEG_DIR="${EVAL_MODEL_DIR}/TEST_SEG"
+
 
 # select 20%, or at least 5 of layout files for evaluation
 NUM_FILES=$(ls $LRT_DIR | wc -l)
-if [[ $NUM_FILES -lt 20 ]] ; then
-  echo "You need at least 20 training documents"
+if [[ $NUM_FILES -lt 15 ]] ; then
+  echo "You need at least 15 training documents"
   exit 1
 fi
 NUM_EVAL_FILES=$(($NUM_FILES / 20))
 NUM_EVAL_FILES=$((NUM_EVAL_FILES < 5 ? 5 : NUM_EVAL_FILES))
 EVAL_FILES=$(ls $LRT_DIR | shuf -n $NUM_EVAL_FILES)
 mkdir -p $EVAL_TEST_SEG_DIR
+mkdir -p $EVAL_TEST_REFS_DIR
 mkdir -p $EVAL_TEST_LYT_DIR
 echo "Using $NUM_EVAL_FILES files for evaluation, and $(($NUM_FILES - $NUM_EVAL_FILES)) for training."
 
@@ -71,7 +74,8 @@ for lrt_file_path in $LRT_DIR/* ; do
       if ! [[ -f $seg_file_path ]]; then
         echo "Segmentation gold file $seg_file_path is missing for evaluation"
       else
-        sed 's/<[^>]*>//g' $seg_file_path | sed '/^$/d' > $EVAL_TEST_SEG_DIR/$seg_file_name
+        cp $seg_file_path $EVAL_TEST_SEG_DIR
+        sed 's/<[^>]*>//g' $seg_file_path | sed '/^$/d' > $EVAL_TEST_REFS_DIR/$seg_file_name
       fi
       found=1
       break

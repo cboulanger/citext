@@ -163,12 +163,14 @@ if __name__ == "__main__":
     model_merge_parser.add_argument("models",
                                     metavar="model", type=str, nargs="+",
                                     help="The name of the model which will be merged into the target model. If a model name ends with \"*\", it is used as a prefix and all models starting with this prefix are selected")
+    model_merge_parser.add_argument("--omit-test-data", help="When copying training data, omit the documents used for testing in the given models", action="store_true")
     model_merge_parser.set_defaults(command="model_merge")
 
     # add legacy commands
     parsers = []
     for data in Commands:
         cmd = subcommands.add_parser(data.value, help=f"Run the {data.value} command")
+        cmd.add_argument("args", nargs="+")
         cmd.set_defaults(command=data.value)
         parsers.append(cmd)
 
