@@ -413,6 +413,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
             id1 = np.where(ref_id == Z[ii - 1])[0]
             l1 = [txt[idd] for idd in id1]
             l0 = l1 + l
+            tlin0 = len(' '.join(l0).split())
             pb, lb0, _ = main_sg(' '.join(l0), 0)
             p0 = get_score(pb, len(' '.join(l).split()), 'e')
             ##
