@@ -38,7 +38,7 @@ def eval_extraction(gold_folder: str, out_folder:str, log_folder="") -> str:
                 continue
 
             eval_file_path = os.path.join(out_folder, filename)
-            gold_file_name = filename.replace(".csv",".xml")
+            gold_file_name = filename.replace(".csv", ".xml")
             gold_file_path = os.path.join(gold_folder, gold_file_name)
 
             if not os.path.exists(gold_file_path):
@@ -62,13 +62,16 @@ def eval_extraction(gold_folder: str, out_folder:str, log_folder="") -> str:
                     o.write(o_line_no_spaces[match.a:match.a + match.size] + "\n")
                     num = len(o_line_no_spaces[match.a:match.a + match.size]) / len(o_line_no_spaces)
                     file_nums.append(num)
-                nums.append(sum(file_nums) / len(file_nums))
+                accuracy = sum(file_nums) / len(file_nums)
+                nums.append(accuracy)
+                o.write(f"Average accuracy for {filename}: {str(accuracy)}\n")
+                c.write(f'"{filename}",{accuracy}\n')
 
         if len(nums) == 0:
             print(f"No accuracy information for files in {gold_folder}")
         else:
             accuracy = sum(nums) / len(nums)
-            o.write(f"Average accuracy for {filename}: {str(accuracy)}\n")
+            o.write(f"Average accuracy for all files: {str(accuracy)}\n")
             c.write(f'"{filename}",{accuracy}\n')
     return csvfile
 
@@ -158,6 +161,7 @@ def eval_segmentation(gold_folder: str, out_folder: str, log_folder="") -> str:
         print("Average accuracy for all files: " + str(sum(nums) / len(nums)))
         o.write(f"Average accuracy for all files: {str(sum(nums) / len(nums))}\n")
         return csvfile
+
 
 # for test
 if __name__ == '__main__':
