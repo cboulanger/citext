@@ -1,3 +1,4 @@
+import importlib
 import os.path
 import shutil
 import subprocess
@@ -6,6 +7,7 @@ import traceback
 from lib.pogressbar import *
 from lib.logger import *
 from dotenv import load_dotenv
+import argparse
 
 from evaluation import compare_output_to_gold
 
@@ -31,7 +33,6 @@ class Commands(Enum):
     LIST_PACKAGES = "list_packages"
     DELETE_PACKAGE = "delete_package"
     EVALUATE = "eval"
-    MERGE = "merge"
 
 
 def run_command(command):
@@ -172,11 +173,41 @@ def call_download_model():
     create_model_folders(model_name)
     download_model(model_name, package_name)
 
-def merge_models(target_model_name: str, models:list):
-    pass
+
 
 
 if __name__ == "__main__":
+
+    # https://docs.python.org/3/library/argparse.html
+    parser = argparse.ArgumentParser(description='Run exparser tools.')
+    subparsers = parser.add_subparsers()
+
+    # merge
+    merge_parser = subparsers.add_parser("merge", help="Merge one or more models into a new model")
+    merge_parser.add_argument("target", type=str, help="The name of the model into which the other models will be merged. Will be created if it does not exist.")
+    merge_parser.add_argument("models", metavar="model", type=str, nargs="+", help="The name of the model which will be merged into the target model.")
+    merge_parser.set_defaults(command="merge")
+
+    # add legacy commands
+    parsers = []
+    for data in Commands:
+        cmd = subparsers.add_parser(data.value, help=f"Run the {data.value} command")
+        cmd.set_defaults(command=data.value)
+        parsers.append(cmd)
+
+    # check if argparse implementation of command exists, import and run it
+    try:
+        args = parser.parse_args()
+        if args.command is not None:
+            command = importlib.import_module("commands." + args.command)
+            kwargs = vars(args)
+            del kwargs['command']
+            command.execute(**kwargs)
+            sys.exit(0)
+    except ModuleNotFoundError:
+        # it's a legacy command
+        pass
+
     func_name = ''
     if len(sys.argv) > 1:
         func_name = sys.argv[1]
@@ -262,12 +293,7 @@ if __name__ == "__main__":
             log_folder = sys.argv[5]
             compare_output_to_gold(gold_folder, model_out_folder, mode, log_folder)
 
-        elif func_name == Commands.MERGE.value:
-            if len(sys.argv) < 3:
-                raise RuntimeError("At least two model names are expected, the first is the target model name that will be created, the remaining names are those of models that will be merged into the target model")
-            target_model_name = sys.argv[2]
-            model_names = sys.argv[3:]
-            merge_models(target_model_name, model_names)
+
 
         else:
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +
