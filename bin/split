@@ -6,16 +6,16 @@ MODEL_NAME=${1:-default}
 EVAL_MODEL_NAME="${2:-${MODEL_NAME}_eval_$(date +%s)}"
 
 # check input model
-MODEL_DIR="./EXparser/Dataset/${MODEL_NAME}"
-if ! [[ -d "${MODEL_DIR}" ]]; then
+MODEL_DATASET_DIR="./EXparser/Dataset/${MODEL_NAME}"
+if ! [[ -d "${MODEL_DATASET_DIR}" ]]; then
   echo "Model $MODEL_NAME does not exist"
   exit 1
 fi
 
 # model directories
-LRT_DIR="${MODEL_DIR}/LRT"
-LYT_DIR="${MODEL_DIR}/LYT"
-SEG_DIR="${MODEL_DIR}/SEG"
+LRT_DIR="${MODEL_DATASET_DIR}/LRT"
+LYT_DIR="${MODEL_DATASET_DIR}/LYT"
+SEG_DIR="${MODEL_DATASET_DIR}/SEG"
 
 if ! [[ -d "$LRT_DIR" ]] || ! [[ -d "$SEG_DIR" ]] ; then
   echo "Model $MODEL_NAME has no LRT and/or SEG gold standard data"

@@ -1,23 +1,14 @@
 import os
-from enum import Enum
 import re
 from difflib import SequenceMatcher
-from datetime import datetime
 
+def eval_extraction(
+        gold_dir:str,
+        exparser_result_dir:str,
+        output_dir:str=None,
+        add_logfile=False,
+        output_filename_prefix="") -> str:
 
-class Modes(Enum):
-    EXTRACTION = "extr"
-    SEGMENTATION = "seg"
-
-
-def compare_output_to_gold(gold_folder, out_folder, mode, log_folder=""):
-    if mode == Modes.EXTRACTION.value:
-        eval_extraction(gold_folder, out_folder, log_folder)
-    elif mode == Modes.SEGMENTATION.value:
-        eval_segmentation(gold_folder, out_folder, log_folder)
-
-
-def eval_extraction(gold_folder: str, out_folder:str, log_folder="") -> str:
     """Compares gold files with files with extracted references.
     Finds longest common sequence between each extracted reference and the whole gold file
     represented as a single string.
@@ -25,21 +16,21 @@ def eval_extraction(gold_folder: str, out_folder:str, log_folder="") -> str:
     Gold and model output's file names should be the same (except for the last extension).
     :returns Path to the CSV file that contains a list of file names and accuracies
     """
-    date_string = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
-    logfile = os.path.join(log_folder, f"{date_string}_extraction_evaluation.txt")
-    csvfile = os.path.join(log_folder, f"{date_string}_extraction_evaluation.csv")
+
+    logfile = os.path.join(output_dir, f"{output_filename_prefix}extraction.log")
+    csvfile = os.path.join(output_dir, f"{output_filename_prefix}extraction.csv")
     with open(logfile, "w") as o, open(csvfile, "w") as c:
-        o.write("Gold folder: " + gold_folder + ", Results folder: " + out_folder)
+        o.write("Gold folder: " + gold_dir + ", Results folder: " + exparser_result_dir)
 
         nums = []
-        for filename in os.listdir(out_folder):
+        for filename in os.listdir(exparser_result_dir):
             if filename.startswith(".") or not filename.endswith(".csv"):
                 print(f"Ignoring {filename}")
                 continue
 
-            eval_file_path = os.path.join(out_folder, filename)
+            eval_file_path = os.path.join(exparser_result_dir, filename)
             gold_file_name = filename.replace(".csv", ".xml")
-            gold_file_path = os.path.join(gold_folder, gold_file_name)
+            gold_file_path = os.path.join(gold_dir, gold_file_name)
 
             if not os.path.exists(gold_file_path):
                 print("The gold file is missing for: " + filename)
@@ -68,11 +59,13 @@ def eval_extraction(gold_folder: str, out_folder:str, log_folder="") -> str:
                 c.write(f'"{filename}",{accuracy}\n')
 
         if len(nums) == 0:
-            print(f"No accuracy information for files in {gold_folder}")
+            print(f"No accuracy information for files in {gold_dir}")
         else:
             accuracy = sum(nums) / len(nums)
             o.write(f"Average accuracy for all files: {str(accuracy)}\n")
             c.write(f'"{filename}",{accuracy}\n')
+    if not add_logfile:
+        os.remove(logfile)
     return csvfile
 
 
@@ -92,7 +85,13 @@ def get_value_tag_map(ref_string):
     return value_tag_map
 
 
-def eval_segmentation(gold_folder: str, out_folder: str, log_folder="") -> str:
+def eval_segmentation(
+        gold_dir: str,
+        exparser_result_dir: str,
+        output_dir: str = None,
+        add_logfile=False,
+        output_filename_prefix="") -> str:
+
     """Compares gold files with segmented references
     e.g. <author><surname>Aron</surname>, <given-names>Raymond</given-names>...
     to model output files of the same structure.
@@ -101,20 +100,19 @@ def eval_segmentation(gold_folder: str, out_folder: str, log_folder="") -> str:
     :returns Path to the CSV file that contains a list of file names and accuracies
     """
 
-    date_string = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p")
-    logfile = os.path.join(log_folder, f"{date_string}_segmentation_evaluation.txt")
-    csvfile = os.path.join(log_folder, f"{date_string}_segmentation_evaluation.csv")
+    logfile = os.path.join(output_dir, f"{output_filename_prefix}segmentation.log")
+    csvfile = os.path.join(output_dir, f"{output_filename_prefix}segmentation.csv")
     with open(logfile, "w") as o, open(csvfile, "w") as c:
-        o.write("Gold folder: " + gold_folder + ", Results folder: " + out_folder)
+        o.write("Gold folder: " + gold_dir + ", Results folder: " + exparser_result_dir)
 
         nums = []
-        for file in os.listdir(out_folder):
+        for file in os.listdir(exparser_result_dir):
             if file.startswith(".") or not file.endswith(".xml"):
                 continue
 
-            if os.path.exists(os.path.join(gold_folder, file)):
-                extracted_file_path = os.path.join(out_folder, file)
-                gold_file_path = os.path.join(gold_folder, file)
+            if os.path.exists(os.path.join(gold_dir, file)):
+                extracted_file_path = os.path.join(exparser_result_dir, file)
+                gold_file_path = os.path.join(gold_dir, file)
                 with open(extracted_file_path) as in_f, open(gold_file_path) as gold_f:
                     # token-to-tags maps
                     out_maps = []
@@ -160,6 +158,8 @@ def eval_segmentation(gold_folder: str, out_folder: str, log_folder="") -> str:
 
         print("Average accuracy for all files: " + str(sum(nums) / len(nums)))
         o.write(f"Average accuracy for all files: {str(sum(nums) / len(nums))}\n")
+        if not add_logfile:
+            os.remove(logfile)
         return csvfile
 
 

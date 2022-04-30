@@ -23,6 +23,30 @@ def get_client():
     return client
 
 
+def call_upload_model():
+    num_args = len(sys.argv)
+    if num_args < 3:
+        raise RuntimeError("Please provide a name for the model")
+    model_name = sys.argv[2]
+    package_name = sys.argv[3] if num_args > 3 else model_name
+    kwargs = {}
+    if num_args > 4:
+        for i in range(4, num_args):
+            kwargs[sys.argv[i]] = True
+    from commands.model_storage import upload_model
+    upload_model(model_name, package_name, **kwargs)
+
+
+def call_download_model():
+    if len(sys.argv) < 3:
+        raise RuntimeError("Please provide a name for the model")
+    model_name = sys.argv[2]
+    package_name = sys.argv[3] if len(sys.argv) == 4 else model_name
+    from commands.model_storage import download_model
+    create_model_folders(model_name)
+    download_model(model_name, package_name)
+
+
 def get_package_dir():
     return os.path.join(os.environ.get("EXCITE_WEBDAV_MODEL_PATH"), get_version())
 

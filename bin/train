@@ -3,18 +3,18 @@ set -o errexit
 trap 'exit 130' INT
 
 MODEL_NAME=${1:-default}
-MODEL_DIR="./EXparser/Dataset/${MODEL_NAME}"
+MODEL_DATASET_DIR="./EXparser/Dataset/${MODEL_NAME}"
 
 # check input model
-if ! [[ -d "${MODEL_DIR}" ]]; then
+if ! [[ -d "${MODEL_DATASET_DIR}" ]]; then
   echo "Model $MODEL_NAME does not exist"
   exit 1
 fi
 
 # model directories
-LRT_DIR="${MODEL_DIR}/LRT"
-LYT_DIR="${MODEL_DIR}/LYT"
-SEG_DIR="${MODEL_DIR}/SEG"
+LRT_DIR="${MODEL_DATASET_DIR}/LRT"
+LYT_DIR="${MODEL_DATASET_DIR}/LYT"
+SEG_DIR="${MODEL_DATASET_DIR}/SEG"
 
 if ! [[ -d "$LRT_DIR" ]] || ! [[ -d "${SEG_DIR}" ]] || ! [[ -d "${LYT_DIR}" ]] ; then
   echo "Model $MODEL_NAME is missing LRT, LYT and/or SEG data"

@@ -3,16 +3,16 @@
 set -o errexit
 
 MODEL_NAME=${1:-default}
-MODEL_DIR="./EXparser/Dataset/${MODEL_NAME}"
+MODEL_DATASET_DIR="./EXparser/Dataset/${MODEL_NAME}"
 
-if ! [[ -d "${MODEL_DIR}" ]]; then
+if ! [[ -d "${MODEL_DATASET_DIR}" ]]; then
   echo "Model $MODEL_NAME does not exist"
   exit 1
 fi
 
-TEST_LYT_DIR="${MODEL_DIR}/TEST_LYT"
-TEST_REFS_DIR="${MODEL_DIR}/TEST_REFS"
-TEST_SEG_DIR="${MODEL_DIR}/TEST_SEG"
+TEST_LYT_DIR="${MODEL_DATASET_DIR}/TEST_LYT"
+TEST_REFS_DIR="${MODEL_DATASET_DIR}/TEST_REFS"
+TEST_SEG_DIR="${MODEL_DATASET_DIR}/TEST_SEG"
 EXPARSER_LAYOUT_DIR=./Data/2-layouts
 EXPARSER_REFS_DIR=./Data/3-refs
 EXPARSER_SEG_DIR=./Data/3-refs_seg
@@ -43,7 +43,11 @@ echo "==========================================================================
 echo
 
 #  gold: SEG files without tags, input: exparser extraction output
-docker run -it --rm -v $(pwd):/app excite_toolchain eval $TEST_REFS_DIR $EXPARSER_REFS_DIR extr $MODEL_DIR
+docker run -it --rm -v $(pwd):/app excite_toolchain eval $MODEL_NAME \
+  --extraction \
+  --gold-dir $TEST_REFS_DIR \
+  --exparser-result-dir $EXPARSER_REFS_DIR \
+  --output-filename-prefix="${MODEL_NAME}_"
 
 echo
 echo "=========================================================================================="
@@ -60,6 +64,10 @@ echo "==========================================================================
 echo
 
 # gold: original SEG files, input: output of exparser segmentation
-docker run -it --rm -v $(pwd):/app excite_toolchain eval $TEST_SEG_DIR $EXPARSER_SEG_DIR seg $MODEL_DIR
+docker run -it --rm -v $(pwd):/app excite_toolchain eval $MODEL_NAME \
+  --segmentation \
+  --gold-dir $TEST_SEG_DIR \
+  --exparser-result-dir  $EXPARSER_SEG_DIR \
+  --output-filename-prefix="${MODEL_NAME}_"
 
-echo "Logfiles and CSV data have been written to ./Exparser/Dataset/${MODEL_NAME}"
+echo "Logfiles and CSV data have been written to ${MODEL_DATASET_DIR}"
