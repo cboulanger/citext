@@ -151,6 +151,7 @@ if __name__ == "__main__":
     model_delete_parser.add_argument("model_names",
                                     metavar="model", type=str, nargs="+",
                                     help="The name of the model to be deleted. If a model name ends with \"*\", it is used as a prefix and all models starting with this prefix are selected for deletion")
+    model_delete_parser.add_argument("-I", "--non-interactive", action="store_true", help="Do not ask for confirmation")
     model_delete_parser.set_defaults(command="model_delete")
 
     # model list
@@ -163,7 +164,8 @@ if __name__ == "__main__":
     model_merge_parser.add_argument("models",
                                     metavar="model", type=str, nargs="+",
                                     help="The name of the model which will be merged into the target model. If a model name ends with \"*\", it is used as a prefix and all models starting with this prefix are selected")
-    model_merge_parser.add_argument("--omit-test-data", help="When copying training data, omit the documents used for testing in the given models", action="store_true")
+    model_merge_parser.add_argument("-O", "--omit-test-data", help="When copying training data, omit the documents used for testing in the given models", action="store_true")
+    model_merge_parser.add_argument("-I", "--non-interactive", action="store_true", help="Do not ask for confirmation")
     model_merge_parser.set_defaults(command="model_merge")
 
     # add legacy commands
