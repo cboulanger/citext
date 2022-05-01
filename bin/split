@@ -38,7 +38,6 @@ EVAL_TEST_LYT_DIR="${EVAL_MODEL_DIR}/TEST_LYT"
 EVAL_TEST_REFS_DIR="${EVAL_MODEL_DIR}/TEST_REFS"
 EVAL_TEST_SEG_DIR="${EVAL_MODEL_DIR}/TEST_SEG"
 
-
 # select 20%, or at least 5 of layout files for evaluation
 NUM_FILES=$(ls $LRT_DIR | wc -l)
 if [[ $NUM_FILES -lt 15 ]] ; then

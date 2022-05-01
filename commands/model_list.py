@@ -9,6 +9,15 @@ def get_models_with_prefix(prefix:str):
     """
     return [ m for m in list_models() if m[:len(prefix)] == prefix]
 
+def expand_wildcards(model_names):
+    mdls = []
+    for model in model_names:
+        if model.endswith("*"):
+            mdls.extend(get_models_with_prefix(model[:-1]))
+        else:
+            mdls.append(model)
+    return mdls
+
 def list_models():
     models = []
     curr_model_dir = os.path.join(model_dir(), get_version())

@@ -68,6 +68,6 @@ docker run -it --rm -v $(pwd):/app excite_toolchain eval $MODEL_NAME \
   --segmentation \
   --gold-dir $TEST_SEG_DIR \
   --exparser-result-dir  $EXPARSER_SEG_DIR \
-  --output-filename-prefix="${MODEL_NAME}_"
+  --output-filename-prefix=""
 
 echo "Logfiles and CSV data have been written to ${MODEL_DATASET_DIR}"
