@@ -23,6 +23,7 @@ class Commands(Enum):
     TRAIN_SEGMENTATION = "train_segmentation"
     START_SERVER = "start_server"
 
+
 def run_command(command):
     log(command)
     proc = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
@@ -95,14 +96,13 @@ def call_start_server(port):
     test(CGIHTTPRequestHandler, HTTPServer, port=port)
 
 
-
-
 if __name__ == "__main__":
 
     # https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser(description='Run exparser tools.')
     subcommands = parser.add_subparsers()
 
+    # model
     model_parser = subcommands.add_parser("model", help="Tools to work with models")
     model_subcommands = model_parser.add_subparsers()
 
@@ -146,17 +146,56 @@ if __name__ == "__main__":
     ep.add_argument("--gold-dir", "-g", metavar="path", type=str,
                     help="Path to the folder containing the 'gold standard' files against which to evaluate the result.",
                     required=True)
-    ep.add_argument("--add-logfile", "-l", action="store_true", default=False, help="Generate verbose debug logfile (.log)")
-    ep.add_argument("--output-dir", "-d", metavar="path", type=str, help="Path to the directory in which the evaluation output files should be stored. Defaults to the model's dataset directory.")
-    ep.add_argument("--output-filename-prefix", "-f", metavar="prefix", type=str, help="Prefix for the output files, to which the mode ('segmentation' or 'extraction') will be appended. Defaults to a timestamp." )
+    ep.add_argument("--add-logfile", "-l", action="store_true", default=False,
+                    help="Generate verbose debug logfile (.log)")
+    ep.add_argument("--output-dir", "-d", metavar="path", type=str,
+                    help="Path to the directory in which the evaluation output files should be stored. Defaults to the model's dataset directory.")
+    ep.add_argument("--output-filename-prefix", "-f", metavar="prefix", type=str,
+                    help="Prefix for the output files, to which the mode ('segmentation' or 'extraction') will be appended. Defaults to a timestamp.")
     ep.set_defaults(command="eval")
 
     # accuracy
     ap = subcommands.add_parser("accuracy", help="Generate accuracy information for one or more models.")
-    ap.add_argument("model_names", metavar="name", nargs="+", help="One or more names of models to include in the accuracy report. If a name ends with *, all matching model names will be included.")
-    ap.add_argument("--output-file", "-o", help="Optional path to a file in which the results are stored as CSV data. If not given, they are printed to the console.")
-    ap.add_argument("--prefix", "-p", default="", help="An optional prefix to the accuracy files produced by evaluation")
+    ap.add_argument("model_names", metavar="name", nargs="+",
+                    help="One or more names of models to include in the accuracy report. If a name ends with *, all matching model names will be included.")
+    ap.add_argument("--output-file", "-o",
+                    help="Optional path to a file in which the results are stored as CSV data. If not given, they are printed to the console.")
+    ap.add_argument("--prefix", "-p", default="",
+                    help="An optional prefix to the accuracy files produced by evaluation")
     ap.set_defaults(command="accuracy")
+
+    # repo
+    repo_parser = subcommands.add_parser("repo",
+                                         help="Commands to store model and training data in a remote repository and download it from there.")
+    repo_subcommands = repo_parser.add_subparsers()
+
+    # repo list
+    rlp = repo_subcommands.add_parser("list", help="List all available data packages")
+    rlp.set_defaults(command="repo", func_name="exec_list")
+
+    # repo publish
+    rpp = repo_subcommands.add_parser("publish", help="Publish model data as a package in the repository")
+    rpp.add_argument("package_name", type=str, help="Name of the package in which to publish the model data")
+    rpp.add_argument("--model-name", "-n", type=str,
+                     help="Name of the model from which to publish data. If not given, the name of the package is used.")
+    rpp.add_argument("--trained-model", "-m", action="store_true", help="Include the trained model itself")
+    rpp.add_argument("--training-data", "-t", choices=["extraction", "segmentation", "all"],
+                     help="The type of training data to include in the package")
+    rpp.add_argument("--overwrite", "-o", action="store_true", help="Overwrite an existing package")
+    rpp.set_defaults(command="repo", func_name="exec_publish")
+
+    # repo import
+    rip = repo_subcommands.add_parser("import", help="Import model data from a package in the repository")
+    rip.add_argument("package_name", type=str, help="Name of the package from which to import model data")
+    rip.add_argument("--model-name", "-n", type=str,
+                     help="Name of the model into which to import data. If not given, the name of the package is used. Will be created if it does not exist")
+    rip.set_defaults(command="repo", func_name="exec_import")
+
+    # repo delete
+    rdp = repo_subcommands.add_parser("delete", help="Delete a package")
+    rdp.add_argument("package_names", metavar="package_name", type=str, nargs="+", help="Name(s) of the package to delete")
+    rdp.add_argument("-I", "--non-interactive", action="store_true", help="Do not ask for confirmation")
+    rdp.set_defaults(command="repo", func_name="exec_delete")
 
     # add legacy commands
     parsers = []
@@ -171,9 +210,14 @@ if __name__ == "__main__":
         args = parser.parse_args()
         if args.command is not None:
             command = importlib.import_module("commands." + args.command)
+            func_name = "execute"
+            if hasattr(args, "func_name"):
+                func_name = args.func_name
             kwargs = vars(args)
             del kwargs['command']
-            command.execute(**kwargs)
+            del kwargs['func_name']
+            # call command function
+            getattr(command, func_name)(**kwargs)
             sys.exit(0)
     except ModuleNotFoundError as err:
         # it's a legacy command or something went wrong
