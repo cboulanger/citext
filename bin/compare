@@ -24,8 +24,8 @@ echo " Merging '$first' and '$second' into combined model '$combined_eval' ..."
 echo "=========================================================================================="
 echo
 
-bin/run-command model merge -I $second_eval $second
-bin/run-command model merge -I --omit-test-data $combined_eval $first_eval $second_eval
+bin/run model merge -I $second_eval $second
+bin/run model merge -I --omit-test-data $combined_eval $first_eval $second_eval
 
 bin/train $first_eval
 bin/eval $first_eval
@@ -39,4 +39,5 @@ bin/train $combined_eval
 bin/eval $combined_eval
 
 # save data to csv
-bin/run-command accuracy $first_eval $second_eval $combined_eval -o "${prefix}.csv"
+bin/run report $first_eval $second_eval $combined_eval -o "${prefix}.csv"
+echo "A comparison of the accuracy of the models has been written to ${prefix}.csv"

@@ -6,7 +6,9 @@ project](https://excite.informatik.uni-stuttgart.de/) which serve to extract
 citation data from PDF Documents. In particular, it provides a Web UI for
 producing training material which is needed to improve citation recognition for
 particular corpora of scholarly literature where the current algorithm does not
-perform well.
+perform well; and provides a powerful CLI to run the excite commands, manage
+multiple sets of model training data and model data, and support an evaluation
+workflow that can measure the performance of the model.
 
 The code has been forked from https://git.gesis.org/hosseiam/excite-docker, but
 has been in many parts completely rewritten.
@@ -43,22 +45,18 @@ environment variable to the path pointing to this directory.
 
 ## CLI
 
-You can control the extraction and segmentation process via the CLI. 
-CLI commands can be executed like so:
+You can control the extraction and segmentation process via the CLI. CLI
+commands can be executed with `./bin/run <command>` Available commands can be
+listed with `./bin/run --help`, and you can always get detailed help on each
+command with `./bin/run <command> [<subcommand>] --help`
 
-`./bin/run-command <command>`
-
-Available commands are: 
+The main commands for extracting references from PDFs are: 
 
 - `layout`: run layout analysis of any PDF file in `Data/1-pdfs` and put the
   result into `Data/2-layout`
 - `exparser`: process all the files in `Data/2-layout`. The output will be
   provided in  csv (plain text), xml and BibTex format in the directories
   `Data/3-refs`, `Data/3-refs_seg` and `Data/3-refs_bibtex`
-- `exmatcher`: Match this data against the data in the [CrossRef
-  database](https://www.crossref.org/): `docker run -v $(pwd):/app
-  excite_toolchain exmatcher`. Any matched reference will be in
-  `Data/4-refs_crossref`
 - `segmentation`: process the references that are in the csv files in the
   `Data/3-refs` directory and output xml and BibTex files in 
   `Data/3-refs_seg` and `Data/3-refs_bibtex`
@@ -74,12 +72,12 @@ are used during training.
 
 In order to train a new model from scratch, you need to do the following:
 
-1. Run `./bin/run-command create_mdoel <model_name>` 
+1. Run `./bin/run model create <model_name>` 
 2. Put the PDFs with which you are going to train the model into `Data/1-pdfs`
    if they are native PDFs or contain an OCR layer. If the PDFs consist of
    scanned pages without the OCR layer, put them into `0-pdfs_no_ocr` and wait
    for the OCR server to process them and move them to `Data/1-pdfs`
-3. Create the layout files with `./bin/run-command layout`
+3. Create the layout files with `./bin/run layout`
 4. Move files from `Data/2-layout` into `EXparser/Dataset/<model_name>/LYT`
 5. Load the web application and choose your new model from the "Model" dropdown
 6. Use the web application to load and annotate the layout files from
@@ -89,9 +87,9 @@ In order to train a new model from scratch, you need to do the following:
    [the reference parsing model](https://exparser.readthedocs.io/en/latest/ReferenceParsing/).
 7. "Save" the training files after each annotation, they will be stored
    in the model directory
-8. On the command line, run `./bin/training <model_name>`. If
+8. On the command line, run `./bin/train <model_name>`. If
 you want to train extraction and segmentation models separately, use
-`./bin/run-command train_extraction <model_name>` or `train_segmentation
+`./bin/run train_extraction <model_name>` or `train_segmentation
 <model_name>`
 
 Training data lives in the `EXparser/Dataset/<model_name>`
@@ -118,30 +116,77 @@ Models/<model_name>/FSN.npy
 Models/<model_name>/rf.pkl - the model
 ```
 
-You can list all existing models with `list_models` and delete a model with
-`delete_model <model_name>`.
+You can list all existing models with `bin/run model list` and delete a model with
+`bin/run model delete <model_name>`.
 
-## WebDAV model storage
+## WebDAV-based model repository
 
 You can store model and training data on a WebDAV server, which is particularly
 useful for sharing data and collaborative training. To enable this, rename `/.env.dist`
 to `.env` and configure the required environment variables.
 
-To upload training or model data to the WebDAV server, do the following
+The available CLI commands can be listed with `bin/run repo --help`. To
+upload training or model data to the WebDAV server, you can use the `repo
+publish` command, which has the following syntax
 
-```shell
-./bin/run-command upload_model <model name> <package name> (model|training|extraction|segmentation|all)
+```text
+bin/run repo publish --help
+usage: repo publish [-h] [--model-name MODEL_NAME] [--trained-model]
+                    [--training-data {extraction,segmentation,all}]
+                    [--overwrite]
+                    package_name
+
+positional arguments:
+  package_name          Name of the package in which to publish the model data
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --model-name MODEL_NAME, -n MODEL_NAME
+                        Name of the model from which to publish data. If not
+                        given, the name of the package is used.
+  --trained-model, -m   Include the trained model itself
+  --training-data {extraction,segmentation,all}, -t {extraction,segmentation,all}
+                        The type of training data to include in the package
+  --overwrite, -o       Overwrite an existing package
 ```
 
 The `package_name` is an arbitrary string which should express the content of
-the package, such as `mymodel-training-segmentation`. After the package name,
-you can either add "all" to upload the complete set of data, including both
-model and training data, or specify parts that you want to include, such as
-`training extraction segmentation` (to have both extraction and segmentation
-training data) or `model` to just upload the model data.
+the package, plus ideally a timestamp, such as `foo-segm-train-data-20220502` or
+`foo-model-data-20220502_075523`. You can choose to upload training data with
+the `--training-data` option, which takes either "extraction", "segmentation",
+or "all" for both. To share the trained model itself, use `--trained-model`. Since
+the model files are large, this will add significantly to the size of the package
+and to the time it takes to upload and download the model data. On the other hand,
+this saves the time for training the model with the training data first. 
 
-You can then later `download_model other_model package_name` to load the package
-contents into the new model.
+You can then later `bin/run repo import <package_name>` to import the package
+contents into a model with the same name, which is created if it does not exist. If
+you want to import the package contents into a differnt model, specify its name with 
+the `--model-name` option. 
 
-Display the list of remotely stored packages with `list_packages` and delete a
-package with `delete_package <package_name>`.
+Display the list of remotely stored packages with `bin/run repo list` and delete a
+package with `bin/run repo delete <package_name>`.
+
+## Evaluating the performance of a model
+
+To measure the accuracy of a model, we support the following split - train -
+eval workflow via scripts that use the CLI commands.
+
+1) `bin/split foo foo_split`: The training data of a model "foo" is split into
+80% training data and 20% evaluation data and moved into a newly created model
+"foo_split":
+
+2)`bin/train foo_split`: The model is trained with its training data 
+
+3) `bin/eval foo_split`: Extraction and segmentation is run on the
+evaluation data and the result is evaluated against the known gold standard.
+
+4) `bin/run report foo_split` prints the accuracy data to the console
+(it can also output it to a csv file)
+
+This workflow can be further automated with the `bin/split_train_eval
+<model_name>` script, which runs these commands in sequence. 
+
+In order to compare the performance of two models, you can use the `bin/compare
+<model1> <model2>` command, which will automatically make a split copies of the
+models and add a third model which combines the training data of both models.

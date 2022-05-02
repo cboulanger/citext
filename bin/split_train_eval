@@ -10,3 +10,4 @@ EVAL_MODEL_NAME="${MODEL_NAME}_eval_$(date +%s)"
 bin/split $MODEL_NAME $EVAL_MODEL_NAME
 bin/train $EVAL_MODEL_NAME
 bin/eval $EVAL_MODEL_NAME
+bin/run report  $EVAL_MODEL_NAME
