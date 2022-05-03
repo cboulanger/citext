@@ -174,8 +174,17 @@ def exec_list():
 
 
 def exec_publish(package_name, **kwargs):
+    # this is a shortcut to publish several models at once
+    if package_name.endswith("*"):
+        if kwargs['model_name']:
+            raise ValueError("If package name contains a wildcard, the model name must not be specified.")
+        for model_name in list_models():
+            if package_name[:-1] == model_name[:len(package_name[:-1])]:
+                exec_publish(model_name, **kwargs)
+        return
     if not kwargs['model_name']:
         kwargs['model_name'] = package_name
+
     upload_package(package_name, **kwargs)
     print(f"Package '{package_name}' successfully published")
 

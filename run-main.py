@@ -165,37 +165,37 @@ if __name__ == "__main__":
     ap.set_defaults(command="report")
 
     # repo
-    repo_parser = subcommands.add_parser("repo",
-                                         help="Commands to store model and training data in a remote repository and download it from there.")
+    repo_parser = subcommands.add_parser("package",
+                                         help="Commands to store model and training data as a package in a repository and download it from there.")
     repo_subcommands = repo_parser.add_subparsers()
 
-    # repo list
+    # package list
     rlp = repo_subcommands.add_parser("list", help="List all available data packages")
-    rlp.set_defaults(command="repo", func_name="exec_list")
+    rlp.set_defaults(command="package", func_name="exec_list")
 
-    # repo publish
+    # package publish
     rpp = repo_subcommands.add_parser("publish", help="Publish model data as a package in the repository")
-    rpp.add_argument("package_name", type=str, help="Name of the package in which to publish the model data")
+    rpp.add_argument("package_name", type=str, help="Name of the package in which to publish the model data. If it ends with '*', all models matching the wildcard will be published as a package.")
     rpp.add_argument("--model-name", "-n", type=str,
-                     help="Name of the model from which to publish data. If not given, the name of the package is used.")
+                     help="Name of the model from which to publish data. If not given, the name of the package is used")
     rpp.add_argument("--trained-model", "-m", action="store_true", help="Include the trained model itself")
     rpp.add_argument("--training-data", "-t", choices=["extraction", "segmentation", "all"],
                      help="The type of training data to include in the package")
     rpp.add_argument("--overwrite", "-o", action="store_true", help="Overwrite an existing package")
-    rpp.set_defaults(command="repo", func_name="exec_publish")
+    rpp.set_defaults(command="package", func_name="exec_publish")
 
-    # repo import
+    # package import
     rip = repo_subcommands.add_parser("import", help="Import model data from a package in the repository")
     rip.add_argument("package_name", type=str, help="Name of the package from which to import model data")
     rip.add_argument("--model-name", "-n", type=str,
                      help="Name of the model into which to import data. If not given, the name of the package is used. Will be created if it does not exist")
-    rip.set_defaults(command="repo", func_name="exec_import")
+    rip.set_defaults(command="package", func_name="exec_import")
 
-    # repo delete
+    # package delete
     rdp = repo_subcommands.add_parser("delete", help="Delete a package")
     rdp.add_argument("package_names", metavar="package_name", type=str, nargs="+", help="Name(s) of the package to delete. You can use a * as wildcard")
     rdp.add_argument("-I", "--non-interactive", action="store_true", help="Do not ask for confirmation")
-    rdp.set_defaults(command="repo", func_name="exec_delete")
+    rdp.set_defaults(command="package", func_name="exec_delete")
 
     # add legacy commands
     parsers = []

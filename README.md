@@ -119,19 +119,19 @@ Models/<model_name>/rf.pkl - the model
 You can list all existing models with `bin/run model list` and delete a model with
 `bin/run model delete <model_name>`.
 
-## WebDAV-based model repository
+## WebDAV-based model package repository
 
 You can store model and training data on a WebDAV server, which is particularly
 useful for sharing data and collaborative training. To enable this, rename `/.env.dist`
 to `.env` and configure the required environment variables.
 
-The available CLI commands can be listed with `bin/run repo --help`. To
-upload training or model data to the WebDAV server, you can use the `repo
+The available CLI commands can be listed with `bin/run package --help`. To
+upload training or model data to the WebDAV server, you can use the `package
 publish` command, which has the following syntax
 
 ```text
-bin/run repo publish --help
-usage: repo publish [-h] [--model-name MODEL_NAME] [--trained-model]
+bin/run package publish --help
+usage: package publish [-h] [--model-name MODEL_NAME] [--trained-model]
                     [--training-data {extraction,segmentation,all}]
                     [--overwrite]
                     package_name
@@ -159,13 +159,13 @@ the model files are large, this will add significantly to the size of the packag
 and to the time it takes to upload and download the model data. On the other hand,
 this saves the time for training the model with the training data first. 
 
-You can then later `bin/run repo import <package_name>` to import the package
+You can then later `bin/run package import <package_name>` to import the package
 contents into a model with the same name, which is created if it does not exist. If
 you want to import the package contents into a differnt model, specify its name with 
 the `--model-name` option. 
 
-Display the list of remotely stored packages with `bin/run repo list` and delete a
-package with `bin/run repo delete <package_name>`.
+Display the list of remotely stored packages with `bin/run package list` and delete a
+package with `bin/run package delete <package_name>`.
 
 ## Evaluating the performance of a model
 
