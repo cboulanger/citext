@@ -47,7 +47,7 @@ docker run -it --rm -v $(pwd):/app excite_toolchain eval $MODEL_NAME \
   --extraction \
   --gold-dir $TEST_REFS_DIR \
   --exparser-result-dir $EXPARSER_REFS_DIR \
-  --output-filename-prefix="${MODEL_NAME}_"
+  --output-filename-prefix=""
 
 echo
 echo "=========================================================================================="

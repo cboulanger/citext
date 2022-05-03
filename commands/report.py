@@ -51,10 +51,9 @@ def execute(model_names: list, prefix: str = "", output_file: str = None):
         raise ValueError("No model name given")
     model_names = expand_wildcards(model_names)
     df = compare_accuracy(model_names, prefix)
+    pd.set_option('expand_frame_repr', False)
+    print(df[col_names])
     if output_file is not None:
         with open(output_file, "w") as file:
             df[col_names].to_csv(file)
         print(f"Accuracy data written to {output_file}")
-    else:
-        pd.set_option('expand_frame_repr', False)
-        print(df[col_names])

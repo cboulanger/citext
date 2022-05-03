@@ -176,7 +176,7 @@ eval workflow via scripts that use the CLI commands.
 80% training data and 20% evaluation data and moved into a newly created model
 "foo_split":
 
-2)`bin/train foo_split`: The model is trained with its training data 
+2) `bin/train foo_split`: The model is trained with its training data 
 
 3) `bin/eval foo_split`: Extraction and segmentation is run on the
 evaluation data and the result is evaluated against the known gold standard.
