@@ -56,7 +56,9 @@ def get_zip_path(model_name):
 
 def list_packages():
     client = get_client()
-    return [name.strip(".zip") for name in client.list(get_package_dir()) if ".zip" in name]
+    package_list = [name.strip(".zip") for name in client.list(get_package_dir()) if ".zip" in name]
+    package_list.sort()
+    return package_list
 
 
 def upload_package(package_name, model_name, trained_model=False, training_data=None, overwrite=False):
