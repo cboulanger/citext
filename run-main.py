@@ -21,7 +21,6 @@ class Commands(Enum):
     EXMATCHER = "exmatcher"
     TRAIN_EXTRACTION = "train_extraction"
     TRAIN_SEGMENTATION = "train_segmentation"
-    START_SERVER = "start_server"
 
 
 def run_command(command):
@@ -88,12 +87,6 @@ def call_segmentation_training(model_name: str):
     train_segmentation(os.path.join(dataset_dir(), model_name),
                        os.path.join(model_dir(), get_version(), model_name))
     progress_disable()
-
-
-def call_start_server(port):
-    # todo: make server multi-threaded: https://stackoverflow.com/a/46224191
-    from http.server import HTTPServer, CGIHTTPRequestHandler, test
-    test(CGIHTTPRequestHandler, HTTPServer, port=port)
 
 
 if __name__ == "__main__":
@@ -164,18 +157,19 @@ if __name__ == "__main__":
                     help="An optional prefix to the accuracy files produced by evaluation")
     ap.set_defaults(command="report")
 
-    # repo
-    repo_parser = subcommands.add_parser("package",
-                                         help="Commands to store model and training data as a package in a repository and download it from there.")
-    repo_subcommands = repo_parser.add_subparsers()
+    # package
+    pkg_parser = subcommands.add_parser("package",
+                                        help="Commands to store model and training data as a package in a repository and download it from there.")
+    pkg_subcommands = pkg_parser.add_subparsers()
 
     # package list
-    rlp = repo_subcommands.add_parser("list", help="List all available data packages")
+    rlp = pkg_subcommands.add_parser("list", help="List all available data packages")
     rlp.set_defaults(command="package", func_name="exec_list")
 
     # package publish
-    rpp = repo_subcommands.add_parser("publish", help="Publish model data as a package in the repository")
-    rpp.add_argument("package_name", type=str, help="Name of the package in which to publish the model data. If it ends with '*', all models matching the wildcard will be published as a package.")
+    rpp = pkg_subcommands.add_parser("publish", help="Publish model data as a package in the repository")
+    rpp.add_argument("package_name", type=str,
+                     help="Name of the package in which to publish the model data. If it ends with '*', all models matching the wildcard will be published as a package.")
     rpp.add_argument("--model-name", "-n", type=str,
                      help="Name of the model from which to publish data. If not given, the name of the package is used")
     rpp.add_argument("--trained-model", "-m", action="store_true", help="Include the trained model itself")
@@ -185,17 +179,27 @@ if __name__ == "__main__":
     rpp.set_defaults(command="package", func_name="exec_publish")
 
     # package import
-    rip = repo_subcommands.add_parser("import", help="Import model data from a package in the repository")
+    rip = pkg_subcommands.add_parser("import", help="Import model data from a package in the repository")
     rip.add_argument("package_name", type=str, help="Name of the package from which to import model data")
     rip.add_argument("--model-name", "-n", type=str,
                      help="Name of the model into which to import data. If not given, the name of the package is used. Will be created if it does not exist")
     rip.set_defaults(command="package", func_name="exec_import")
 
     # package delete
-    rdp = repo_subcommands.add_parser("delete", help="Delete a package")
-    rdp.add_argument("package_names", metavar="package_name", type=str, nargs="+", help="Name(s) of the package to delete. You can use a * as wildcard")
+    rdp = pkg_subcommands.add_parser("delete", help="Delete a package")
+    rdp.add_argument("package_names", metavar="package_name", type=str, nargs="+",
+                     help="Name(s) of the package to delete. You can use a * as wildcard")
     rdp.add_argument("-I", "--non-interactive", action="store_true", help="Do not ask for confirmation")
     rdp.set_defaults(command="package", func_name="exec_delete")
+
+    # server start
+
+    server_parser = subcommands.add_parser("server", help="Commands dealing with the server that provides the Web UI.")
+    server_subcommands = server_parser.add_subparsers()
+
+    p = server_subcommands.add_parser("start", help="Start the webserver")
+    p.add_argument("--port", "-p", help="The port on which to listen", default=8000)
+    p.set_defaults(command="server", func_name="server_start")
 
     # add legacy commands
     parsers = []

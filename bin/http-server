@@ -9,7 +9,7 @@ docker run -d -it \
   -v ${ZOTERO_STORAGE_PATH}:/zotero-storage \
   -v $(pwd):/app \
   --name excite-app \
-  excite_toolchain start_server > /dev/null
+  excite_toolchain server start > /dev/null
 
 echo "Waiting for webserver to start..."
 
