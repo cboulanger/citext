@@ -4,14 +4,8 @@ import sklearn_crfsuite
 from .src.gle_fun import *
 from .src.gle_fun_seg import *
 from progress.bar import Bar
-from lib.logger import *
-
-
-def get_progress_bar(task, max):
-    progressbar = Bar(task, bar_prefix=' [', bar_suffix='] ', empty_fill='.',
-                      suffix='%(index)d/%(max)d',
-                      max=max)
-    return progressbar
+from lib.logger import log
+from lib.pogressbar import get_progress_bar
 
 def train_segmentation(data_dir: str, model_dir: str):
     # preparing training data
@@ -23,13 +17,14 @@ def train_segmentation(data_dir: str, model_dir: str):
     total = len(fdir)
     counter = 0
     progress_bar = get_progress_bar("Segmentation training", total)
+    log("Segmentation training")
     for u in range(total):
         counter += 1
-        progress_bar.goto(int((counter / total) * 100))
+        progress_bar.goto(counter)
         curr_file = fdir[u]
         if curr_file.startswith(".") or not curr_file.endswith(".xml"):
             continue
-        log(f"Segmenting training with {curr_file}")
+        log(f" - {curr_file}")
         fname = os.path.join(fold, curr_file)
         file = open(fname, encoding="utf-8")
         reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)  # , quotechar='|'
@@ -85,7 +80,8 @@ def train_segmentation(data_dir: str, model_dir: str):
             finally:
                 linenum += 1
         file.close()
-    print("Training, this will take a while...")
+    progress_bar.finish()
+    print("Learning... this will take a while...")
     crf = sklearn_crfsuite.CRF(
         algorithm='pa',
         # c2=0.8,

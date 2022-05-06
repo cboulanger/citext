@@ -5,6 +5,8 @@ import numpy as np
 from itertools import groupby
 from .src.gle_fun import *
 from .src.gle_fun_ext import *
+from lib.logger import log
+from lib.pogressbar import get_progress_bar
 
 
 def extract_features(data_dir: str):
@@ -13,12 +15,17 @@ def extract_features(data_dir: str):
         os.makedirs(tmp_dir)
     fold = os.path.join(data_dir, "LYT")
     fdir = os.listdir(fold)
-    total = str(len(fdir))
-    for u in range(0, len(fdir)):
+    total = len(fdir)
+    counter = 0
+    progress_bar = get_progress_bar("Feature extraction", total)
+    log("Feature extraction...")
+    for u in range(0, total):
+        counter += 1
+        progress_bar.goto(counter)
         curr_file = fdir[u]
         if curr_file.startswith(".") or not curr_file.endswith(".csv"):
             continue
-        print('>Feature extraction:' + str(u + 1) + '/' + total + ":" + curr_file)
+        log(f" - {curr_file}")
         npy_file = os.path.join(tmp_dir, curr_file + '.npy')
         if not os.path.isfile(npy_file):
             np.save(npy_file, 0)
@@ -170,4 +177,4 @@ def extract_features(data_dir: str):
                 del tp
             np.savetxt(os.path.join(data_dir, 'Features', curr_file), FS)
             file.close()
-
+    progress_bar.finish()

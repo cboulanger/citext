@@ -4,7 +4,6 @@ import shutil
 import subprocess
 import sys
 import traceback
-from lib.pogressbar import *
 from lib.logger import *
 from dotenv import load_dotenv
 import argparse
@@ -63,30 +62,6 @@ def call_run_exparser(model_name=None):
 def call_segmentation(model_name=None, input_dir=None):
     from commands.run_segmentation import call_Exparser_segmentation
     call_Exparser_segmentation(os.path.join(model_dir(), get_version(), model_name), input_dir)
-
-
-def call_extraction_training(model_name: str):
-    from EXparser.Feature_Extraction import extract_features
-    from EXparser.Txt2Vec import text_to_vec
-    from EXparser.Training_Ext import train_extraction
-    progress_enable()
-    extract_features(os.path.join(dataset_dir(), model_name))
-    text_to_vec(os.path.join(dataset_dir(), model_name))
-    train_extraction(os.path.join(dataset_dir(), model_name),
-                     os.path.join(model_dir(), get_version(), model_name))
-    progress_disable()
-
-
-def call_segmentation_training(model_name: str):
-    from EXparser.Training_Seg import train_segmentation
-    from EXparser.Feature_Extraction import extract_features
-    from EXparser.Txt2Vec import text_to_vec
-    progress_enable()
-    extract_features(os.path.join(dataset_dir(), model_name))
-    text_to_vec(os.path.join(dataset_dir(), model_name))
-    train_segmentation(os.path.join(dataset_dir(), model_name),
-                       os.path.join(model_dir(), get_version(), model_name))
-    progress_disable()
 
 
 if __name__ == "__main__":
@@ -255,11 +230,13 @@ if __name__ == "__main__":
         elif func_name == Commands.TRAIN_EXTRACTION.value:
             if len(sys.argv) < 3:
                 raise RuntimeError("Please provide a name for the model")
+            from commands.training import call_extraction_training
             call_extraction_training(sys.argv[2])
 
         elif func_name == Commands.TRAIN_SEGMENTATION.value:
             if len(sys.argv) < 3:
                 raise RuntimeError("Please provide a name for the model")
+            from commands.training import call_segmentation_training
             call_segmentation_training(sys.argv[2])
 
         elif func_name == Commands.START_SERVER.value:

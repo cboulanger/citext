@@ -6,7 +6,8 @@ import re
 import numpy as np
 import pickle
 from sklearn.neighbors import KernelDensity
-
+from lib.pogressbar import get_progress_bar
+from lib.logger import log
 
 def dist_tags(b):
     ntag = []
@@ -147,7 +148,8 @@ sfx = '_en'  # suffix"
 fold = "./Dataset/SEG" + sfx  # ****************************************************************
 fdir = os.listdir(fold)
 train_label = []
-for u in range(len(fdir)):
+total = len(fdir)
+for u in range(total):
     fname = fold + "/" + fdir[u]
     file = open(fname)
     reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)  # , quotechar='|'

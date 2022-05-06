@@ -1,5 +1,5 @@
 import time, threading, socket
-from http.server import HTTPServer, CGIHTTPRequestHandler, test
+from http.server import HTTPServer, CGIHTTPRequestHandler
 
 class CgiThread(threading.Thread):
     def __init__(self, i, addr, sock):

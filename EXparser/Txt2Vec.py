@@ -3,6 +3,8 @@ import os
 import csv
 import re
 import numpy as np
+from lib.pogressbar import get_progress_bar
+from lib.logger import log
 
 
 def check_ref(ln):
@@ -26,12 +28,17 @@ def check_eref(ln):
 def text_to_vec(data_dir: str):
     fold = os.path.join(data_dir, "LRT")
     fdir = os.listdir(fold)
-    total = str(len(fdir))
-    for u in range(0, len(fdir)):
+    total = len(fdir)
+    counter = 0
+    progress_bar = get_progress_bar("Vectorizing text", total)
+    log("Vectorizing...")
+    for u in range(0, total):
+        counter += 1
+        progress_bar.goto(counter)
         curr_file = fdir[u]
         if curr_file.startswith(".") or not curr_file.endswith(".csv"):
             continue
-        print('>Text to Vec:' + str(u + 1) + '/' + total + ":" + curr_file)
+        log(curr_file)
         refld_dir = os.path.join(data_dir, "RefLD")
         refld_file = os.path.join(refld_dir, curr_file)
         if not os.path.isfile(refld_file):
@@ -67,3 +74,4 @@ def text_to_vec(data_dir: str):
                         i = 0
                     R = np.append(R, [[ref]], 0)
             np.savetxt(refld_file, R)
+    progress_bar.finish()

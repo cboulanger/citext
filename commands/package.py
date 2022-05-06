@@ -5,14 +5,7 @@ from configs import *
 from progress.bar import Bar
 from .model_create import create_model_folders
 from .model_list import list_models
-
-
-def get_progress_bar(task, max):
-    progressbar = Bar(task, bar_prefix=' [', bar_suffix='] ', empty_fill='.',
-                      suffix='%(index)d/%(max)d',
-                      max=max)
-    return progressbar
-
+from lib.pogressbar import get_progress_bar
 
 client = None
 

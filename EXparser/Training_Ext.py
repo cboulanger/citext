@@ -8,7 +8,8 @@ import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 import pickle
 from sklearn.cluster import KMeans
-
+from lib.logger import log
+from lib.pogressbar import get_progress_bar
 
 def vec2crfeat(vec, prefix):
     feat = {}
@@ -28,18 +29,25 @@ def train_extraction(data_dir: str, model_dir: str):
     SM = np.empty((0, 1), float)  # feature space
     fold = data_dir + "/LYT"
     fdir = os.listdir(fold)
-    total = str(len(fdir))
-    for u in range(len(fdir)):
+    total = len(fdir)
+    counter = 0
+    progress_bar = get_progress_bar("Extraction training", total)
+    log("Extraction training...")
+    for u in range(total):
+        counter += 1
+        progress_bar.goto(counter)
         curr_file = fdir[u]
         if curr_file.startswith(".") or not curr_file.endswith(".csv"):
             continue
-        print('>Extraction training:' + str(u + 1) + '/' + total + ":" + curr_file)
+        log(f" - {curr_file}")
         try:
             fpath = os.path.join(data_dir, "Features", curr_file)
             with open(fpath) as file:
                 reader = str(file.read())
         except FileNotFoundError:
-            print(fpath + " does not exist, skipping...")
+            errmsg = fpath + " does not exist, skipping..."
+            sys.stderr.write('\n' + errmsg + '\n')
+            log(errmsg)
             continue
         reader = re.sub(r'[\r\n]+', '\r', reader)
         reader = reader.split('\r')
@@ -49,7 +57,9 @@ def train_extraction(data_dir: str, model_dir: str):
             with open(fpath) as file:
                 reader2 = str(file.read())
         except FileNotFoundError:
-            print(fpath + " does not exist, skipping...")
+            errmsg = fpath + " does not exist, skipping..."
+            sys.stderr.write('\n' + errmsg + '\n')
+            log(errmsg)
             continue
         reader2 = re.sub(r'[\r\n]+', '|', reader2)
         reader2 = reader2.split('|')
@@ -99,6 +109,8 @@ def train_extraction(data_dir: str, model_dir: str):
 
         FS = np.append(FS, Fs, 0)
         SM = np.append(SM, Sm, 0)
+    progress_bar.finish()
+
     SM = np.transpose(SM)[0]
     # balance the data (random over sampling)
     P1 = sum(SM == 1)  # number of positives =1

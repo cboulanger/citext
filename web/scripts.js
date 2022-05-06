@@ -124,7 +124,7 @@ class Actions {
           throw new Error(`The item titled "${firstSelectedItem.title}" has no PDF attachment`);
         }
         if (firstSelectedItem.DOI) {
-          filename = firstSelectedItem.DOI.replace(/\//g,"_") + ".pdf"
+          filename = firstSelectedItem.DOI.replace(/\//g, "_") + ".pdf"
         } else {
           filename = attachment.key + ".pdf"
         }
@@ -141,7 +141,7 @@ class Actions {
         // linux/mac
         s = filepath.split("/");
       }
-      zoteroAttachmentFilepath = s.slice(s.indexOf("storage")+1).join("/");
+      zoteroAttachmentFilepath = s.slice(s.indexOf("storage") + 1).join("/");
       await this.loadFromUrl("file://zotero-storage/" + zoteroAttachmentFilepath, filename)
     } catch (e) {
       alert(e.message);
@@ -153,7 +153,7 @@ class Actions {
   static loadFile(file) {
     let filename = file.name;
     // FIXME ad-hoc filename fix to remave ".pdfa" infix, needs to be configurable
-    filename = filename.replace(/\.pdfa\./,".")
+    filename = filename.replace(/\.pdfa\./, ".")
     let type = file.type;
     let fileExt;
     if (filename) {
@@ -272,6 +272,17 @@ class Actions {
     let html = `<pre>${JSON.stringify(refs, null, 2)}</pre>`;
     $("#citation-data-preview-body").html(html);
     $("#modal-citation-data-preview").show();
+  }
+
+  static async run_cgi_script(name, params) {
+    let querystring = Object.keys(params).map(key => key + '=' + params[key]).join('&');
+    const url = `${SERVER_URL}/${name}?${querystring}`
+    try {
+      return await fetch(url)
+    } catch (e) {
+      console.error(e)
+      alert(e.message)
+    }
   }
 
   static async run_excite_command(command) {
@@ -1002,6 +1013,15 @@ class Utils {
   }
 }
 
+class Excite {
+  static async trainCurrentModel() {
+    await Actions.run_cgi_script("train.py", {id: Config.channel_id, model_name:modelName})
+  }
+}
+
+class Config {
+  // static channel_id
+}
 
 class GUI {
 
@@ -1050,12 +1070,35 @@ class GUI {
       .then(result => $(".visible-if-zotero-connection")
         .toggleClass("hidden", !result.includes("Zotero Connector Server is Available")));
 
-    /* test sse
-    console.log("Initiating SSE connection")
-    const source = new EventSource("/cgi-bin/sse.py");
-    source.onmessage = function (event) {
-      console.log(event.data);
-    };*/
+    //
+    const channel_id = Config.channel_id = Math.random().toString().slice(2)
+    console.log("Initiating SSE connection with id " + channel_id)
+    const source = new EventSource(SERVER_URL + "sse.py?" + channel_id);
+    let hideFn;
+    let timeout_id;
+    let hideAfter = 10000
+    $("#server-messages").hide()
+    for (let alert_type of ["success", "info", "warning", "danger"]) {
+      source.addEventListener(alert_type, function (event) {
+        if (timeout_id) {
+          window.clearTimeout(timeout_id);
+          hideFn();
+        }
+        $("#server-messages").addClass("alert-"+alert_type)
+        hideFn = () => {
+          $("#server-messages").removeClass("alert-"+alert_type)
+          $("#server-messages").hide()
+          timeout_id = null
+        }
+        $("#sse-target").html(event.data)
+        $("#server-messages").show();
+        timeout_id = window.setTimeout(hideFn, hideAfter)
+      })
+    }
+
+    source.onerror = function (err) {
+      console.error("EventSource failed:", err.message);
+    };
   }
 
   static _configureStatus(status) {
@@ -1064,8 +1107,10 @@ class GUI {
     if (status.model_names.length > 1) {
       $("#btn-model").removeClass("hidden");
       status.model_names
-      .reverse()
-      .forEach(name =>$("#model-names").append($(`<li><a class="dropdown-item" href="#" id="btn-model-${name}" onclick="Actions.changeModel('${name}')">${name}</a></li>`)));
+        .reverse()
+        .forEach(name => $("#model-names").append($(`<li>` +
+          `<a class="dropdown-item" href="#" id="btn-model-${name}" onclick="Actions.changeModel('${name}')">${name}</a>` +
+          `</li>`)));
     }
     Actions.changeModel(model_name);
   }
@@ -1760,9 +1805,9 @@ class GUI {
     }
     this.saveState();
     $("#text-content").html($("#text-content").html()
-      .replace(/data-tag="surname"/g,'data-tag2="given-names"')
-      .replace(/data-tag="given-names"/g,'data-tag="surname"')
-      .replace(/data-tag2/g,'data-tag')
+      .replace(/data-tag="surname"/g, 'data-tag2="given-names"')
+      .replace(/data-tag="given-names"/g, 'data-tag="surname"')
+      .replace(/data-tag2/g, 'data-tag')
     );
   }
 }
