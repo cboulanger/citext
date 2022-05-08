@@ -9,7 +9,7 @@ model_names = []
 dataset_dir = 'EXparser/Dataset'
 for dirname in os.listdir(dataset_dir):
     path = os.path.join(dataset_dir, dirname)
-    if os.path.isdir(path):
+    if os.path.isdir(path) and not dirname.startswith("test_"):
         model_names.append(dirname)
 result = {'model_names': model_names}
 print(json.dumps(result))

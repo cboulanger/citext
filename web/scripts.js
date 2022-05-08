@@ -1015,13 +1015,18 @@ class Utils {
 
 class Excite {
   static async trainCurrentModel() {
-    await Actions.run_cgi_script("train.py", {id: Config.channel_id, model_name:modelName})
+    await Actions.run_cgi_script("train.py", {id: Config.channel_id, model_name: modelName})
+  }
+
+  static async evalCurrentModel() {
+    await Actions.run_cgi_script("eval.py", {id: Config.channel_id, model_name: modelName})
   }
 }
 
 class Config {
-  // static channel_id
 }
+
+Config.channel_id;
 
 class GUI {
 
@@ -1070,35 +1075,45 @@ class GUI {
       .then(result => $(".visible-if-zotero-connection")
         .toggleClass("hidden", !result.includes("Zotero Connector Server is Available")));
 
-    //
+    // SSE
     const channel_id = Config.channel_id = Math.random().toString().slice(2)
-    console.log("Initiating SSE connection with id " + channel_id)
     const source = new EventSource(SERVER_URL + "sse.py?" + channel_id);
-    let hideFn;
-    let timeout_id;
-    let hideAfter = 10000
-    $("#server-messages").hide()
-    for (let alert_type of ["success", "info", "warning", "danger"]) {
-      source.addEventListener(alert_type, function (event) {
-        if (timeout_id) {
-          window.clearTimeout(timeout_id);
-          hideFn();
+    let toasts = {};
+    source.addEventListener("open", () => {
+      console.log("Initialized SSE connection with id " + channel_id)
+    })
+    for (let type of ['success', 'info', 'warning', 'error']) {
+      source.addEventListener(type, evt => {
+        let data = evt.data;
+        let title, text;
+        let sepPos = data.indexOf(":")
+        if (sepPos !== -1) {
+          title = data.slice(0, sepPos) || type
+          text = data.slice(sepPos + 1)
+        } else {
+          title = type
+          text = data
         }
-        $("#server-messages").addClass("alert-"+alert_type)
-        hideFn = () => {
-          $("#server-messages").removeClass("alert-"+alert_type)
-          $("#server-messages").hide()
-          timeout_id = null
+        let toastId = type + "|" + title;
+        let toast = toasts[toastId];
+        if ( toast && toast.css("visibility")) {
+          toast.text(text)
+        } else {
+          let isProgressScaleFactor = text.includes("[") ? 5 : 1
+          toast = toastr[type](text, title, {
+            positionClass: "toast-bottom-full-width",
+            timeout: 10000 * isProgressScaleFactor,
+            extendedTimeout: 10000 * isProgressScaleFactor,
+            showProgressBar: true
+          })
+          toasts[toastId] = toast
         }
-        $("#sse-target").html(event.data)
-        $("#server-messages").show();
-        timeout_id = window.setTimeout(hideFn, hideAfter)
-      })
+      });
     }
 
-    source.onerror = function (err) {
-      console.error("EventSource failed:", err.message);
-    };
+    source.addEventListener("error", evt => {
+      console.error("EventSource failed:", evt);
+    });
   }
 
   static _configureStatus(status) {

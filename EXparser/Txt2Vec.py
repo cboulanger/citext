@@ -38,7 +38,7 @@ def text_to_vec(data_dir: str):
         curr_file = fdir[u]
         if curr_file.startswith(".") or not curr_file.endswith(".csv"):
             continue
-        log(curr_file)
+        log(f" - {curr_file}")
         refld_dir = os.path.join(data_dir, "RefLD")
         refld_file = os.path.join(refld_dir, curr_file)
         if not os.path.isfile(refld_file):

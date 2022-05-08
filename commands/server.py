@@ -31,6 +31,6 @@ def server_start(port):
     sock.bind(addr)
     sock.listen(5)
     # Create 10 handlers
-    [CgiThread(i, addr, sock) for i in range(10)]
+    [CgiThread(i, addr, sock) for i in range(100)]
     print(f"Serving http and cgi requests from http://localhost:{port}")
     time.sleep(9e9)

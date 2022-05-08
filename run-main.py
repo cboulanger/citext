@@ -32,8 +32,7 @@ def run_command(command):
             break
         line = str(proc.stdout.readline()).strip()
         if line != "":
-            progress_print(line)
-    progress_disable()
+            print(line)
     # subprocess returned with error
     if return_code != 0:
         lines = [line.strip('\n') for line in proc.stderr.readlines() if line.strip('\n')]
@@ -65,6 +64,8 @@ def call_segmentation(model_name=None, input_dir=None):
 
 
 if __name__ == "__main__":
+
+
 
     # https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser(description='Run exparser tools.', prog="")

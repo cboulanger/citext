@@ -3,14 +3,12 @@
 import builtins
 import sys,os, time, cgi
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from utils import run_command, push_event, StdoutToEvent
+from lib.utils import push_event, StdoutToEvent
 from commands.training import call_segmentation_training, call_extraction_training
 
 params = cgi.parse()
 channel_id = params['id'][0]
 model_name = params['model_name'][0]
-
-push_event(channel_id, "info", f"Starting training of '{model_name}'....")
 
 oldstdout = sys.stdout
 sys.stdout = StdoutToEvent(channel_id)
@@ -33,7 +31,7 @@ et = time.time()
 elapsed_time = int(et - st)
 
 message = f"Finished training of '{model_name}' in {elapsed_time} s ..."
-push_event(channel_id, "info", message)
+push_event(channel_id, "success", message)
 
 oldstdout.write("Content-type: text/plain\n\n")
 oldstdout.write(message)

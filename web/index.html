@@ -11,6 +11,8 @@
     <script src="js/jquery-3.2.1.min.js"></script>
     <script src="scripts.js"></script>
     <script src="js/bootstrap.min.js"></script>
+    <script src="js/toastr.min.js"></script>
+    <link rel="stylesheet" href="css/toastr.min.css">
 </head>
 
 <body>
@@ -54,6 +56,7 @@
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-model" id="model-names">
                 <li><a href="#" onclick="Excite.trainCurrentModel()">Train currently selected model</a></li>
+                <li><a href="#" onclick="Excite.evalCurrentModel()">Evaluate currently selected model</a></li>
                 <li role="separator" class="divider"></li>
 
             </ul>
@@ -180,9 +183,6 @@
     </div>
 
 </nav>
-<div id="server-messages" class="navbar-fixed-bottom alert alert-success" style="display: none">
-    <span id="sse-target"></span>
-</div>
 
 <div id="main-container" class="grid-container">
     <!-- text to mark up -->
