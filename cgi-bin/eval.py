@@ -16,25 +16,30 @@ from commands.report import compute_accuracy_info
 params = cgi.parse()
 channel_id = params['id'][0]
 model_name = params['model_name'][0]
+skip_splitting = 'skip_splitting' in params
 skip_segmentation = 'skip_segmentation' in params
 skip_extraction = 'skip_extraction' in params
 
 oldprint = redirectPrintToEvent(channel_id, f"Evaluating model '{model_name}'")
-
 
 try:
     split_model_name = f"test_{model_name}"
     split_model_dir = os.path.join(config_model_dir(), get_version(), split_model_name)
     split_dataset_dir = os.path.join(config_dataset_dir(), split_model_name)
 
-    print("Splitting model...")
-    if split_model_name in list_models():
-        delete_model_folders(split_model_name)
-    split_model(model_name, split_model_name)
+    if not skip_splitting:
+        print("Splitting model...")
 
-    # create exparser workflow dirs
-    for dirname in config_data_dirnames():
-        os.makedirs(os.path.join(split_dataset_dir, dirname), exist_ok=True)
+        # delete existing model data
+        if split_model_name in list_models():
+            delete_model_folders(split_model_name)
+
+        # create split
+        split_model(model_name, split_model_name)
+
+        # create exparser workflow dirs
+        for dirname in config_data_dirnames():
+            os.makedirs(os.path.join(split_dataset_dir, dirname), exist_ok=True)
 
     if not skip_extraction:
         # train extraction
