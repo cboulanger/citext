@@ -1,4 +1,4 @@
-from evaluation import *
+from evaluation import eval_extraction, eval_segmentation
 import os, sys
 from configs import *
 from datetime import datetime
@@ -16,7 +16,7 @@ def execute(model_name,
         print("No evaluation mode given, add --extraction/-x or --segmentation/-s flag(s)")
         sys.exit(1)
 
-    dataset_path = os.path.join(dataset_dir(), model_name)
+    dataset_path = os.path.join(config_dataset_dir(), model_name)
     if output_filename_prefix is None:
         output_filename_prefix = datetime.now().strftime("%Y_%m_%d-%I_%M_%S_%p") + "_"
 

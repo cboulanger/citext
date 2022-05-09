@@ -9,11 +9,11 @@ def delete_model_folders(model_name: str):
     :param model_name:
     :return:
     """
-    model_dir_path = os.path.join(model_dir(), get_version(), model_name)
+    model_dir_path = os.path.join(config_model_dir(), get_version(), model_name)
     if not os.path.isdir(model_dir_path):
         raise ValueError(f'Model "{model_name}" does not exist.')
     shutil.rmtree(model_dir_path, ignore_errors=True)
-    dataset_dir_path = os.path.join(dataset_dir(), model_name)
+    dataset_dir_path = os.path.join(config_dataset_dir(), model_name)
     shutil.rmtree(dataset_dir_path, ignore_errors=True)
 
 

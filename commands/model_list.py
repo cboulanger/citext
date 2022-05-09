@@ -20,7 +20,7 @@ def expand_wildcards(model_names):
 
 def list_models():
     models = []
-    curr_model_dir = os.path.join(model_dir(), get_version())
+    curr_model_dir = os.path.join(config_model_dir(), get_version())
     for file in os.listdir(curr_model_dir):
         if os.path.isdir(os.path.join(curr_model_dir, file)):
             models.append(file)

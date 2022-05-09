@@ -1,5 +1,4 @@
-import os
-import re
+import os, sys, re
 from difflib import SequenceMatcher
 
 def eval_extraction(
@@ -23,18 +22,15 @@ def eval_extraction(
         o.write("Gold folder: " + gold_dir + ", Results folder: " + exparser_result_dir)
 
         nums = []
-        for filename in os.listdir(exparser_result_dir):
-            if filename.startswith(".") or not filename.endswith(".csv"):
-                print(f"Ignoring {filename}")
+        for file_name in os.listdir(exparser_result_dir):
+            if file_name.startswith(".") or not file_name.endswith(".csv"):
                 continue
 
-            eval_file_path = os.path.join(exparser_result_dir, filename)
-            gold_file_name = filename.replace(".csv", ".xml")
-            gold_file_path = os.path.join(gold_dir, gold_file_name)
+            eval_file_path = os.path.join(exparser_result_dir, file_name)
+            gold_file_path = os.path.join(gold_dir, file_name)
 
             if not os.path.exists(gold_file_path):
-                print("The gold file is missing for: " + filename)
-                continue
+                raise RuntimeError(f"The extraction gold file {gold_file_path} is missing.")
 
             o.write(f"Comparing {eval_file_path} with gold {gold_file_path}: \n  - longest common sequence:")
 
@@ -55,15 +51,14 @@ def eval_extraction(
                     file_nums.append(num)
                 accuracy = sum(file_nums) / len(file_nums)
                 nums.append(accuracy)
-                o.write(f"Average accuracy for {filename}: {str(accuracy)}\n")
-                c.write(f'"{filename}",{accuracy}\n')
+                o.write(f"Average accuracy for {file_name}: {str(accuracy)}\n")
+                c.write(f'"{file_name}",{accuracy}\n')
 
         if len(nums) == 0:
-            print(f"No accuracy information for files in {gold_dir}")
-        else:
-            accuracy = sum(nums) / len(nums)
-            o.write(f"Average accuracy for all files: {str(accuracy)}\n")
-            c.write(f'"{filename}",{accuracy}\n')
+            raise RuntimeError(f"No accuracy information for files in {gold_dir}")
+        accuracy = sum(nums) / len(nums)
+        o.write(f"Average accuracy for all files: {str(accuracy)}\n")
+        c.write(f'"{file_name}",{accuracy}\n')
     if not add_logfile:
         os.remove(logfile)
     return csvfile
@@ -110,54 +105,54 @@ def eval_segmentation(
             if file.startswith(".") or not file.endswith(".xml"):
                 continue
 
-            if os.path.exists(os.path.join(gold_dir, file)):
-                extracted_file_path = os.path.join(exparser_result_dir, file)
-                gold_file_path = os.path.join(gold_dir, file)
-                with open(extracted_file_path) as in_f, open(gold_file_path) as gold_f:
-                    # token-to-tags maps
-                    out_maps = []
-                    for l in in_f:
-                        out_maps.append(get_value_tag_map(l))
+            if not os.path.exists(os.path.join(gold_dir, file)):
+                raise RuntimeError("The segmentation gold file is missing for: " + file)
 
-                    gold_maps = []
-                    for l in gold_f:
-                        if l.startswith("<?xml") or l.startswith("<seganno>") or l.startswith("</seganno>"):
-                            continue
-                        gold_maps.append(get_value_tag_map(l))
+            extracted_file_path = os.path.join(exparser_result_dir, file)
+            gold_file_path = os.path.join(gold_dir, file)
+            with open(extracted_file_path) as in_f, open(gold_file_path) as gold_f:
+                # token-to-tags maps
+                out_maps = []
+                for l in in_f:
+                    out_maps.append(get_value_tag_map(l))
 
-                    if len(out_maps) != len(gold_maps):
-                        print(f"Skipping {file} for segmentation evaluation: different number of lines in extracted vs. gold file." )
+                gold_maps = []
+                for l in gold_f:
+                    if l.startswith("<?xml") or l.startswith("<seganno>") or l.startswith("</seganno>"):
+                        continue
+                    gold_maps.append(get_value_tag_map(l))
+
+                if len(out_maps) != len(gold_maps):
+                    raise RuntimeError(f"Different number of lines in extracted {extracted_file_path} ({len(out_maps)}) vs. gold file {gold_file_path} ({len(gold_maps)}).")
+
+                acc_per_line = []
+                for i in range(len(gold_maps)):
+                    out_map = out_maps[i]
+                    gold_map = gold_maps[i]
+
+                    if len (out_map.keys()) == 0 or len(gold_map.keys()) == 0:
                         continue
 
-                    acc_per_line = []
-                    for i in range(len(gold_maps)):
-                        out_map = out_maps[i]
-                        gold_map = gold_maps[i]
+                    correct_value_tag_pairs = 0
+                    gold_value_tag_pairs = len(gold_map.keys())
+                    for k, v in gold_map.items():
+                        if k in out_map:
+                            if v == out_map[k]:
+                                correct_value_tag_pairs += 1
+                    acc_per_line.append(correct_value_tag_pairs / gold_value_tag_pairs)
 
-                        if len (out_map.keys()) == 0 or len(gold_map.keys()) == 0:
-                            continue
+                if len(acc_per_line) == 0:
+                    sys.stderr.write(f"{file} does not contain any accuracy information!\n")
+                    continue
 
-                        correct_value_tag_pairs = 0
-                        gold_value_tag_pairs = len(gold_map.keys())
-                        for k, v in gold_map.items():
-                            if k in out_map:
-                                if v == out_map[k]:
-                                    correct_value_tag_pairs += 1
-                        acc_per_line.append(correct_value_tag_pairs / gold_value_tag_pairs)
+                accuracy = sum(acc_per_line) / len(acc_per_line)
+                o.write("\nAverage accuracy for " + file + ": " + str(accuracy))
+                c.write(f'"{file}",{accuracy}\n')
+                nums.append(sum(acc_per_line) / len(acc_per_line))
 
-                    if len(acc_per_line) == 0:
-                        print(f"{file} does not contain any accuracy information")
-                        continue
-
-                    accuracy = sum(acc_per_line) / len(acc_per_line)
-                    o.write("Average accuracy for " + file + ": " + str(accuracy))
-                    c.write(f'"{file}",{accuracy}\n')
-                    nums.append(sum(acc_per_line) / len(acc_per_line))
-            else:
-                print("The gold file is missing for: " + file)
-
-        print("Average accuracy for all files: " + str(sum(nums) / len(nums)))
-        o.write(f"Average accuracy for all files: {str(sum(nums) / len(nums))}\n")
+        avg_msg = f"\nAverage accuracy for all files: {str(sum(nums) / len(nums))}\n"
+        sys.stderr.write(avg_msg)
+        o.write(avg_msg)
         if not add_logfile:
             os.remove(logfile)
         return csvfile

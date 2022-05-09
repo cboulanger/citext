@@ -1,7 +1,7 @@
 import sys,os, shutil, re, random
 from .model_list import list_models
 from .model_create import create_model_folders
-from configs import dataset_dir
+from configs import config_dataset_dir
 
 def split_model(model_name, test_model_name):
     if model_name not in list_models():
@@ -10,9 +10,9 @@ def split_model(model_name, test_model_name):
         raise ValueError(f"Test model {model_name} exists, delete first.")
 
     def dataset_subdir(subdir):
-        return os.path.join(dataset_dir(), model_name, subdir)
+        return os.path.join(config_dataset_dir(), model_name, subdir)
     def test_dataset_subdir(subdir):
-        return os.path.join(dataset_dir(), test_model_name, subdir)
+        return os.path.join(config_dataset_dir(), test_model_name, subdir)
 
     # make sure we have enough data for training and evaluation
     num_lrt_docs = len(os.listdir(dataset_subdir("LRT")))
@@ -22,9 +22,6 @@ def split_model(model_name, test_model_name):
 
     # create model dirs for training and test data
     create_model_folders(test_model_name)
-    os.makedirs(test_dataset_subdir("TEST_LYT"))
-    os.makedirs(test_dataset_subdir("TEST_REFS"))
-    os.makedirs(test_dataset_subdir("TEST_SEG"))
 
     # split LRT files into testing and training docs
     lrt_files = os.listdir(dataset_subdir("LRT"))
@@ -52,7 +49,11 @@ def split_model(model_name, test_model_name):
 
         # copy LYT training data or generate it
         if os.path.exists(lyt_orig_path):
-            shutil.copy(lyt_orig_path, lyt_train_path)
+            try:
+                shutil.copy(lyt_orig_path, lyt_train_path)
+            except PermissionError as err:
+                # work around WSL problem
+                sys.stderr.write(f"Warning: {str(err)}\n")
         else:
             with open(lrt_orig_path) as s, open(lyt_train_path, "w") as t:
                 t.write(re.sub("<\/?(ref|oth)>", "", s.read()))
@@ -63,7 +64,11 @@ def split_model(model_name, test_model_name):
             shutil.move(lyt_train_path, lyt_test_path)
             if os.path.exists(seg_orig_path):
                 # copy SEG gold to test data
-                shutil.copy(seg_orig_path, seg_test_path)
+                try:
+                    shutil.copy(seg_orig_path, seg_test_path)
+                except PermissionError as err:
+                    # work around WSL problem
+                    sys.stderr.write(f"Warning: {str(err)}\n")
                 # generate REFS test data from SEG gold to evaluate extraction output and to serve as segmentation input
                 with open(seg_orig_path) as s, open(refs_test_path, "w") as t:
                     content = s.read()
@@ -77,8 +82,16 @@ def split_model(model_name, test_model_name):
         # training data
         else:
             # copy LRT and SEG
-            shutil.copy(lrt_orig_path, lrt_train_path)
+            try:
+                shutil.copy(lrt_orig_path, lrt_train_path)
+            except PermissionError as err:
+                # work around WSL problem
+                sys.stderr.write(f"Warning: {str(err)}\n")
             if os.path.exists(seg_orig_path):
-                shutil.copy(seg_orig_path, seg_train_path)
+                try:
+                    shutil.copy(seg_orig_path, seg_train_path)
+                except PermissionError as err:
+                    # work around WSL problem
+                    sys.stderr.write(f"Warning: {str(err)}\n")
             else:
                 sys.stderr.write(f"Segmentation gold file {seg_orig_path} is missing for training")

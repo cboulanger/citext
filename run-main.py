@@ -54,13 +54,13 @@ def call_run_exmatcher():
 
 
 def call_run_exparser(model_name=None):
-    from commands.run_exparser import call_Exparser
-    call_Exparser(os.path.join(model_dir(), get_version(), model_name))
+    from commands.run_exparser import call_exparser_extraction
+    call_exparser_extraction(os.path.join(config_model_dir(), get_version(), model_name))
 
 
 def call_segmentation(model_name=None, input_dir=None):
-    from commands.run_segmentation import call_Exparser_segmentation
-    call_Exparser_segmentation(os.path.join(model_dir(), get_version(), model_name), input_dir)
+    from commands.run_segmentation import call_exparser_segmentation
+    call_exparser_segmentation(os.path.join(config_model_dir(), get_version(), model_name), input_dir)
 
 
 if __name__ == "__main__":
@@ -239,12 +239,6 @@ if __name__ == "__main__":
                 raise RuntimeError("Please provide a name for the model")
             from commands.training import call_segmentation_training
             call_segmentation_training(sys.argv[2])
-
-        elif func_name == Commands.START_SERVER.value:
-            port = 8000
-            if len(sys.argv) == 3:
-                port = sys.argv[2]
-            call_start_server(port)
 
         else:
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +

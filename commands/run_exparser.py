@@ -8,38 +8,35 @@ from configs import *
 from lib.logger import *
 from lib.pogressbar import get_progress_bar
 
-def call_Exparser(model_dir: str):
+
+def call_exparser_extraction(model_dir: str, input_base_dir: str = None):
     load_model(model_dir)
-    try:
-        subfolder = '/'
-        dir_list = os.listdir(config_url_Layouts() + subfolder)
-        list_of_files = []
-        for item in dir_list:
-            if not item.startswith('.') and item.endswith('.csv'):
-                list_of_files.append(os.path.splitext(item)[0])
-    except:
-        sys.stderr.write(traceback.format_exc())
-        log(traceback.format_exc())
-        log('*' * 50 + '\n')
-        sys.exit(1)
+    if input_base_dir is None:
+        input_base_dir = config_url_data()
+
+    list_of_files = []
+    for item in os.listdir(os.path.join(input_base_dir, config_dirname_layouts())):
+        if not item.startswith('.') and item.endswith('.csv'):
+            list_of_files.append(os.path.splitext(item)[0])
 
     t1 = time.time()
     i = 1
     total = len(list_of_files)
     list_of_time = []
-    progress_bar = get_progress_bar("Segmenting", total)
+    progress_bar = get_progress_bar("Extracting references", total)
+    log("Extracting references")
     counter = 0
     for filename in list_of_files:
         counter += 1
         progress_bar.goto(counter)
-        log(f"Extracting references from {filename}")
+        log(f" - {filename}")
         t11 = time.time()
-        path_layout = config_url_Layouts() + subfolder + filename + '.csv'
-        path_refs = config_url_Refs() + subfolder + filename + '.csv'
-        path_segs = config_url_Refs_segment() + subfolder + filename + '.xml'
-        path_refs_and_bibtex = config_url_Refs_bibtex() + subfolder + filename + '.bib'
-        path_segs_prob = config_url_Refs_segment_prob() + subfolder + filename + '.csv'
-        path_segs_ditc = config_url_Refs_segment_dict() + subfolder + filename + '.csv'
+        path_layout = os.path.join(input_base_dir, config_dirname_layouts(), filename + '.csv')
+        path_refs = os.path.join(input_base_dir, config_dirname_refs(), filename + '.csv')
+        path_segs = os.path.join(input_base_dir, config_dirname_refs_seg(), filename + '.xml')
+        path_refs_and_bibtex = os.path.join(input_base_dir, config_dirname_bibtex(), filename + '.bib')
+        path_segs_prob = os.path.join(input_base_dir, config_dirname_seg_prob(), filename + '.csv')
+        path_segs_dict = os.path.join(input_base_dir, config_dirname_seg_dict(), filename + '.csv')
 
         file = open(path_layout, encoding="utf-8")
         reader = file.read()
@@ -87,7 +84,7 @@ def call_Exparser(model_dir: str):
         reslt, refstr, retex = sg_ref(txt, refs, 1)
         # reslt: ref_seg_prob
         wf_seg_prob = open(path_segs_prob, 'w')
-        wf_ref_dic = open(path_segs_ditc, 'w')
+        wf_ref_dic = open(path_segs_dict, 'w')
         len_of_ref_list = len(refstr)
         j = 0
         for item in reslt:
@@ -100,7 +97,6 @@ def call_Exparser(model_dir: str):
             json_dict = json.dumps(data, ensure_ascii=False)
             wf_ref_dic.write("%s\n" % json_dict)
             j += 1
-        log('-' * 100)
         i += 1
         t22 = time.time()
         temp = t22 - t11

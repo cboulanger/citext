@@ -1094,6 +1094,7 @@ class GUI {
           title = type
           text = data
         }
+        console.log({title, text})
         let toastId = type + "|" + title;
         let toast = toasts[toastId];
         if ( toast && toast.css("visibility")) {
@@ -1102,12 +1103,13 @@ class GUI {
           } else {
             toastr.clear(toast)
           }
-        } else {
-          let containsProgressBar = text.includes("#")
+        } else if (text.trim()) {
           toast = toastr[type](text, title, {
             positionClass: "toast-bottom-full-width",
-            timeOut: containsProgressBar ? 0 : 20000,
-            extendedTimeOut: 0
+            timeOut: 0,
+            extendedTimeOut: 0,
+            closeButton: true,
+            onCloseClick: function() { console.log('close button clicked'); }
           })
           toasts[toastId] = toast
         }

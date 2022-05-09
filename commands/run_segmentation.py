@@ -8,56 +8,45 @@ from configs import *
 from lib.logger import *
 from lib.pogressbar import get_progress_bar
 
-def call_Exparser_segmentation(model_dir: str, input_dir=None):
+def call_exparser_segmentation(model_dir: str, input_base_dir=None):
     load_model(model_dir)
-    try:
-        subfolder = '/'
-        if input_dir is None:
-            dir_list = os.listdir(config_url_Refs() + subfolder)
-            input_dir = config_url_Refs()
-        else:
-            dir_list = os.listdir(input_dir + subfolder)
-        list_of_files = []
-        for item in dir_list:
-            if not item.startswith('.'):
-                # list_of_files.append(os.path.splitext(item)[0])
-                list_of_files.append(item)
-    except:
-        sys.stderr.write(traceback.format_exc())
-        log(traceback.format_exc())
-        log('*' * 50 + '\n')
-        sys.exit(1)
+    if input_base_dir is None:
+        input_base_dir = config_url_data()
+    list_of_files = []
+    for item in os.listdir(os.path.join(input_base_dir, config_dirname_refs())):
+        if not item.startswith('.'):
+            list_of_files.append(os.path.splitext(item)[0])
+            #list_of_files.append(item)
 
     t1 = time.time()
     i = 1
     total = len(list_of_files)
     list_of_time = []
-    progress_bar = get_progress_bar("Segmenting", total)
+    progress_bar = get_progress_bar("Segmenting references", total)
+    log(f"Segmenting references")
     counter = 0
     for filename in list_of_files:
+        filename = str(filename)
         counter += 1
         progress_bar.goto(counter)
-        log(f"Segmenting references from {filename}")
+        log(f" - {filename}")
         t11 = time.time()
-        # path_layout = config_url_Layouts() + subfolder + filename + '.csv'
-        path_refs = input_dir + subfolder + filename
-        path_segs = config_url_Refs_segment() + subfolder + filename.replace(".csv", ".xml")
-        path_refs_and_bibtex = config_url_Refs_bibtex() + subfolder + filename + '.bib'
-        path_segs_prob = config_url_Refs_segment_prob() + subfolder + filename + '.csv'
-        path_segs_dict = config_url_Refs_segment_dict() + subfolder + filename + '.csv'
+        path_refs = os.path.join(input_base_dir, config_dirname_refs(), filename + ".csv")
+        path_segs = os.path.join(input_base_dir, config_dirname_refs_seg(), filename + ".xml")
+        path_refs_and_bibtex = os.path.join(input_base_dir, config_dirname_bibtex(), filename + '.bib')
+        path_segs_prob = os.path.join(input_base_dir, config_dirname_seg_prob(), filename + '.csv')
+        path_segs_dict = os.path.join(input_base_dir, config_dirname_seg_dict(), filename + '.csv')
 
-        file = open(path_refs)
-        reader = str(file.read())
-        # what do we need language detection for, anyways?
-        global lng
-        try:
-            lng = detect(reader)
-        except:
-            print(f"Cannot detect language in {path_refs}")
-        file.close()
+        with open(path_refs) as file:
+            reader = str(file.read())
+            # what do we need language detection for, anyways?
+            global lng
+            try:
+                lng = detect(reader)
+            except:
+                log(f"Cannot detect language in {path_refs}")
 
         # txt, valid, _, ref_prob0 = ref_ext(reader)
-
         reader = re.sub(r'[\r\n]+', '\n', str(reader))
         reader = reader.split('\n')
         reader = reader[0:-1] if reader[-1] == '' else reader

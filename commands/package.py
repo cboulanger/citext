@@ -74,9 +74,9 @@ def upload_package(package_name, model_name, trained_model=False, training_data=
         raise RuntimeError(
             'One of --trained-model or --training-data is required')
     if training_data:
-        directories.append(os.path.join(dataset_dir(), model_name))
+        directories.append(os.path.join(config_dataset_dir(), model_name))
     if trained_model:
-        directories.append(os.path.join(model_dir(), get_version(), model_name))
+        directories.append(os.path.join(config_model_dir(), get_version(), model_name))
     file_paths = []
     for directory in directories:
         if not os.path.isdir(directory):

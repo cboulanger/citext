@@ -1,5 +1,5 @@
 import json
-import os, sys, subprocess, re
+import os, sys, subprocess, re, builtins
 import socket
 
 
@@ -20,9 +20,7 @@ def push_event(channel_id, event_name: str, event_data: str):
     file_path = os.path.join("tmp", str(channel_id))
     with open(file_path) as f:
         port = int(f.read())
-    #sys.stderr.write(f"Connecting to channel {channel_id} via port {str(port)}...\n")
-    # remove control characters
-    event_data = re.sub("[\x00-\x1f\x7f-\x9f]","",event_data)
+    # sys.stderr.write(f"Connecting to channel {channel_id} via port {str(port)}...\n")
     event_json = json.dumps({
         "name": event_name,
         "data": event_data
@@ -32,7 +30,7 @@ def push_event(channel_id, event_name: str, event_data: str):
     client.connect(('', port))
     client.send(bytes(event_json, 'utf-8'))
     client.close()
-
+    return True
 
 
 def run_shell_command(channel_id, *args):
@@ -57,6 +55,7 @@ def run_shell_command(channel_id, *args):
         sys.stderr.write(err_msg + "\n")
         raise RuntimeError(lines[-1] if len(lines) > 0 else "Unknown error")
 
+
 class StdoutToEvent(object):
     def __init__(self, channel_id):
         self.channel_id = channel_id
@@ -70,3 +69,23 @@ class StdoutToEvent(object):
         self.flush()
         if message.strip("\n"):
             push_event(self.channel_id, "info", message)
+
+
+def redirectPrintToEvent(channel_id, msg_prefix):
+    oldprint = builtins.print
+    #sys.stdout = StdoutToEvent(channel_id)
+
+    def print2event(*args, sep=' ', end='\n', file=None):
+        message = sep.join(args)
+
+        if message.strip("\n"):
+            if "RuntimeWarning" not in message:
+                # remove control characters
+                message_clean = re.sub("[\x00-\x1f\x7f-\x9f]", "", message)
+                if message_clean.strip() and "[?" not in message_clean: # ugly workaround
+                    push_event(channel_id, "info", f"{msg_prefix}: {message_clean}")
+            sys.stderr.write(message + end)
+            sys.stderr.flush()
+
+    builtins.print = print2event
+    return oldprint

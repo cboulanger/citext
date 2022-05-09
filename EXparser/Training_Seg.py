@@ -81,7 +81,7 @@ def train_segmentation(data_dir: str, model_dir: str):
                 linenum += 1
         file.close()
     progress_bar.finish()
-    print("Learning... this will take a while...")
+    print("Learning...")
     crf = sklearn_crfsuite.CRF(
         algorithm='pa',
         # c2=0.8,

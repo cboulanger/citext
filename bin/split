@@ -74,7 +74,7 @@ for lrt_file_path in $LRT_DIR/* ; do
         echo "Segmentation gold file $seg_file_path is missing for evaluation"
       else
         cp $seg_file_path $EVAL_TEST_SEG_DIR
-        sed 's/<[^>]*>//g' $seg_file_path | sed '/^$/d' > $EVAL_TEST_REFS_DIR/$seg_file_name
+        sed 's/<[^>]*>//g' $seg_file_path | sed '/^$/d' > $EVAL_TEST_REFS_DIR/$file_name
       fi
       found=1
       break

@@ -8,7 +8,7 @@ from statistics import mean, stdev
 col_names = ["model", "ext_mean", "ext_min", "ext_max", "ext_stdev", "seg_mean", "seg_min", "seg_max", "seg_stdev"]
 
 def get_csv_path(model_name: str, model_type: str, prefix: str = "") -> str:
-    return os.path.join(dataset_dir(), model_name, prefix + model_type + ".csv")
+    return os.path.join(config_dataset_dir(), model_name, prefix + model_type + ".csv")
 
 
 def get_model_accuracy(model_name: str, model_type: str, prefix: str = "") -> pandas.DataFrame:

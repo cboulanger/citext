@@ -15,44 +15,84 @@ def config_url_venu():
     return venue_address
 
 
+def config_url_data():
+    return data_address
+
+
 def config_url_log():
     return venue_address + '/logfile.log'
 
 
+def config_dirname_pdfs_no_ocr():
+    return '0-pdfs_no_ocr/'
+
+
 def config_url_pdfs_no_ocr():
-    return data_address + '0-pdfs_no_ocr/'
+    return os.path.join(data_address, config_dirname_pdfs_no_ocr())
+
+
+def config_dirname_pdfs():
+    return '1-pdfs/'
 
 
 def config_url_pdfs():
-    return data_address + '1-pdfs/'
+    return os.path.join(data_address, config_dirname_pdfs())
+
+
+def config_dirname_layouts():
+    return '2-layouts/'
 
 
 def config_url_Layouts():
-    return data_address + '2-layouts/'
+    return os.path.join(data_address, config_dirname_layouts())
+
+
+def config_dirname_refs():
+    return '3-refs/'
 
 
 def config_url_Refs():
-    return data_address + '3-refs/'
+    return os.path.join(data_address, config_dirname_refs())
+
+
+def config_dirname_refs_seg():
+    return '3-refs_seg/'
 
 
 def config_url_Refs_segment():
-    return data_address + '3-refs_seg/'
+    return os.path.join(data_address, config_dirname_refs_seg())
+
+
+def config_dirname_bibtex():
+    return '3-refs_bibtex/'
 
 
 def config_url_Refs_bibtex():
-    return data_address + '3-refs_bibtex/'
+    return os.path.join(data_address, config_dirname_bibtex())
+
+
+def config_dirname_seg_prob():
+    return '3-refs_seg_prob/'
 
 
 def config_url_Refs_segment_prob():
-    return data_address + '3-refs_seg_prob/'
+    return os.path.join(data_address, config_dirname_seg_prob())
+
+
+def config_dirname_seg_dict():
+    return '3-refs_seg_dict/'
 
 
 def config_url_Refs_segment_dict():
-    return data_address + '3-refs_seg_dict/'
+    return os.path.join(data_address, config_dirname_seg_dict())
+
+
+def config_dirname_crossref():
+    return '4-refs_crossref/'
 
 
 def config_url_Refs_crossref():
-    return data_address + '4-refs_crossref/'
+    return os.path.join(data_address, config_dirname_crossref())
 
 
 def config_url_exmatcher_crossref_package():
@@ -70,15 +110,36 @@ def config_url_layout_extractor():
 def config_layout_extractor_function_name():
     return 'gesis.cermine.layout.extractor.CermineLineLayoutExtractor'
 
-def dataset_dir():
+
+def config_data_dirnames():
+    return [
+        config_dirname_pdfs_no_ocr(),
+        config_dirname_pdfs(),
+        config_dirname_layouts(),
+        config_dirname_refs(),
+        config_dirname_refs_seg(),
+        config_dirname_seg_prob(),
+        config_dirname_seg_dict(),
+        config_dirname_bibtex(),
+        config_dirname_crossref()
+    ]
+
+
+def config_dataset_dir():
     return "EXparser/Dataset"
 
-def model_dir():
+
+def config_model_dir():
     return "EXparser/Models"
+
 
 class DatasetDirs(Enum):
     FEATURES = "Features"
     LAYOUT = "LYT"
-    LAYOUT_TRAINING = "LRT"
+    TRAIN_LYT = "LRT"
     REFLD = "RefLD"
-    SEGMENTATION_TRAINING = "SEG"
+    TRAIN_SEG = "SEG"
+    TEST_LYT="TEST_LYT"
+    TEST_REFS="TEST_REFS"
+    TEST_SEG="TEST_SEG"
+
