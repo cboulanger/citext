@@ -31,6 +31,7 @@ et = time.time()
 elapsed_time = int(et - st)
 
 message = f"Finished training of '{model_name}' in {elapsed_time} s ..."
+push_event(channel_id, "info", f"{model_name}:") # remove the info box
 push_event(channel_id, "success", message)
 
 oldstdout.write("Content-type: text/plain\n\n")

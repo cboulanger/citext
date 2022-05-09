@@ -30,7 +30,7 @@ def server_start(port):
     sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     sock.bind(addr)
     sock.listen(5)
-    # Create 10 handlers
+    # Create 100 handlers - not yet clear if the SSE threads are shutting down if the client disconnects
     [CgiThread(i, addr, sock) for i in range(100)]
     print(f"Serving http and cgi requests from http://localhost:{port}")
     time.sleep(9e9)

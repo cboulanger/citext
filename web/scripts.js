@@ -1097,14 +1097,17 @@ class GUI {
         let toastId = type + "|" + title;
         let toast = toasts[toastId];
         if ( toast && toast.css("visibility")) {
-          toast.text(text)
+          if (text.trim()) {
+            toast.find(".toast-message").text(text)
+          } else {
+            toastr.clear(toast)
+          }
         } else {
-          let isProgressScaleFactor = text.includes("[") ? 5 : 1
+          let containsProgressBar = text.includes("#")
           toast = toastr[type](text, title, {
             positionClass: "toast-bottom-full-width",
-            timeout: 10000 * isProgressScaleFactor,
-            extendedTimeout: 10000 * isProgressScaleFactor,
-            showProgressBar: true
+            timeOut: containsProgressBar ? 0 : 20000,
+            extendedTimeOut: 0
           })
           toasts[toastId] = toast
         }
