@@ -77,7 +77,6 @@ def redirectPrintToEvent(channel_id, msg_prefix):
 
     def print2event(*args, sep=' ', end='\n', file=None):
         message = sep.join(args)
-
         if message.strip("\n"):
             if "RuntimeWarning" not in message:
                 # remove control characters
@@ -86,6 +85,45 @@ def redirectPrintToEvent(channel_id, msg_prefix):
                     push_event(channel_id, "info", f"{msg_prefix}: {message_clean}")
             sys.stderr.write(message + end)
             sys.stderr.flush()
+        # piggybacking to allow aborting
+        checkForAbortSignal(channel_id)
 
     builtins.print = print2event
     return oldprint
+
+
+import threading
+
+class InvervalJob(threading.Thread):
+    def __init__(self, callback, event, interval):
+        '''runs the callback function after interval seconds
+        :param callback:  callback function to invoke
+        :param event: external event for controlling the update operation
+        :param interval: time in seconds after which are required to fire the callback
+        :type callback: function
+        :type interval: int
+        '''
+        self.callback = callback
+        self.event = event
+        self.interval = interval
+        super(InvervalJob,self).__init__()
+
+    def run(self):
+        while not self.event.wait(self.interval):
+            self.callback()
+
+def getAbortSignalPath(channel_id):
+    return f"tmp/{channel_id}.abort"
+
+def setAbortSignal(channel_id):
+    if not os.path.exists(f"tmp/{channel_id}"):
+        raise ValueError(f"Invalid channel id {channel_id}")
+    with open(getAbortSignalPath(channel_id), "w") as f:
+        f.write("cancel")
+
+def checkForAbortSignal(channel_id):
+    abort_signal_path = getAbortSignalPath(channel_id)
+    if os.path.exists(abort_signal_path):
+        os.remove(abort_signal_path)
+        raise InterruptedError("Canceled")
+

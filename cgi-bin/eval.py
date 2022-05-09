@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
-import shutil
-import sys, os, cgi, traceback
+import sys, os, cgi, traceback, shutil
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.utils import push_event, redirectPrintToEvent
@@ -17,79 +16,89 @@ from commands.report import compute_accuracy_info
 params = cgi.parse()
 channel_id = params['id'][0]
 model_name = params['model_name'][0]
+skip_segmentation = 'skip_segmentation' in params
+skip_extraction = 'skip_extraction' in params
 
 oldprint = redirectPrintToEvent(channel_id, f"Evaluating model '{model_name}'")
+
 
 try:
     split_model_name = f"test_{model_name}"
     split_model_dir = os.path.join(config_model_dir(), get_version(), split_model_name)
     split_dataset_dir = os.path.join(config_dataset_dir(), split_model_name)
 
-    # create exparser workflow dirs
-    for dirname in config_data_dirnames():
-        os.makedirs(os.path.join(split_dataset_dir, dirname), exist_ok=True)
-
     print("Splitting model...")
     if split_model_name in list_models():
         delete_model_folders(split_model_name)
     split_model(model_name, split_model_name)
 
-    # train the model
-    call_extraction_training(split_model_name)
-    
-    call_segmentation_training(split_model_name)
+    # create exparser workflow dirs
+    for dirname in config_data_dirnames():
+        os.makedirs(os.path.join(split_dataset_dir, dirname), exist_ok=True)
 
-    # copy test layout files for exparser extraction
-    test_lyt_dir = os.path.join(split_dataset_dir, DatasetDirs.TEST_LYT.value)
-    for file_name in os.listdir(test_lyt_dir):
-        try:
-            shutil.copy(
-                os.path.join(test_lyt_dir, file_name),
-                os.path.join(split_dataset_dir, config_dirname_layouts())
-            )
-        except PermissionError as err:
-            # work around WSL problem
-            sys.stderr.write(f"Warning: {str(err)}\n")
+    if not skip_extraction:
+        # train extraction
+        call_extraction_training(split_model_name)
 
+        # copy test layout files for exparser extraction
+        test_lyt_dir = os.path.join(split_dataset_dir, DatasetDirs.TEST_LYT.value)
+        for file_name in os.listdir(test_lyt_dir):
+            try:
+                shutil.copy(
+                    os.path.join(test_lyt_dir, file_name),
+                    os.path.join(split_dataset_dir, config_dirname_layouts(), file_name)
+                )
+            except PermissionError as err:
+                # work around WSL problem
+                sys.stderr.write(f"Warning: {str(err)}\n")
 
-    # run extraction
-    call_exparser_extraction(split_model_dir, split_dataset_dir)
+        # run extraction
+        call_exparser_extraction(split_model_dir, split_dataset_dir)
 
-    # extraction
-    eval_extraction(
-        gold_dir=os.path.join(split_dataset_dir, "TEST_REFS"),  # $TEST_REFS_DIR
-        exparser_result_dir=os.path.join(split_dataset_dir, config_dirname_refs()),  # $EXPARSER_REFS_DIR
-        output_dir=split_dataset_dir,
-        output_filename_prefix="",
-        add_logfile=False)
-    
-    # copy refs gold data to excite refs output dir
-    excite_refs_path = os.path.join(split_dataset_dir, config_dirname_refs())
-    test_refs_path = os.path.join(split_dataset_dir, DatasetDirs.TEST_REFS.value)
-    for file_name in os.listdir(excite_refs_path):
-        os.remove(os.path.join(excite_refs_path, file_name))
-    for file_name in os.listdir(test_refs_path):
-        try:
-            shutil.copy(os.path.join(test_refs_path, file_name), excite_refs_path)
-        except PermissionError as err:
-            # work around WSL problem
-            sys.stderr.write(f"Warning: {str(err)}\n")
+        # evaluate extraction
+        eval_extraction(
+            gold_dir=os.path.join(split_dataset_dir, "TEST_REFS"),  # $TEST_REFS_DIR
+            exparser_result_dir=os.path.join(split_dataset_dir, config_dirname_refs()),  # $EXPARSER_REFS_DIR
+            output_dir=split_dataset_dir,
+            output_filename_prefix="",
+            add_logfile=False)
 
-    # run segmentation
-    call_exparser_segmentation(split_model_dir, split_dataset_dir)
+    if not skip_segmentation:
+        # train segmentation
+        call_segmentation_training(split_model_name)
 
-    # eval segmentation
-    eval_segmentation(
-        gold_dir=os.path.join(split_dataset_dir, "TEST_SEG"),  # $TEST_SEG_DIR
-        exparser_result_dir=os.path.join(split_dataset_dir, config_dirname_refs_seg()),  # $EXPARSER_SEG_DIR
-        output_dir=split_dataset_dir,
-        output_filename_prefix="",
-        add_logfile=False)
+        # copy refs gold data to excite refs output dir
+        excite_refs_path = os.path.join(split_dataset_dir, config_dirname_refs())
+        test_refs_path = os.path.join(split_dataset_dir, DatasetDirs.TEST_REFS.value)
+        for file_name in os.listdir(excite_refs_path):
+            os.remove(os.path.join(excite_refs_path, file_name))
+        for file_name in os.listdir(test_refs_path):
+            try:
+                shutil.copy(os.path.join(test_refs_path, file_name),
+                            os.path.join(excite_refs_path, file_name))
+            except PermissionError as err:
+                # work around WSL problem
+                sys.stderr.write(f"Warning: {str(err)}\n")
+
+        # run segmentation
+        call_exparser_segmentation(split_model_dir, split_dataset_dir)
+
+        # eval segmentation
+        eval_segmentation(
+            gold_dir=os.path.join(split_dataset_dir, "TEST_SEG"),  # $TEST_SEG_DIR
+            exparser_result_dir=os.path.join(split_dataset_dir, config_dirname_refs_seg()),  # $EXPARSER_SEG_DIR
+            output_dir=split_dataset_dir,
+            output_filename_prefix="",
+            add_logfile=False)
 
     # output accuracy
     extr_accuracy = round(compute_accuracy_info(split_model_name, "extraction")['mean'], 3)
-    seg_accuracy = round(compute_accuracy_info(split_model_name, "segmentation")['mean'] , 3)
-    response = f"{model_name}: Model evaluation results in the following accuracy values: extraction: {extr_accuracy}, segmentation: {seg_accuracy}"
+    seg_accuracy = round(compute_accuracy_info(split_model_name, "segmentation")['mean'], 3)
+    response = f"{model_name}: Model evaluation results in the following accuracy values:"
+    if not skip_extraction:
+        response += f" extraction: {extr_accuracy}"
+    if not skip_segmentation:
+        response += f" segmentation: {seg_accuracy}"
     push_event(channel_id, "success", response)
 
 except Exception as err:
@@ -98,6 +107,7 @@ except Exception as err:
     sys.stderr.write(tb)
     response = tb
 finally:
+    # abortThread.join()
     push_event(channel_id, "info", f"{model_name}:")
     oldprint("Content-Type: text/plain\n")
     oldprint(response)

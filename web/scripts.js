@@ -1094,7 +1094,7 @@ class GUI {
           title = type
           text = data
         }
-        console.log({title, text})
+        //console.log({title, text})
         let toastId = type + "|" + title;
         let toast = toasts[toastId];
         if ( toast && toast.css("visibility")) {
@@ -1104,12 +1104,15 @@ class GUI {
             toastr.clear(toast)
           }
         } else if (text.trim()) {
+          const onCloseClick = type === "info" ? () => {
+            Actions.run_cgi_script("abort.py", {id: channel_id})
+          } : undefined;
           toast = toastr[type](text, title, {
             positionClass: "toast-bottom-full-width",
             timeOut: 0,
             extendedTimeOut: 0,
             closeButton: true,
-            onCloseClick: function() { console.log('close button clicked'); }
+            onCloseClick
           })
           toasts[toastId] = toast
         }
