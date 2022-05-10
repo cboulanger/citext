@@ -18,6 +18,8 @@ for file_name in os.listdir("tmp"):
         try:
             s.bind(('', port))
             os.remove(file_path)
+            if os.path.exists(file_path + ".abort"):
+                os.remove(file_path +".abort")
         except socket.error as e:
             if e.errno != errno.EADDRINUSE:
                 pass
@@ -34,7 +36,7 @@ with open(f"tmp/{channel_id}", "w") as f:
     f.write(str(port))
 
 sys.stderr.write(f"SSE: Connected channel id {channel_id} with port {port}\n")
-sys.stdout.write(f"event:success\ndata:Server connected\n\n")
+sys.stdout.write(f"event:debug\ndata:Server connected with channel id {channel_id}\n\n")
 sys.stdout.flush()
 
 while True:

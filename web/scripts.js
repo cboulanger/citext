@@ -1117,6 +1117,9 @@ class GUI {
           toasts[toastId] = toast
         }
       });
+      source.addEventListener("debug", evt => {
+        console.log(evt.data);
+      })
     }
 
     source.addEventListener("error", evt => {

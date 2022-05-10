@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
-import builtins
-import sys,os, time, cgi
+import sys,os, time, cgi, builtins, traceback
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.utils import push_event, redirectPrintToEvent
 from commands.training import call_segmentation_training, call_extraction_training
@@ -10,7 +9,8 @@ params = cgi.parse()
 channel_id = params['id'][0]
 model_name = params['model_name'][0]
 
-oldprint = redirectPrintToEvent(channel_id, f"Training model '{model_name}'")
+title = f"Training model '{model_name}'"
+oldprint = redirectPrintToEvent(channel_id, title)
 
 try:
     st = time.time()
@@ -22,10 +22,9 @@ try:
     push_event(channel_id, "success", response)
 except Exception as err:
     push_event(channel_id, "error", str(err))
-    tb = traceback.format_exc()
-    sys.stderr.write(tb)
-    response = tb
+    response = traceback.format_exc()
+    sys.stderr.write(response)
 finally:
-    push_event(channel_id, "info", f"{model_name}:")
+    push_event(channel_id, "info", title+":")
     oldprint("Content-Type: text/plain\n")
     oldprint(response)

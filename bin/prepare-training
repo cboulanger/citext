@@ -1,9 +1,9 @@
 #! /bin/bash
-if ! [[ -d ./tmp ]] ; then
-  git clone --depth 1 https://github.com/exciteproject/Exparser.git tmp
+if ! [[ -d ./tmp/gold ]] ; then
+  git clone --depth 1 https://github.com/exciteproject/Exparser.git tmp/gold
   mkdir -p ./EXparser/Dataset/default
-  cp -a ./tmp/EXparser/Dataset/* ./EXparser/Dataset/default
+  cp -a ./tmp/gold/EXparser/Dataset/* ./EXparser/Dataset/default
   echo "Downloaded training data. To improve the model, add your own training data to the directories in Exparser/Dataset/"
 else
-  echo "Training data has already been downloaded. To download again, delete the 'tmp' dir."
+  echo "Training data has already been downloaded. To download again, delete the 'tmp/gold' dir."
 fi

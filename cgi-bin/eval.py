@@ -20,13 +20,15 @@ skip_splitting = 'skip_splitting' in params
 skip_segmentation = 'skip_segmentation' in params
 skip_extraction = 'skip_extraction' in params
 
-oldprint = redirectPrintToEvent(channel_id, f"Evaluating model '{model_name}'")
+title = f"Evaluating model '{model_name}'"
+oldprint = redirectPrintToEvent(channel_id, title)
 
 try:
     split_model_name = f"test_{model_name}"
     split_model_dir = os.path.join(config_model_dir(), get_version(), split_model_name)
     split_dataset_dir = os.path.join(config_dataset_dir(), split_model_name)
 
+    # splitting
     if not skip_splitting:
         print("Splitting model...")
 
@@ -41,10 +43,16 @@ try:
         for dirname in config_data_dirnames():
             os.makedirs(os.path.join(split_dataset_dir, dirname), exist_ok=True)
 
+    # training
+
     if not skip_extraction:
-        # train extraction
         call_extraction_training(split_model_name)
 
+    if not skip_segmentation:
+        call_segmentation_training(split_model_name)
+
+    # evaluation
+    if not skip_extraction:
         # copy test layout files for exparser extraction
         test_lyt_dir = os.path.join(split_dataset_dir, DatasetDirs.TEST_LYT.value)
         for file_name in os.listdir(test_lyt_dir):
@@ -69,9 +77,6 @@ try:
             add_logfile=False)
 
     if not skip_segmentation:
-        # train segmentation
-        call_segmentation_training(split_model_name)
-
         # copy refs gold data to excite refs output dir
         excite_refs_path = os.path.join(split_dataset_dir, config_dirname_refs())
         test_refs_path = os.path.join(split_dataset_dir, DatasetDirs.TEST_REFS.value)
@@ -113,6 +118,6 @@ except Exception as err:
     response = tb
 finally:
     # abortThread.join()
-    push_event(channel_id, "info", f"{model_name}:")
+    push_event(channel_id, "info", title+":")
     oldprint("Content-Type: text/plain\n")
     oldprint(response)
