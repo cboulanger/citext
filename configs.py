@@ -20,7 +20,7 @@ def config_url_data():
 
 
 def config_url_log():
-    return venue_address + '/logfile.log'
+    return venue_address + '/tmp/logfile.log'
 
 
 def config_dirname_pdfs_no_ocr():
@@ -126,11 +126,15 @@ def config_data_dirnames():
 
 
 def config_dataset_dir():
-    return "EXparser/Dataset"
+    return os.path.join(venue_address, "EXparser", "Dataset")
 
 
 def config_model_dir():
-    return "EXparser/Models"
+    return os.path.join(venue_address, "EXparser", "Models")
+
+
+def config_lists_dir():
+    return os.path.join(venue_address, "EXparser", "Lists")
 
 
 class DatasetDirs(Enum):
@@ -139,7 +143,6 @@ class DatasetDirs(Enum):
     TRAIN_LYT = "LRT"
     REFLD = "RefLD"
     TRAIN_SEG = "SEG"
-    TEST_LYT="TEST_LYT"
-    TEST_REFS="TEST_REFS"
-    TEST_SEG="TEST_SEG"
-
+    TEST_LYT = "TEST_LYT"
+    TEST_REFS = "TEST_REFS"
+    TEST_SEG = "TEST_SEG"

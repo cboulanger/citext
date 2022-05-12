@@ -16,3 +16,4 @@ progress
 requests
 python-dotenv
 webdavclient3
+regex

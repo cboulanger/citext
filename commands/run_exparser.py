@@ -1,10 +1,7 @@
-import sys
 import time
-import traceback
 from langdetect import detect
 from EXparser.Segment_F1 import *
-from JsonParser import *
-from configs import *
+from lib.JsonParser import *
 from lib.logger import *
 from lib.pogressbar import get_progress_bar
 

@@ -2,8 +2,9 @@
 # Definition: general function for extraction and segmentation
 
 import os
+from configs import *
 
-list_dir = '/app/EXparser/Lists'
+list_dir = config_lists_dir()
 
 def read_csv(filename):
     path = os.path.join(list_dir, filename)

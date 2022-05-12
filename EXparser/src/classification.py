@@ -131,8 +131,8 @@ def ref_ext(reader, lng, idxx, clf1, clf2):
     ch = []  # Capital distance
     hc = []  # Horizontal position
     wc = []  # Width line
-    ll = []  # Lenght line in terms of characters (without spaces)
-    llw = []  # Lenght line in terms of words
+    ll = []  # Length line in terms of characters (without spaces)
+    llw = []  # Length line in terms of words
     ffm = []  # font family
     vsl = []  # vertical space line with respect to the page (user only to check if the line is a page number)
     spl = []  # vertical space to prior line
@@ -140,12 +140,11 @@ def ref_ext(reader, lng, idxx, clf1, clf2):
     u = 1
     rfidx = [0, 0, 'font', 0]
     for row in reader:
-        # print(row.encode('utf-8'))
         row = row.split('\t')
-        row[0] = row[0]
+        row[0] = row[0] # ???
         if len(row[0]) > 1:
             lh = lh + list(map(len, row[0].split()))
-            tmp = np.asarray([i for i, c in enumerate(row[0]) if isup(c)]) + 1
+            tmp = np.asarray([i for i, c in enumerate(row[0]) if c.isupper()]) + 1
             if len(tmp) <= 1:
                 tmp = [1, 1]
             ch = ch + [x - tmp[i - 1] for i, x in enumerate(tmp)][1:]
@@ -155,7 +154,7 @@ def ref_ext(reader, lng, idxx, clf1, clf2):
             ll = ll + [len(re.sub(r'\s', '', row[0]))]
             llw = llw + [len(row[0].split())]
 
-            if (u < len(reader) - 1):
+            if u < len(reader) - 1:
                 xx = reader[u + 1].split('\t')[2]
                 try:
                     nvsl = float(xx)
@@ -166,7 +165,7 @@ def ref_ext(reader, lng, idxx, clf1, clf2):
             tmp = min_ver_dist(float(row[2]), pvsl, nvsl)
             spl = spl + [tmp]
             if len(row) > 6:
-                rfidx = check_litratur(row, rfidx, u)  # take the idx of literature section
+                rfidx = check_literature(row, rfidx, u)  # take the idx of literature section
                 ffm.append(row[6])
             else:
                 ffm.append(0)

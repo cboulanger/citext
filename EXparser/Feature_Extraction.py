@@ -52,7 +52,7 @@ def extract_features(data_dir: str):
                 row = row.split('\t')
                 if len(row[0]) > 1:
                     lh = lh + list(map(len, row[0].split()))
-                    tmp = np.asarray([i for i, c in enumerate(row[0]) if isup(c)]) + 1
+                    tmp = np.asarray([i for i, c in enumerate(row[0]) if c.isupper()]) + 1
                     if len(tmp) <= 1:
                         tmp = [1, 1]
                     ch = ch + [x - tmp[i - 1] for i, x in enumerate(tmp)][1:]
@@ -66,7 +66,7 @@ def extract_features(data_dir: str):
                         nvsl = 0
                     tmp = min_ver_dist(float(row[2]), pvsl, nvsl)
                     spl = spl + [tmp]
-                    rfidx = check_litratur(row, rfidx, uu)  # take the idx of literature section
+                    rfidx = check_literature(row, rfidx, uu)  # take the idx of literature section
                     ffm.append(row[6])
                 pvsl = float(row[2])
                 uu += 1

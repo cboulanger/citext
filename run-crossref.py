@@ -3,7 +3,7 @@ import time, os, subprocess
 import traceback
 from configs import *
 
-logf = open(config_url_venu() + 'logfile.log', "a")
+logf = open(config_url_log(), "a")
 
 
 def excite_call_Exmatcher_python(filename):
