@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
-import re
-import sys, time, os, json, traceback
-import socket, errno
+import re, sys, time, os, json, traceback, socket, errno
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from configs import *
 
 channel_id = os.environ.get('QUERY_STRING')
