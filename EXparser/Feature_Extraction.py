@@ -1,5 +1,3 @@
-# -*- coding: UTF-8 -*- 
-
 import jenkspy
 import numpy as np
 from itertools import groupby

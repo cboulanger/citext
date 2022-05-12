@@ -1,15 +1,12 @@
-# -*- coding: UTF-8 -*- 
-
-import random
-import os
-import re
-import sys
+import random, os, re, sys
 import numpy as np
 from sklearn.ensemble import RandomForestClassifier
 import pickle
 from sklearn.cluster import KMeans
 from lib.logger import log
 from lib.pogressbar import get_progress_bar
+from configs import *
+
 
 def vec2crfeat(vec, prefix):
     feat = {}
@@ -23,7 +20,8 @@ def row_count(filename):
 
 
 def train_extraction(data_dir: str, model_dir: str):
-    idxx = np.load('/app/EXparser/idxx.npy')
+    idxx = np.load(os.path.join(config_exparser_dir(), 'idxx.npy'))
+
     # Training
     FS = np.empty((0, 50 * 3), float)  # feature space
     SM = np.empty((0, 1), float)  # feature space
@@ -143,6 +141,5 @@ def train_extraction(data_dir: str, model_dir: str):
     # save the classifier
     with open(model_dir + '/rf.pkl', 'wb') as fid2:
         pickle.dump(clf1, fid2)
-
 
 # train_extraction()

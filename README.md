@@ -78,10 +78,10 @@ In order to train a new model from scratch, you need to do the following:
    scanned pages without the OCR layer, put them into `0-pdfs_no_ocr` and wait
    for the OCR server to process them and move them to `Data/1-pdfs`
 3. Create the layout files with `./bin/run layout`
-4. Move files from `Data/2-layout` into `EXparser/Dataset/<model_name>/LYT`
+4. Move files from `Data/2-layout` into `Dataset/<model_name>/LYT`
 5. Load the web application and choose your new model from the "Model" dropdown
 6. Use the web application to load and annotate the layout files from
-   `EXparser/Dataset/<model_name>/LYT` in the identification and segmentation
+   `Dataset/<model_name>/LYT` in the identification and segmentation
    views. Here is more information on training [the reference extraction
    model](https://exparser.readthedocs.io/en/latest/ReferenceExtraction/) and the
    [the reference parsing model](https://exparser.readthedocs.io/en/latest/ReferenceParsing/).
@@ -92,8 +92,8 @@ you want to train extraction and segmentation models separately, use
 `./bin/run train_extraction <model_name>` or `train_segmentation
 <model_name>`
 
-Training data lives in the `EXparser/Dataset/<model_name>`
-folder. For details, see [here](./EXparser/Dataset/README.md).
+Training data lives in the `Dataset/<model_name>`
+folder. For details, see [here](./Dataset/README.md).
 
 For training, you need to populate the following folders with training data:
 ```
@@ -190,3 +190,13 @@ This workflow can be further automated with the `bin/split_train_eval
 In order to compare the performance of two models, you can use the `bin/compare
 <model1> <model2>` command, which will automatically make a split copies of the
 models and add a third model which combines the training data of both models.
+
+# Use different versions of the EXparser engine
+
+In order to be able to compare the performance of different versions of the main
+EXparser extraction and segmentation engine, the engine can be dynamically
+switched (sine v0.2.0). You can install an engine version with `bin/run engine
+install <version>` and use it with `bin/run engine use <version>`. A list of
+installed engines is available with `bin/run engine list`. The available engines
+are listed on the release page https://github.com/cboulanger/excite-docker/releases
+(version 0.1.0 is not compatible).

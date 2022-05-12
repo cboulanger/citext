@@ -1,51 +1,50 @@
-# -*- coding: UTF-8 -*- 
 # segment a reference string
-# Optimized trainingII
-import random
-import pickle
+
+# Optimized training II
+import os, random, pickle
 from .src.spc_fun_seg import *
 from .src.classification import *
 from configs import *
 
+default_model_path = os.path.join(config_model_dir(), get_version(), 'default')
 
 # load models
+
 # segmentation model
-with open('/app/EXparser/Models/' + get_version() + '/default/crf_model.pkl', 'rb') as fid:
+crf_path = os.path.join(default_model_path, 'crf_model.pkl')
+with open(crf_path, 'rb') as fid:
     crf = pickle.load(fid)
+
 # extraction
-with open('/app/EXparser/Models/' + get_version() + '/default/rf.pkl', 'rb') as fid:
+rf_path = os.path.join(default_model_path, 'rf.pkl')
+with open(rf_path, 'rb') as fid:
     rf = pickle.load(fid)
 
-# with open('EXparser/Utils/crf_model_en.pkl', 'rb') as fid:
-#     crf1 = pickle.load(fid)
 
 # Models for reference completeness
-kde_ntag1 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_ntag_en.pkl', "rb"), encoding="latin1")
-kde_ltag1 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_ltag_en.pkl', "rb"), encoding="latin1")
-kde_dtag1 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_dtag_en.pkl', "rb"), encoding="latin1")
-kde_atag1 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_atag_en.pkl', "rb"), encoding="latin1")
-kde_wtag1 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_wtag_en.pkl', "rb"), encoding="latin1")
-kde_gtag1 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_gtag_en.pkl', "rb"), encoding="latin1")
-kde_llen1 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_llen_en.pkl', "rb"), encoding="latin1")
-kde_tlen1 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_tlen_en.pkl', "rb"), encoding="latin1")
-kde_ntag2 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_ntag_de.pkl', "rb"), encoding="latin1")
-kde_ltag2 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_ltag_de.pkl', "rb"), encoding="latin1")
-kde_dtag2 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_dtag_de.pkl', "rb"), encoding="latin1")
-kde_atag2 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_atag_de.pkl', "rb"), encoding="latin1")
-kde_wtag2 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_wtag_de.pkl', "rb"), encoding="latin1")
-kde_gtag2 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_gtag_de.pkl', "rb"), encoding="latin1")
-kde_llen2 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_llen_de.pkl', "rb"), encoding="latin1")
-kde_tlen2 = pickle.load(open('/app/EXparser/Models/' + get_version() + '/default/kde_tlen_de.pkl', "rb"), encoding="latin1")
 
-# with open('EXparser/Utils/rf_en.pkl', 'rb') as fid:
-#     clf1 = pickle.load(fid)
-# with open('EXparser/Utils/crf_model_de.pkl', 'rb') as fid:
-#     crf2 = pickle.load(fid)
-# with open('EXparser/Utils/rf_de.pkl', 'rb') as fid:
-#     clf2 = pickle.load(fid)
+def load_pickle(model_file):
+    return pickle.load(open(os.path.join(default_model_path, model_file), "rb"), encoding="latin1")
 
-idxx = np.load('/app/EXparser/idxx.npy')
+kde_ntag1 = load_pickle('kde_ntag_en.pkl')
+kde_ltag1 = load_pickle('kde_ltag_en.pkl')
+kde_dtag1 = load_pickle('kde_dtag_en.pkl')
+kde_atag1 = load_pickle('kde_atag_en.pkl')
+kde_wtag1 = load_pickle('kde_wtag_en.pkl')
+kde_gtag1 = load_pickle('kde_gtag_en.pkl')
+kde_llen1 = load_pickle('kde_llen_en.pkl')
+kde_tlen1 = load_pickle('kde_tlen_en.pkl')
+kde_ntag2 = load_pickle('kde_ntag_de.pkl')
+kde_ltag2 = load_pickle('kde_ltag_de.pkl')
+kde_dtag2 = load_pickle('kde_dtag_de.pkl')
+kde_atag2 = load_pickle('kde_atag_de.pkl')
+kde_wtag2 = load_pickle('kde_wtag_de.pkl')
+kde_gtag2 = load_pickle('kde_gtag_de.pkl')
+kde_llen2 = load_pickle('kde_llen_de.pkl')
+kde_tlen2 = load_pickle('kde_tlen_de.pkl')
 
+idxx = np.load(os.path.join(config_exparser_dir(), 'idxx.npy'))
+lng = ""
 
 def load_model(model_dir: str):
     if model_dir is None:
@@ -61,41 +60,30 @@ def load_model(model_dir: str):
     with open(model_dir + '/rf.pkl', 'rb') as fid:
         rf = pickle.load(fid)
 
-    # with open('EXparser/Utils/crf_model_en.pkl', 'rb') as fid:
-    #     crf1 = pickle.load(fid)
-
     # Models for reference completeness
     global kde_ltag1, kde_ntag1, kde_dtag1, kde_atag1, kde_wtag1, kde_gtag1, kde_llen1, kde_tlen1, kde_ntag2
-    global  kde_ltag2, kde_dtag2, kde_atag2, kde_wtag2, kde_gtag2, kde_llen2, kde_tlen2
+    global kde_ltag2, kde_dtag2, kde_atag2, kde_wtag2, kde_gtag2, kde_llen2, kde_tlen2
 
-    kde_ntag1 = pickle.load(open(model_dir + '/kde_ntag_en.pkl', "rb"), encoding="latin1")
-    kde_ltag1 = pickle.load(open(model_dir + '/kde_ltag_en.pkl', "rb"), encoding="latin1")
-    kde_dtag1 = pickle.load(open(model_dir + '/kde_dtag_en.pkl', "rb"), encoding="latin1")
-    kde_atag1 = pickle.load(open(model_dir + '/kde_atag_en.pkl', "rb"), encoding="latin1")
-    kde_wtag1 = pickle.load(open(model_dir + '/kde_wtag_en.pkl', "rb"), encoding="latin1")
-    kde_gtag1 = pickle.load(open(model_dir + '/kde_gtag_en.pkl', "rb"), encoding="latin1")
-    kde_llen1 = pickle.load(open(model_dir + '/kde_llen_en.pkl', "rb"), encoding="latin1")
-    kde_tlen1 = pickle.load(open(model_dir + '/kde_tlen_en.pkl', "rb"), encoding="latin1")
-    kde_ntag2 = pickle.load(open(model_dir + '/kde_ntag_de.pkl', "rb"), encoding="latin1")
-    kde_ltag2 = pickle.load(open(model_dir + '/kde_ltag_de.pkl', "rb"), encoding="latin1")
-    kde_dtag2 = pickle.load(open(model_dir + '/kde_dtag_de.pkl', "rb"), encoding="latin1")
-    kde_atag2 = pickle.load(open(model_dir + '/kde_atag_de.pkl', "rb"), encoding="latin1")
-    kde_wtag2 = pickle.load(open(model_dir + '/kde_wtag_de.pkl', "rb"), encoding="latin1")
-    kde_gtag2 = pickle.load(open(model_dir + '/kde_gtag_de.pkl', "rb"), encoding="latin1")
-    kde_llen2 = pickle.load(open(model_dir + '/kde_llen_de.pkl', "rb"), encoding="latin1")
-    kde_tlen2 = pickle.load(open(model_dir + '/kde_tlen_de.pkl', "rb"), encoding="latin1")
+    def load_pickle(model_file):
+        return pickle.load(open(os.path.join(model_dir, model_file), "rb"), encoding = "latin1")
 
-    # with open('EXparser/Utils/rf_en.pkl', 'rb') as fid:
-    #     clf1 = pickle.load(fid)
-    # with open('EXparser/Utils/crf_model_de.pkl', 'rb') as fid:
-    #     crf2 = pickle.load(fid)
-    # with open('EXparser/Utils/rf_de.pkl', 'rb') as fid:
-    #     clf2 = pickle.load(fid)
-    # global idxx
-    # idxx = np.load('app/EXparser/idxx.npy')
+    kde_ntag1 = load_pickle('kde_ntag_en.pkl')
+    kde_ltag1 = load_pickle('kde_ltag_en.pkl')
+    kde_dtag1 = load_pickle('kde_dtag_en.pkl')
+    kde_atag1 = load_pickle('kde_atag_en.pkl')
+    kde_wtag1 = load_pickle('kde_wtag_en.pkl')
+    kde_gtag1 = load_pickle('kde_gtag_en.pkl')
+    kde_llen1 = load_pickle('kde_llen_en.pkl')
+    kde_tlen1 = load_pickle('kde_tlen_en.pkl')
+    kde_ntag2 = load_pickle('kde_ntag_de.pkl')
+    kde_ltag2 = load_pickle('kde_ltag_de.pkl')
+    kde_dtag2 = load_pickle('kde_dtag_de.pkl')
+    kde_atag2 = load_pickle('kde_atag_de.pkl')
+    kde_wtag2 = load_pickle('kde_wtag_de.pkl')
+    kde_gtag2 = load_pickle('kde_gtag_de.pkl')
+    kde_llen2 = load_pickle('kde_llen_de.pkl')
+    kde_tlen2 = load_pickle('kde_tlen_de.pkl')
 
-
-lng = ""
 
 
 def get_score(prob, n, p):
@@ -249,7 +237,8 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
         prep[start] = 1
         l = [txt[start]]
         tlin = len(' '.join(l).split())  # length in terms of token
-        lim = [start] * 3  # the first cell is the begining of the string, the second is the starting line and the last is the end of the string
+        lim = [
+                  start] * 3  # the first cell is the begining of the string, the second is the starting line and the last is the end of the string
         samples = 17
         llin = 1  # length of the line
         ww = 1
@@ -503,7 +492,3 @@ def sg_ref(txt, refs, opt):
                 xs = tmp
                 restex.append(tmp)
     return reslt, refstr, restex
-
-
-
-

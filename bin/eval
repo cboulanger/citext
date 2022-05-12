@@ -3,7 +3,7 @@
 set -o errexit
 
 MODEL_NAME=${1:-default}
-MODEL_DATASET_DIR="./EXparser/Dataset/${MODEL_NAME}"
+MODEL_DATASET_DIR="./Dataset/${MODEL_NAME}"
 
 if ! [[ -d "${MODEL_DATASET_DIR}" ]]; then
   echo "Model $MODEL_NAME does not exist"

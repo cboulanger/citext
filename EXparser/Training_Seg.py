@@ -8,6 +8,7 @@ from lib.logger import log
 from lib.pogressbar import get_progress_bar
 
 def train_segmentation(data_dir: str, model_dir: str):
+
     # preparing training data
     fold = data_dir + "/SEG"
     fdir = os.listdir(fold)

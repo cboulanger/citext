@@ -6,7 +6,7 @@ MODEL_NAME=${1:-default}
 EVAL_MODEL_NAME="${2:-${MODEL_NAME}_eval_$(date +%s)}"
 
 # check input model
-MODEL_DATASET_DIR="./EXparser/Dataset/${MODEL_NAME}"
+MODEL_DATASET_DIR="./Dataset/${MODEL_NAME}"
 if ! [[ -d "${MODEL_DATASET_DIR}" ]]; then
   echo "Model $MODEL_NAME does not exist"
   exit 1
@@ -30,7 +30,7 @@ echo
 
 docker run -it --rm -v $(pwd):/app excite_toolchain model create $EVAL_MODEL_NAME
 
-EVAL_MODEL_DIR="./EXparser/Dataset/${EVAL_MODEL_NAME}"
+EVAL_MODEL_DIR="./Dataset/${EVAL_MODEL_NAME}"
 EVAL_LRT_DIR="${EVAL_MODEL_DIR}/LRT"
 EVAL_LYT_DIR="${EVAL_MODEL_DIR}/LYT"
 EVAL_SEG_DIR="${EVAL_MODEL_DIR}/SEG"

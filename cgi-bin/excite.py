@@ -142,7 +142,7 @@ try:
                 content = result_file.read()
                 result["success"] = content
                 if command == "layout" and model_name:
-                    lyt_dir = os.path.join("/app/EXparser/Dataset", model_name, "LYT")
+                    lyt_dir = os.path.join("/app/Dataset", model_name, "LYT")
                     sys.stderr.write(lyt_dir)
                     if os.path.isdir(lyt_dir):
                         with open(os.path.join(lyt_dir, filename + ".csv"), "w") as lyt_file:

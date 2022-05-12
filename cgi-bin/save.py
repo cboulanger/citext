@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
 import sys, json, os
-
-dataset_dir = "EXparser/Dataset"
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from configs import *
 
 print("Content-type: application/json")
 print()
@@ -29,7 +29,7 @@ try:
     if model_name == "":
         raise RuntimeError("No model name given")
 
-    dir_name = os.path.join(os.getcwd(), dataset_dir, model_name)
+    dir_name = os.path.join(os.getcwd(), config_dataset_dir(), model_name)
 
     if data_type == "layout":
         dir_name = os.path.join(dir_name, "LRT")

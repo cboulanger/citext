@@ -1,6 +1,6 @@
 import sys, os, json, requests, re
 import urllib.parse
-
+from configs import *
 
 # get data from DNB authority files via lobid.org
 def get_lobid_data(filter: dict):
@@ -24,7 +24,7 @@ def make_publishers_list():
     entries = get_lobid_data({
         "broaderTermInstantial.id": "https://d-nb.info/gnd/4063004-3" # = Publisher
     })
-    with open('EXparser/Lists/publishers.csv', 'w') as file:
+    with open(os.path.join(config_lists_dir(), 'publishers.csv'), 'w') as file:
         for i in range(len(entries)):
             entries[i] = re.sub(r'\([^)]+\)','', entries[i]).strip()
         entries = list(dict.fromkeys(entries))
@@ -36,7 +36,7 @@ def make_journals_list():
     entries = get_lobid_data({
         "broaderTermInstantial.id": "https://d-nb.info/gnd/4016222-9" # == Academic Journal
     })
-    with open('EXparser/Lists/journals-gnd.csv', 'w') as file:
+    with open(os.path.join(config_lists_dir(), 'journals-gnd.csv'), 'w') as file:
         entries = list(dict.fromkeys(entries))
         entries.sort()
         file.write('\n'.join(entries).strip())

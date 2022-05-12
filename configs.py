@@ -4,7 +4,7 @@ from enum import Enum
 venue_address = '/app/' if os.path.isdir('/app/') else os.path.dirname(os.path.abspath(__file__))
 data_address = venue_address + '/Data/'
 
-version = "0.1.0"
+version = "0.2.0"
 
 
 def get_version():
@@ -20,7 +20,7 @@ def config_url_data():
 
 
 def config_url_log():
-    return venue_address + '/tmp/logfile.log'
+    return os.path.join(config_tmp_dir(), 'logfile.log')
 
 
 def config_dirname_pdfs_no_ocr():
@@ -125,16 +125,34 @@ def config_data_dirnames():
     ]
 
 
+def config_url_git_repo():
+    return "https://github.com/cboulanger/excite-docker"
+
+
+def config_exparser_dir(version=None):
+    if version:
+        return os.path.join(config_tmp_dir(), os.path.basename(config_url_git_repo()) + "-" + version)
+    return os.path.join(venue_address, "EXparser")
+
+
+def config_exparser_version_file():
+    return os.path.join(config_tmp_dir(), "exparser-version.txt")
+
+
 def config_dataset_dir():
-    return os.path.join(venue_address, "EXparser", "Dataset")
+    return os.path.join(venue_address, "Dataset")
 
 
 def config_model_dir():
-    return os.path.join(venue_address, "EXparser", "Models")
+    return os.path.join(venue_address, "Models")
 
 
 def config_lists_dir():
-    return os.path.join(venue_address, "EXparser", "Lists")
+    return os.path.join(venue_address, "Lists")
+
+
+def config_tmp_dir():
+    return os.path.join(venue_address, "tmp")
 
 
 class DatasetDirs(Enum):

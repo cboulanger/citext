@@ -1,13 +1,4 @@
-This folder contains all scripts developed for reference extraction in EXCITE. 
-
-Folders:
-
-     Dataset/:  Contains the training data, see Dataset/README.md
-     Utils/:    Contains the necessary files for the extraction
-                list.db:    Database of names, sources and cities.
-     src/:      Contains the functions and modules needed for running different scripts
-    
-Scripts:
+This folder contains all scripts developed for reference extraction in EXCITE.
 
     *********************OffLine***************************
     Before being able to extract and segment files, it is important to train the models:

@@ -50,7 +50,7 @@ def generate_lyt_from_lrt_if_missing(model_name: str):
 def execute(model_name: str):
     try:
         create_model_folders(model_name)
-        sys.stdout.write("Please put the training data to: " + os.path.join(config_dataset_dir(), model_name)
+        sys.stdout.write("Please put the training data to: " + os.path.join(config_dataset_dir().replace("/app/",""), model_name)
                      + " and then run the training commands.\n")
     except ValueError as err:
         print(str(err))

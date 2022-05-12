@@ -30,11 +30,11 @@ bin/run model merge -I --omit-test-data $combined_eval $first_eval $second_eval
 bin/train $first_eval
 bin/eval $first_eval
 
-cp -r EXparser/Dataset/$first_eval/{TEST_LYT,TEST_REFS,TEST_SEG} EXparser/Dataset/$second_eval
+cp -r Dataset/$first_eval/{TEST_LYT,TEST_REFS,TEST_SEG} Dataset/$second_eval
 bin/train $second_eval
 bin/eval $second_eval
 
-cp -r EXparser/Dataset/$first_eval/{TEST_LYT,TEST_REFS,TEST_SEG} EXparser/Dataset/$combined_eval
+cp -r Dataset/$first_eval/{TEST_LYT,TEST_REFS,TEST_SEG} Dataset/$combined_eval
 bin/train $combined_eval
 bin/eval $combined_eval
 

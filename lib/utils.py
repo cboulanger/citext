@@ -1,23 +1,23 @@
 import json
 import os, sys, subprocess, re, builtins
 import socket
-
+from configs import *
 
 def get_message_path(channel_id) -> str:
     if not channel_id:
         raise ValueError("Missing channel id")
-    return os.path.join("tmp", channel_id)
+    return os.path.join(config_tmp_dir(), channel_id)
 
 
 def get_lock_path(channel_id) -> str:
     if not channel_id:
         raise ValueError("Missing channel id")
-    return os.path.join("tmp", channel_id + ".lock")
+    return os.path.join(config_tmp_dir(), channel_id + ".lock")
 
 
 def push_event(channel_id, event_name: str, event_data: str):
     # find out which internal port this channel id is associated with
-    file_path = os.path.join("tmp", str(channel_id))
+    file_path = os.path.join(config_tmp_dir(), str(channel_id))
     with open(file_path) as f:
         port = int(f.read())
     # sys.stderr.write(f"Connecting to channel {channel_id} via port {str(port)}...\n")
@@ -113,10 +113,10 @@ class InvervalJob(threading.Thread):
             self.callback()
 
 def getAbortSignalPath(channel_id):
-    return f"tmp/{channel_id}.abort"
+    return os.path.join(config_tmp_dir(), channel_id + '.abort')
 
 def setAbortSignal(channel_id):
-    if not os.path.exists(f"tmp/{channel_id}"):
+    if not os.path.exists(os.path.join(config_tmp_dir(), channel_id)):
         raise ValueError(f"Invalid channel id {channel_id}")
     with open(getAbortSignalPath(channel_id), "w") as f:
         f.write("cancel")

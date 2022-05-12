@@ -169,13 +169,30 @@ if __name__ == "__main__":
     rdp.set_defaults(command="package", func_name="exec_delete")
 
     # server start
-
     server_parser = subcommands.add_parser("server", help="Commands dealing with the server that provides the Web UI.")
     server_subcommands = server_parser.add_subparsers()
 
     p = server_subcommands.add_parser("start", help="Start the webserver")
     p.add_argument("--port", "-p", help="The port on which to listen", default=8000)
     p.set_defaults(command="server", func_name="server_start")
+
+    # engine
+    engine_parser = subcommands.add_parser("engine", help="Commands to manage the recognition engine")
+    engine_subcommands = engine_parser.add_subparsers()
+
+    # engine install
+    p = engine_subcommands.add_parser("install", help="Install a particular version of the engine")
+    p.add_argument("version", type=str, help="Install a particular version of the recognition engine")
+    p.set_defaults(command="engine", func_name="engine_install")
+
+    # engine list
+    p = engine_subcommands.add_parser("list", help="List all installed engines")
+    p.set_defaults(command="engine", func_name="exec_list")
+
+    # engine use
+    p = engine_subcommands.add_parser("use", help="Use a particular version of the engine")
+    p.add_argument("version", type=str, help="Use a particular version of the recognition engine, which must be installed first")
+    p.set_defaults(command="engine", func_name="exec_use")
 
     # add legacy commands
     parsers = []
@@ -184,6 +201,15 @@ if __name__ == "__main__":
         cmd.add_argument("args", nargs="+")
         cmd.set_defaults(command=data.value)
         parsers.append(cmd)
+
+    # set the exparser engine path
+    if os.path.exists(config_exparser_version_file()):
+        with open(config_exparser_version_file()) as f:
+            version = f.read()
+        if version != get_version():
+            from commands.engine import check_version
+            check_version(version)
+            sys.path.insert(0, config_exparser_dir(version))
 
     # check if argparse implementation of command exists, import and run it
     try:

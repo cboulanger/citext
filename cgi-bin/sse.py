@@ -2,6 +2,7 @@
 import re
 import sys, time, os, json, traceback
 import socket, errno
+from configs import *
 
 channel_id = os.environ.get('QUERY_STRING')
 
@@ -9,9 +10,9 @@ sys.stdout.write('Cache-Control: no-store\n')
 sys.stdout.write('Content-type: text/event-stream\n\n')
 
 # cleanup channel_id -> port cache
-for file_name in os.listdir("tmp"):
+for file_name in os.listdir(config_tmp_dir()):
     if not re.match("^[\d]+$", file_name): continue
-    file_path = os.path.join("tmp", file_name)
+    file_path = os.path.join(config_tmp_dir(), file_name)
     with open(file_path) as f:
         port = int(f.read())
         s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -32,7 +33,7 @@ sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 sock.bind(('', 0))
 port = sock.getsockname()[1]
 sock.listen(5)
-with open(f"tmp/{channel_id}", "w") as f:
+with open(os.path.join(config_tmp_dir(), channel_id), "w") as f:
     f.write(str(port))
 
 sys.stderr.write(f"SSE: Connected channel id {channel_id} with port {port}\n")
