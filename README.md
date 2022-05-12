@@ -197,6 +197,7 @@ In order to be able to compare the performance of different versions of the main
 EXparser extraction and segmentation engine, the engine can be dynamically
 switched (since v0.2.0). You can install an engine version with `bin/run engine
 install <version>` and use it with `bin/run engine use <version>`. A list of
-installed engines is available with `bin/run engine list`. The available engines
-are listed on the release page https://github.com/cboulanger/excite-docker/releases
-(version 0.1.0 is not compatible).
+installed engines is available with `bin/run engine list`. Any commit tag on
+github can be used as a version (including branches and PRs) or the released
+versions listed at https://github.com/cboulanger/excite-docker/releases (except
+version 0.1.0, which is not compatible).

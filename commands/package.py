@@ -31,7 +31,7 @@ def get_package_path(package_name):
 
 
 def create_version_dir():
-    version_dir = os.path.join(get_package_dir(), get_version())
+    version_dir = get_package_dir()
     client = get_client()
     if not client.check(version_dir):
         client.mkdir(version_dir)
