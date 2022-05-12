@@ -191,11 +191,11 @@ In order to compare the performance of two models, you can use the `bin/compare
 <model1> <model2>` command, which will automatically make a split copies of the
 models and add a third model which combines the training data of both models.
 
-# Use different versions of the EXparser engine
+## Use different versions of the EXparser engine
 
 In order to be able to compare the performance of different versions of the main
 EXparser extraction and segmentation engine, the engine can be dynamically
-switched (sine v0.2.0). You can install an engine version with `bin/run engine
+switched (since v0.2.0). You can install an engine version with `bin/run engine
 install <version>` and use it with `bin/run engine use <version>`. A list of
 installed engines is available with `bin/run engine list`. The available engines
 are listed on the release page https://github.com/cboulanger/excite-docker/releases
