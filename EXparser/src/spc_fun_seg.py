@@ -1,4 +1,3 @@
-# -*- coding: UTF-8 -*- 
 # Definition: special function for segmentation
 
 import re

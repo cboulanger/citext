@@ -1,8 +1,5 @@
-# -*- coding: UTF-8 -*-
-
-import os
-import csv
-import re
+import os, csv
+import regex as re
 import numpy as np
 import pickle
 from sklearn.neighbors import KernelDensity
@@ -83,7 +80,7 @@ def findtag(w, l):  # w is the word and l is if the tag is still open
 
 def preproc(ln):
     # remove or replace strange character:
-    ln = re.sub(r'–', '-', ln)
+    ln = re.sub(r'\p{Pd}', '-', ln)
     ln = re.sub(r'<article-title>', '<title>', ln)
     ln = re.sub(r'</article-title>', '</title>', ln)
 
@@ -134,101 +131,120 @@ def preproc(ln):
 
     return ln
 
-
-# preparing training data
-global abv
-abv = ['FN', 'LN', 'YR', 'AT', 'ED', 'SR', 'PB', 'OT', 'VL', 'PG', 'IS', 'UR', 'ID']
-dtag = []
-ltag = []
-ntag = []
-atag = []
-wtag = []
-gtag = []  # general
-sfx = '_en'  # suffix"
-fold = "./Dataset/SEG" + sfx  # ****************************************************************
-fdir = os.listdir(fold)
-train_label = []
-total = len(fdir)
-for u in range(total):
-    fname = fold + "/" + fdir[u]
-    file = open(fname)
-    reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)  # , quotechar='|'
-    print('File in prcossecing =  ' + fdir[u] + '  . . .')
-    for row in reader:
-        ln = row[0]
-        ln = re.sub(r'<author>|</author>', '', ln)  # remove author tag
-        ln = re.sub(r'</fpage>|<lpage>', '', ln)  # change page tag
-        ln = re.sub(r'<fpage>', '<page>', ln)  # change page tag
-        ln = re.sub(r'</lpage>', '</page>', ln)  # change page tag
-        ln = preproc(ln)
-        ln = ln.split()
-        l = -1  # no tag is open
-        w = ln[0]
-        a, b, l = findtag(w, l)
-        train_label.append([b])
-
-        for i in range(1, len(ln)):
-            # add the +2 word
-            w = ln[i]
+def train_completeness(dataset_dir: str, model_dir:str):
+    # preparing training data
+    global abv
+    abv = ['FN', 'LN', 'YR', 'AT', 'ED', 'SR', 'PB', 'OT', 'VL', 'PG', 'IS', 'UR', 'ID']
+    dtag = []
+    ltag = []
+    ntag = []
+    atag = []
+    wtag = []
+    gtag = []  # general
+    seg_folder = os.path.join(dataset_dir, DatasetDirs.TRAIN_SEG.value)
+    fdir = os.listdir(seg_folder)
+    train_label = []
+    total = len(fdir)
+    counter = 0
+    progress_bar = get_progress_bar("Completeness training", total)
+    log("Completeness training")
+    for u in range(total):
+        counter += 1
+        progress_bar.goto(counter)
+        curr_file = fdir[u]
+        if curr_file.startswith(".") or not curr_file.endswith(".xml"):
+            continue
+        log(f" - {curr_file}")
+        fname = os.path.join(seg_folder, curr_file)
+        file = open(fname)
+        reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)  # , quotechar='|'
+        for row in reader:
+            ln = row[0]
+            ln = re.sub(r'<author>|</author>', '', ln)  # remove author tag
+            ln = re.sub(r'</fpage>|<lpage>', '', ln)  # change page tag
+            ln = re.sub(r'<fpage>', '<page>', ln)  # change page tag
+            ln = re.sub(r'</lpage>', '</page>', ln)  # change page tag
+            ln = preproc(ln)
+            ln = ln.split()
+            l = -1  # no tag is open
+            w = ln[0]
             a, b, l = findtag(w, l)
-            train_label[len(train_label) - 1].extend([b])
-        tmpn, tmpd, tmpl, tmpa, tmpw, tmpg = dist_tags(train_label[len(train_label) - 1])
-        ntag.append(tmpn)
-        dtag.append(tmpd)
-        ltag.append(tmpl)
-        atag.append(tmpa)
-        wtag.append(tmpw)
-        gtag.append(tmpg)
-    file.close()
+            train_label.append([b])
 
-llen = []  # line length
-tlen = []  # length in terms of token
-fold = "./Dataset/RefLD"
-fold2 = "./Dataset/LYT"  # ********************************************************************
-fdir = os.listdir(fold)
-for u in range(len(fdir)):
-    print('File in prcossecing =  ' + fdir[u] + '  . . .')
-    fname = fold + "/" + fdir[u]
-    file = open(fname)
-    reader = file.read()
-    file.close()
-    reader = re.sub(r'\.[0]+e\+00\r\n', '', reader)
-    x = re.findall('12*3*', reader)
-    [llen.append([len(t)]) for t in x]
+            for i in range(1, len(ln)):
+                # add the +2 word
+                w = ln[i]
+                a, b, l = findtag(w, l)
+                train_label[len(train_label) - 1].extend([b])
+            tmpn, tmpd, tmpl, tmpa, tmpw, tmpg = dist_tags(train_label[len(train_label) - 1])
+            ntag.append(tmpn)
+            dtag.append(tmpd)
+            ltag.append(tmpl)
+            atag.append(tmpa)
+            wtag.append(tmpw)
+            gtag.append(tmpg)
+        file.close()
 
-    fname = fold2 + "/" + fdir[u]
-    file = open(fname)
-    reader2 = file.read()
-    file.close()
-    reader2 = reader2.split('\r\n')
-    tmp0 = re.finditer('12*3*', reader)
-    tmp = [(m.start(0), m.end(0)) for m in tmp0]
-    for uu in tmp:
-        tlen.append(
-            [sum([len((y.split('\t')[0]).split()) for y in reader2[uu[0]:uu[1] + 1]])])  # number of token per ref
+    llen = []  # line length
+    tlen = []  # length in terms of token
+    refld_folder = os.path.join(dataset_dir, DatasetDirs.REFLD.value)
+    lyt_dir = os.path.join(dataset_dir, DatasetDirs.TRAIN_LYT.value)
+    fdir = os.listdir(refld_folder)
+    for u in range(len(fdir)):
+        fname = os.path.join(refld_folder, fdir[u])
+        file = open(fname)
+        reader = file.read()
+        file.close()
+        reader = re.sub(r'\.[0]+e\+00\r\n', '', reader)
+        x = re.findall('12*3*', reader)
+        [llen.append([len(t)]) for t in x]
 
-# kde_ltag = KernelDensity(kernel='gaussian', bandwidth=1).fit(ltag)
-kde_ntag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(ntag)
-# kde_dtag = KernelDensity(kernel='gaussian', bandwidth=1).fit(dtag)
-kde_atag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(atag)
-kde_wtag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(wtag)
-# kde_gtag = KernelDensity(kernel='gaussian', bandwidth=1).fit(gtag)
-kde_llen = KernelDensity(kernel='gaussian', bandwidth=1).fit(llen)
-kde_tlen = KernelDensity(kernel='gaussian', bandwidth=1).fit(tlen)
+        fname = os.path.join(lyt_dir, fdir[u])
+        file = open(fname)
+        reader2 = file.read()
+        file.close()
+        reader2 = reader2.split('\r\n')
+        tmp0 = re.finditer('12*3*', reader)
+        tmp = [(m.start(0), m.end(0)) for m in tmp0]
+        for uu in tmp:
+            tlen.append(
+                [sum([len((y.split('\t')[0]).split()) for y in reader2[uu[0]:uu[1] + 1]])])  # number of token per ref
 
-# with open('Utils/kde_ltag.pkl', 'wb') as fid:
-#     pickle.dump(kde_ltag, fid)
-with open('Utils/kde_ntag' + sfx + '.pkl', 'wb') as fid:
-    pickle.dump(kde_ntag, fid)
-# with open('Utils/kde_dtag.pkl', 'wb') as fid:
-#     pickle.dump(kde_dtag, fid)
-with open('Utils/kde_atag' + sfx + '.pkl', 'wb') as fid:
-    pickle.dump(kde_atag, fid)
-with open('Utils/kde_wtag' + sfx + '.pkl', 'wb') as fid:
-    pickle.dump(kde_wtag, fid)
-# with open('Utils/kde_gtag.pkl', 'wb') as fid:
-#     pickle.dump(kde_gtag, fid)
-with open('Utils/kde_llen.pkl', 'wb') as fid:
-    pickle.dump(kde_llen, fid)
-with open('Utils/kde_tlen.pkl', 'wb') as fid:
-    pickle.dump(kde_tlen, fid)
+    # kde_ltag = KernelDensity(kernel='gaussian', bandwidth=1).fit(ltag)
+    kde_ntag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(ntag)
+    # kde_dtag = KernelDensity(kernel='gaussian', bandwidth=1).fit(dtag)
+    kde_atag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(atag)
+    kde_wtag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(wtag)
+    # kde_gtag = KernelDensity(kernel='gaussian', bandwidth=1).fit(gtag)
+    kde_llen = KernelDensity(kernel='gaussian', bandwidth=1).fit(llen)
+    kde_tlen = KernelDensity(kernel='gaussian', bandwidth=1).fit(tlen)
+
+    def dump_pickle(file_name, lng, obj):
+        file_path = os.path.join(model_dir, f"{file_name}_{lng}.pkl")
+        with open(file_path, 'wb') as fid:
+            pickle.dump(obj, fid)
+
+    dump_pickle("kde_ntag", "de", kde_ntag)
+    dump_pickle("kde_ntag", "en", kde_ntag)
+
+    """
+    original code: 
+    # with open('Utils/kde_ltag.pkl', 'wb') as fid:
+    #     pickle.dump(kde_ltag, fid)
+    with open('Utils/kde_ntag' + sfx + '.pkl', 'wb') as fid:
+        pickle.dump(kde_ntag, fid)
+    # with open('Utils/kde_dtag.pkl', 'wb') as fid:
+    #     pickle.dump(kde_dtag, fid)
+    with open('Utils/kde_atag' + sfx + '.pkl', 'wb') as fid:
+        pickle.dump(kde_atag, fid)
+    with open('Utils/kde_wtag' + sfx + '.pkl', 'wb') as fid:
+        pickle.dump(kde_wtag, fid)
+    # with open('Utils/kde_gtag.pkl', 'wb') as fid:
+    #     pickle.dump(kde_gtag, fid)
+    with open('Utils/kde_llen.pkl', 'wb') as fid:
+        pickle.dump(kde_llen, fid)
+    with open('Utils/kde_tlen.pkl', 'wb') as fid:
+        pickle.dump(kde_tlen, fid)
+    
+    """
+

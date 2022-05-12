@@ -1,16 +1,17 @@
 import csv
+import os
 import pickle
 import sklearn_crfsuite
 from .src.gle_fun import *
 from .src.gle_fun_seg import *
-from progress.bar import Bar
 from lib.logger import log
 from lib.pogressbar import get_progress_bar
+from configs import *
 
 def train_segmentation(data_dir: str, model_dir: str):
 
     # preparing training data
-    fold = data_dir + "/SEG"
+    fold = os.path.join(data_dir, DatasetDirs.TRAIN_SEG.value)
     fdir = os.listdir(fold)
     train_sents = []
     train_feat = []
