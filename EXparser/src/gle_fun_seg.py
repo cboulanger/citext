@@ -1,25 +1,28 @@
-# -*- coding: UTF-8 -*- 
-# Definition: general function for segmentation
+# general function for segmentation
+# TODO: many functions duplicate behavior from gle_fun_ext, do we really need them twice?
 
-import re
+import regex as re
 import numpy as np
-from .gle_fun import textlow, stopw
+from .gle_fun import stopw
 
 # variables:
-acc = 'A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛ'  # all capital characters
-asc = 'a-zäüöïèéçâîôêëùìòàãõñûß'  # all small characters
+acc = '\p{Lu}'  # all capital characters
+asc = '\p{Ll}'  # all lower-case characters
 ftag = ['given-names', 'surname', 'year', 'title', 'editor', 'source', 'publisher', 'other', 'page', 'volume',
         'author', 'fpage', 'lpage', 'issue', 'url', 'identifier']  # full name of tags
 atag = ['FN', 'LN', 'YR', 'AT', 'ED', 'SR', 'PB', 'OT', 'PG', 'VL', 'AR', 'FP', 'LP', 'IS', 'UR',
         'ID']  # Abbreviated tags
 
 
-# preproces the line with tag
 def preproc(ln):
-    # remove or replace strange character:
-    ln = re.sub(r'–', '-', ln)
-    ln = re.sub(r"[']+", '"', ln)
-    ln = re.sub(r'[‘]+|[’]+|[`]+|„|“', '"', ln)
+    """
+    Preprocess the line with tags
+    :param ln:
+    :return:
+    """
+    # normalize punctuation characters:
+    ln = re.sub(r'\p{Pd}', '-', ln) # Dash_Punctuation
+    ln = re.sub(r'[\p{Pi}\p{Pf}]', '"', ln) #Initial_Punctuation , Final_Punctuation
 
     # remove space between two given names A. B.
     ln = re.sub(
@@ -74,10 +77,13 @@ def preproc(ln):
     return ln
 
 
-# ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-# xml parser
-def findtag(w, l):  # w is the word and l is if the tag is still open
+def findtag(w:str, l:int):
+    """
+    "XML"-like annotation parser
+    :param w:str the word
+    :param l:int whether the tag is still open
+    :return:
+    """
     a = -1
     i = 0
     v = True
@@ -107,9 +113,6 @@ def findtag(w, l):  # w is the word and l is if the tag is still open
     return w, a, l
 
 
-# ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-
 def get_pos(i, l):
     ps1 = 1.0 * (i + 1) / l
     ps2 = 1.0 / (i + 1)
@@ -117,7 +120,7 @@ def get_pos(i, l):
 
 
 def get_len(w):
-    ln = 1.0 / max(1,  len(re.sub(r'\b\s', '', w)))
+    ln = 1.0 / max(1, len(re.sub(r'\b\s', '', w)))
     return ln
 
 
@@ -192,7 +195,7 @@ def get_lex2(w):  # [9]
 
 def get_lex3(w):  # [12]
     tmp = re.findall(
-        r'(verlag)|(press)|(universit(y|ät))|(publi(cation[s]*|shing|sher[s]*))|(book[s]*)|(intitut[e]*)', textlow(w))
+        r'(verlag)|(press)|(universit(y|ät))|(publi(cation[s]*|shing|sher[s]*))|(book[s]*)|(intitut[e]*)', w.casefold())
     lex3 = bool(tmp)
     return lex3
 
@@ -268,7 +271,7 @@ def get_num(w):  # [*2]   #is link
 
 
 def fin_db(w, stopw, b1, b2, b3, b4, b5, b6):  # [1,10]    # search in databases
-    tmp0 = textlow(re.sub(r'[^' + acc + asc + ']', '', w))
+    tmp0 = re.sub(r'[^' + acc + asc + ']', '', w).casefold()
     db = {'name': tmp0 in b1, 'abv': tmp0 in b2, 'city': tmp0 in b3, 'edit': tmp0 in b4, 'jornal': tmp0 in b5,
           'publish': tmp0 in b6}
     return db
@@ -348,7 +351,7 @@ def get_first(c):
 
 def word2feat(w, stopw, i, l, b1, b2, b3, b4, b5, b6):  # pw is the previous word and nw is the next word
     feat = {
-        'wl': textlow(w),
+        'wl': w.casefold(),
         'year': get_yr(w),
         'page': get_pg(w),
         'lex1': get_lex1(w),

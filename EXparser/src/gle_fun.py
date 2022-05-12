@@ -23,10 +23,3 @@ b3 = set(read_csv("cities"))
 b4 = set(read_csv("edt"))
 b5 = set(read_csv("journals"))
 b6 = set(read_csv("publishers"))
-
-
-# make text lower
-def textlow(ln):
-    # string method that converts a string to a case-insensitive form following
-    # an algorithm described by the Unicode Standard
-    return ln.casefold()

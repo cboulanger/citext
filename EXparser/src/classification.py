@@ -24,7 +24,12 @@ def row_count(filename):
         return sum(1 for row in in_file)
 
 
-def filtering(a):  # a is the predicted vector
+def filtering(a):
+    """
+    a is the predicted vector
+    :param a:
+    :return:
+    """
     na = a[:]
     for i in range(2, len(a) - 2):
         if (a[i] != 0) & (a[i - 1] == 0) & (a[i + 1] == 0) & ((a[i - 2] == 0) | (a[i + 2] == 0)):
@@ -35,12 +40,14 @@ def filtering(a):  # a is the predicted vector
 
 
 def check_lit(ln):
-    tmp = re.findall(r'literatur|literature|reference[s]*', textlow(ln))
-    if ((bool(tmp)) & (len(ln) < 15)) | (len(ln) < 3):
-        ch = True
-    else:
-        ch = False
-    return ch
+    """
+    Returns true if the line contains the title of a bibliography section
+    TODO: what's the difference to check_literature?
+    :param ln:
+    :return:
+    """
+    tmp = re.findall(r'literatur|literature|reference[s]*', ln.casefold())
+    return ((bool(tmp)) & (len(ln) < 15)) | (len(ln) < 3)
 
 
 def density_dist(vec, stride, rfidx):
