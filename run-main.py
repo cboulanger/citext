@@ -54,9 +54,9 @@ def call_run_exmatcher():
     run_command('python3.6 run-crossref.py')
 
 
-def call_run_exparser(model_name=None):
+def call_run_exparser(model_name=None, input_dir=None):
     from commands.run_exparser import call_exparser_extraction
-    call_exparser_extraction(os.path.join(config_model_dir(), get_version(), model_name))
+    call_exparser_extraction(os.path.join(config_model_dir(), get_version(), model_name), input_dir)
 
 
 def call_segmentation(model_name=None, input_dir=None):
@@ -192,6 +192,7 @@ if __name__ == "__main__":
     p = engine_subcommands.add_parser("use", help="Use a particular version of the engine")
     p.add_argument("version", type=str, help="Use a particular version of the recognition engine, which must be installed first")
     p.set_defaults(command="engine", func_name="exec_use")
+
 
     # add legacy commands
     parsers = []

@@ -1,12 +1,11 @@
 import time
-from langdetect import detect
 from EXparser.Segment_F1 import *
 from lib.JsonParser import *
 from lib.logger import *
 from lib.pogressbar import get_progress_bar
 
 def call_exparser_segmentation(model_dir: str, input_base_dir=None):
-    load_model(model_dir)
+    load_models(model_dir) # populates
     if input_base_dir is None:
         input_base_dir = config_url_data()
     list_of_files = []
@@ -28,20 +27,11 @@ def call_exparser_segmentation(model_dir: str, input_base_dir=None):
         progress_bar.goto(counter)
         log(f" - {filename}")
         t11 = time.time()
-        path_refs = os.path.join(input_base_dir, config_dirname_refs(), filename + ".csv")
+        #path_refs = os.path.join(input_base_dir, config_dirname_refs(), filename + ".csv")
         path_segs = os.path.join(input_base_dir, config_dirname_refs_seg(), filename + ".xml")
         path_refs_and_bibtex = os.path.join(input_base_dir, config_dirname_bibtex(), filename + '.bib')
         path_segs_prob = os.path.join(input_base_dir, config_dirname_seg_prob(), filename + '.csv')
         path_segs_dict = os.path.join(input_base_dir, config_dirname_seg_dict(), filename + '.csv')
-
-        with open(path_refs) as file:
-            reader = str(file.read())
-            # what do we need language detection for, anyways?
-            global lng
-            try:
-                lng = detect(reader)
-            except:
-                log(f"Cannot detect language in {path_refs}")
 
         # txt, valid, _, ref_prob0 = ref_ext(reader)
         reader = re.sub(r'[\r\n]+', '\n', str(reader))
@@ -77,8 +67,7 @@ def call_exparser_segmentation(model_dir: str, input_base_dir=None):
         j = 0
         for item in retex:
             wf.write("%s\n" % item)
-            data = {}
-            data["ref_bib"] = item
+            data = {"ref_bib": item}
             ref_text_x = refstr[j]
             data["ref_text_x"] = ref_text_x
             json_dict = json.dumps(data, ensure_ascii=False)

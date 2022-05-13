@@ -139,7 +139,7 @@ def train_extraction(dataset_dir: str, model_dir: str):
     clf1 = RandomForestClassifier(n_estimators=500)
     clf1.fit(FSN, SMN)
     # save the classifier
-    with open(model_dir + '/rf.pkl', 'wb') as fid2:
-        pickle.dump(clf1, fid2)
+    with open(os.path.join(model_dir, 'rf.pkl'), 'wb') as file:
+        pickle.dump(clf1, file)
 
 # train_extraction()

@@ -1,89 +1,38 @@
-# segment a reference string
+# Extracts and segments
 
-# Optimized training II
-import os, random, pickle
+import os, random, pickle, regex as re
 from .src.spc_fun_seg import *
 from .src.classification import *
 from configs import *
 
-default_model_path = os.path.join(config_model_dir(), get_version(), 'default')
 
-# load models
-
-# segmentation model
-crf_path = os.path.join(default_model_path, 'crf_model.pkl')
-with open(crf_path, 'rb') as fid:
-    crf = pickle.load(fid)
-
-# extraction
-rf_path = os.path.join(default_model_path, 'rf.pkl')
-with open(rf_path, 'rb') as fid:
-    rf = pickle.load(fid)
-
-
-# Models for reference completeness
-
-def load_pickle(model_file):
-    return pickle.load(open(os.path.join(default_model_path, model_file), "rb"), encoding="latin1")
-
-kde_ntag1 = load_pickle('kde_ntag_en.pkl')
-kde_ltag1 = load_pickle('kde_ltag_en.pkl')
-kde_dtag1 = load_pickle('kde_dtag_en.pkl')
-kde_atag1 = load_pickle('kde_atag_en.pkl')
-kde_wtag1 = load_pickle('kde_wtag_en.pkl')
-kde_gtag1 = load_pickle('kde_gtag_en.pkl')
-kde_llen1 = load_pickle('kde_llen_en.pkl')
-kde_tlen1 = load_pickle('kde_tlen_en.pkl')
-kde_ntag2 = load_pickle('kde_ntag_de.pkl')
-kde_ltag2 = load_pickle('kde_ltag_de.pkl')
-kde_dtag2 = load_pickle('kde_dtag_de.pkl')
-kde_atag2 = load_pickle('kde_atag_de.pkl')
-kde_wtag2 = load_pickle('kde_wtag_de.pkl')
-kde_gtag2 = load_pickle('kde_gtag_de.pkl')
-kde_llen2 = load_pickle('kde_llen_de.pkl')
-kde_tlen2 = load_pickle('kde_tlen_de.pkl')
-
-idxx = np.load(os.path.join(config_exparser_dir(), 'idxx.npy'))
-lng = ""
-
-def load_model(model_dir: str):
+def load_models(model_dir: str):
+    """
+    Loads amd returns model objects and populates the global ModelObjects static class
+    :param model_dir:
+    :return:
+    """
     if model_dir is None:
-        return
-
-    # load models
+        raise ValueError("Missing model dir")
     # segmentation model
-    global crf
-    with open(model_dir + '/crf_model.pkl', 'rb') as fid:
-        crf = pickle.load(fid)
-    # extraction
-    global rf
-    with open(model_dir + '/rf.pkl', 'rb') as fid:
-        rf = pickle.load(fid)
+    with open(os.path.join(model_dir, 'crf_model.pkl'), 'rb') as file:
+        ModelObjects.crf = pickle.load(file)
+    # extraction model
+    with open(os.path.join(model_dir, 'rf.pkl'), 'rb') as file:
+        ModelObjects.rf = pickle.load(file)
 
-    # Models for reference completeness
-    global kde_ltag1, kde_ntag1, kde_dtag1, kde_atag1, kde_wtag1, kde_gtag1, kde_llen1, kde_tlen1, kde_ntag2
-    global kde_ltag2, kde_dtag2, kde_atag2, kde_wtag2, kde_gtag2, kde_llen2, kde_tlen2
-
+    # models for reference completeness
     def load_pickle(model_file):
-        return pickle.load(open(os.path.join(model_dir, model_file), "rb"), encoding = "latin1")
+        return pickle.load(open(os.path.join(model_dir, model_file), "rb"), encoding="latin1")
 
-    kde_ntag1 = load_pickle('kde_ntag_en.pkl')
-    kde_ltag1 = load_pickle('kde_ltag_en.pkl')
-    kde_dtag1 = load_pickle('kde_dtag_en.pkl')
-    kde_atag1 = load_pickle('kde_atag_en.pkl')
-    kde_wtag1 = load_pickle('kde_wtag_en.pkl')
-    kde_gtag1 = load_pickle('kde_gtag_en.pkl')
-    kde_llen1 = load_pickle('kde_llen_en.pkl')
-    kde_tlen1 = load_pickle('kde_tlen_en.pkl')
-    kde_ntag2 = load_pickle('kde_ntag_de.pkl')
-    kde_ltag2 = load_pickle('kde_ltag_de.pkl')
-    kde_dtag2 = load_pickle('kde_dtag_de.pkl')
-    kde_atag2 = load_pickle('kde_atag_de.pkl')
-    kde_wtag2 = load_pickle('kde_wtag_de.pkl')
-    kde_gtag2 = load_pickle('kde_gtag_de.pkl')
-    kde_llen2 = load_pickle('kde_llen_de.pkl')
-    kde_tlen2 = load_pickle('kde_tlen_de.pkl')
-
+    ModelObjects.kde_ntag = load_pickle('kde_ntag_en.pkl')
+    ModelObjects.kde_ltag = load_pickle('kde_ltag_en.pkl')
+    ModelObjects.kde_dtag = load_pickle('kde_dtag_en.pkl')
+    ModelObjects.kde_atag = load_pickle('kde_atag_en.pkl')
+    ModelObjects.kde_wtag = load_pickle('kde_wtag_en.pkl')
+    ModelObjects.kde_gtag = load_pickle('kde_gtag_en.pkl')
+    ModelObjects.kde_llen = load_pickle('kde_llen_en.pkl')
+    ModelObjects.kde_tlen = load_pickle('kde_tlen_en.pkl')
 
 
 def get_score(prob, n, p):
@@ -105,7 +54,7 @@ def get_score(prob, n, p):
     return score
 
 
-def comp_prob(label_pred, llin, tlin, kde_ntag, kde_ltag, kde_dtag, kde_atag, kde_wtag, kde_gtag, kde_llen, kde_tlen):
+def comp_prob(label_pred, llin, tlin):
     abv = ['FN', 'YR', 'AT', 'PG', 'SR', 'ED']
     label_pred = [tmp for tmp in label_pred if tmp in abv]
     n = []
@@ -139,14 +88,14 @@ def comp_prob(label_pred, llin, tlin, kde_ntag, kde_ltag, kde_dtag, kde_atag, kd
     # g=np.concatenate((l,a,[w],n))   #best
 
     # g=np.concatenate((n,[w]))
-    # g=np.exp(kde_gtag.score([g]))
-    n = np.exp(kde_ntag.score([n]))
-    # l=np.exp(kde_ltag.score([l]))
-    # d=np.exp(kde_dtag.score([d]))
-    a = np.exp(kde_atag.score([a]))
-    w = np.exp(kde_wtag.score([w]))
-    # ll=np.exp(kde_llen.score(llin))
-    # tl=np.exp(kde_tlen.score(tlin))
+    # g=np.exp(ModelObjects.kde_gtag.score([g]))
+    n = np.exp(ModelObjects.kde_ntag.score([n]))
+    # l=np.exp(ModelObjects.kde_ltag.score([l]))
+    # d=np.exp(ModelObjects.kde_dtag.score([d]))
+    a = np.exp(ModelObjects.kde_atag.score([a]))
+    w = np.exp(ModelObjects.kde_wtag.score([w]))
+    # ll=np.exp(ModelObjects.kde_llen.score(llin))
+    # tl=np.exp(ModelObjects.kde_tlen.score(tlin))
 
     prob = w * n * a  # *tl
     # prob=n
@@ -157,7 +106,7 @@ def main_sg(ln, vtag):
     # preparing training data
     global xd
     global yd
-    global lng
+    crf = ModelObjects.crf
 
     test_sents = []
     test_feat = []
@@ -189,7 +138,6 @@ def main_sg(ln, vtag):
         # update features
         test_feat[len(test_feat) - 1] = add2feat(test_feat[len(test_feat) - 1], i)
 
-    # crf = crf2 if lng == 'de' else crf1 #todo: we have one model for now: crf - produced by Training_Seg.py
     label_pred = crf.predict_single(test_feat[0])  # predict
     prob_pred = crf.predict_marginals_single(test_feat[0])
     label_pred, prob_pred = one_page(label_pred, prob_pred)
@@ -220,14 +168,6 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
         txt)  # az vector of whether the line is preprocessed or not in order to not preprocessed everything
     tmp = max(ref_prob)
     u = 1
-    kde_ntag = kde_ntag2 if lng == 'de' else kde_ntag1
-    kde_ltag = kde_ltag2 if lng == 'de' else kde_ltag1
-    kde_dtag = kde_dtag2 if lng == 'de' else kde_dtag1
-    kde_atag = kde_atag2 if lng == 'de' else kde_atag1
-    kde_wtag = kde_wtag2 if lng == 'de' else kde_wtag1
-    kde_gtag = kde_gtag2 if lng == 'de' else kde_gtag1
-    kde_llen = kde_llen2 if lng == 'de' else kde_llen1
-    kde_tlen = kde_tlen2 if lng == 'de' else kde_tlen1
     mll = np.median([len(tmp) for tmp in txt])  # median length of line (used for restriction)
 
     while sum(valid) > 0 and tmp > 0:
@@ -252,8 +192,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                 pb, lb, _ = main_sg(' '.join(l), 0)
                 # rp=restriction(lb,l)
                 p = get_score(pb, len(' '.join(l).split()), 'a')
-                cp = comp_prob(lb, llin, tlin, kde_ntag, kde_ltag, kde_dtag, kde_atag, kde_wtag, kde_gtag, kde_llen,
-                               kde_tlen)
+                cp = comp_prob(lb, llin, tlin)
                 s1 = lim[0] - 1
                 s2 = lim[2] + 1
                 if ((w == 0) & (s1 >= 0)):
@@ -271,8 +210,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                         rp = restriction(lb, txt[s1], mll, 4) * restriction(lb, l[0], mll, 1) * restriction(lb, l[0],
                                                                                                             mll, 6)
                         p0 = get_score(pb, len(' '.join(l).split()), 'e')
-                        cp0 = comp_prob(lb0, llin + 1, tlin0, kde_ntag, kde_ltag, kde_dtag, kde_atag, kde_wtag,
-                                        kde_gtag, kde_llen, kde_tlen)
+                        cp0 = comp_prob(lb0, llin + 1, tlin0)
                         pn0 = max(ref_prob0[s1][1:3])
                         pn = ref_prob0[s1][3]
 
@@ -304,8 +242,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                                                                                                              txt[s2],
                                                                                                              mll, 6)
                         p0 = get_score(pb, len(' '.join(l).split()), 'b')
-                        cp0 = comp_prob(lb0, llin + 1, tlin0, kde_ntag, kde_ltag, kde_dtag, kde_atag, kde_wtag,
-                                        kde_gtag, kde_llen, kde_tlen)
+                        cp0 = comp_prob(lb0, llin + 1, tlin0)
                         pn0 = max(ref_prob0[s2][2::])
                         pn = ref_prob0[s2][1]
 
@@ -331,10 +268,10 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                     pb,lb0,_=main_sg(' '.join(l0),0)
                     p0=get_score(pb,len(' '.join(l0).split()),'a')
                     tlin0=len(' '.join(l0).split())   #length in terms of token 
-                    cp0=comp_prob(lb0,llin-1,tlin0,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
+                    cp0=comp_prob(lb0,llin-1,tlin0)
                     pb,lb,_=main_sg(' '.join(l),0)
                     p=get_score(pb,len(' '.join(l0).split()),'e')
-                    cp=comp_prob(lb,llin-1,tlin0,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
+                    cp=comp_prob(lb,llin-1,tlin0)
                     pn=max(ref_prob0[s1][1:3])
                     pn0=ref_prob0[s1][3]
                     rp0=restriction(lb0,l[0],mll,4)*restriction(lb0,l0[0],mll,1)*restriction(lb0,l0[0],mll,6)
@@ -351,10 +288,10 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                     l0=l[0:-1]
                     pb,lb0,_=main_sg(' '.join(l0),0)
                     p0=get_score(pb,len(' '.join(l0).split()),'a')
-                    cp0=comp_prob(lb0,llin-1,tlin0,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
+                    cp0=comp_prob(lb0,llin-1,tlin0)
                     pb,lb,_=main_sg(' '.join(l),0)
                     p=get_score(pb,len(' '.join(l0).split()),'b')
-                    cp=comp_prob(lb,llin-1,tlin0,kde_ntag,kde_ltag,kde_dtag,kde_atag,kde_wtag,kde_gtag,kde_llen,kde_tlen)
+                    cp=comp_prob(lb,llin-1,tlin0)
                     pn=max(ref_prob0[s2][2::])
                     pn0=ref_prob0[s2][1]
                     rp0=restriction(lb0,l0[-1],mll,4)*restriction(lb0,l[-1],mll,1)*restriction(lb0,l[-1],mll,6)
@@ -374,8 +311,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
         ref_prob[np.where(np.array(valid) == 0)] = 0
         tmp = max(ref_prob)
 
-    ##################################################
-    # We try to merge references if they are wrongly splited (rather missted to be merged in the previous step)
+    # We try to merge references if they are wrongly split (rather missed to be merged in the previous step)
     ref_id = np.array(ref_id)
 
     ZZ = []
@@ -396,7 +332,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
         l = [txt[idd] for idd in id]
         b, lb, _ = main_sg(' '.join(l), 0)
         p = get_score(pb, len(' '.join(l).split()), 'a')
-        cp = comp_prob(lb, llin, tlin, kde_ntag, kde_ltag, kde_dtag, kde_atag, kde_wtag, kde_gtag, kde_llen, kde_tlen)
+        cp = comp_prob(lb, llin, tlin)
         w = random.randint(0, 1)  # top or buttom
         if ii > 0:
             id1 = np.where(ref_id == Z[ii - 1])[0]
@@ -423,8 +359,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                                                                                                2) * restriction(lb1,
                                                                                                                 l[0],
                                                                                                                 mll, 2)
-            cp0 = comp_prob(lb0, llin + 1, tlin0, kde_ntag, kde_ltag, kde_dtag, kde_atag, kde_wtag, kde_gtag, kde_llen,
-                            kde_tlen)
+            cp0 = comp_prob(lb0, llin + 1, tlin0)
 
             # with open('rrr.txt','ab') as fid:
             # fid.write(str(i)+'(up):'+str([pn0,rp0,cp0,p0,p10])+':'+' '.join(l0)+'\r'+str([pn,rp,cp,p,p1])+':'+' '.join(l)+'\r\r\r')
@@ -454,8 +389,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                                                                                                 2) * restriction(lb1,
                                                                                                                  l[0],
                                                                                                                  mll, 2)
-            cp0 = comp_prob(lb0, llin + 1, tlin0, kde_ntag, kde_ltag, kde_dtag, kde_atag, kde_wtag, kde_gtag, kde_llen,
-                            kde_tlen)
+            cp0 = comp_prob(lb0, llin + 1, tlin0)
             # with open('rrr.txt','ab') as fid:
             # fid.write(str(i)+'(down):'+str([pn0,rp0,cp0,p0,p10])+':'+' '.join(l0)+'\r'+str([pn,rp,cp,p,p1])+':'+' '.join(l)+'\r\r\r')
             if (pn0 * rp0 * cp0 * p0 * p10) > (pn * rp * cp * p * p1):
@@ -464,7 +398,6 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
         tmp = np.unique(ref_id, return_index=True)
         Z = [x for _, x in sorted(zip(tmp[1], tmp[0]))]
         tmp3 = [tmp2 for tmp2 in Z if tmp2 not in ZZ]
-    ##################################################
     return ref_id
 
 
@@ -478,9 +411,10 @@ def sg_ref(txt, refs, opt):
     for i in Z:  # range(1,max(refs)+1):
         tmp = np.where(refs == i)[0]
         if len(tmp) > 0:
+            ln = ""
             for u in range(len(tmp)):
                 ln = txt[tmp[u]] if u == 0 else ln + ' ' + txt[tmp[u]]
-            tmp1 = re.finditer(r'([A-ZÄÜÖÏÈÉÇÂÎÔÊËÙÌÒÀÃÕÑÛa-zäüöïèéçâîôêëùìòàãõñûß])', ln)
+            tmp1 = re.finditer(r'([\p{L}])', ln)
             tmp2 = [m.start(0) for m in tmp1]
             if bool(tmp2):
                 tmp2 = tmp2[0]
@@ -489,6 +423,5 @@ def sg_ref(txt, refs, opt):
                 refstr.append(ln)
                 reslt.append(tmp0)
                 tmp = refToBibtex(i, tmp0, 'article', True)
-                xs = tmp
                 restex.append(tmp)
     return reslt, refstr, restex

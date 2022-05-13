@@ -4,10 +4,12 @@ from EXparser.Segment_F1 import *
 from lib.JsonParser import *
 from lib.logger import *
 from lib.pogressbar import get_progress_bar
-
+from configs import *
 
 def call_exparser_extraction(model_dir: str, input_base_dir: str = None):
-    load_model(model_dir)
+    load_models(model_dir)
+    rf = ModelObjects.rf
+    idxx = np.load(os.path.join(config_exparser_dir(), 'idxx.npy'))
     if input_base_dir is None:
         input_base_dir = config_url_data()
 
@@ -37,17 +39,8 @@ def call_exparser_extraction(model_dir: str, input_base_dir: str = None):
 
         file = open(path_layout, encoding="utf-8")
         reader = file.read()
-        global lng
         try:
-            lng = detect(reader)
-        except:
-            log("Cannot extract language from " + path_layout)
-            lng = ""
-        finally:
-            file.close()
-        # todo: pass one model: rf as we have one model now for extraction for de and en
-        try:
-            txt, valid, _, ref_prob0 = ref_ext(reader, lng, idxx, rf, rf)
+            txt, valid, _, ref_prob0 = ref_ext(reader, idxx, rf)
         except RuntimeWarning as warning:
             log(warning)
             continue

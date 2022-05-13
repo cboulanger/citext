@@ -128,7 +128,7 @@ def density_dist(vec, stride, rfidx):
     return d
 
 
-def ref_ext(reader, lng, idxx, clf1, clf2):
+def ref_ext(reader, idxx, clf):
     reader = re.sub(r'[\r\n]+', '\n', reader)
     reader = reader.split('\n')
     reader = reader[0:-1] if reader[-1] == '' else reader
@@ -301,7 +301,6 @@ def ref_ext(reader, lng, idxx, clf1, clf2):
     FS[np.isinf(FS)] = 0
     FS = np.transpose([(x - min(x)) / (max(x) - min(x)) for x in np.transpose(FS)])
     FS[np.isnan(FS)] = 0
-    clf = clf2 if lng == 'de' else clf1
     a = density_dist(clf.predict(FS), 1, rfidx)
     # a=clf.predict(FS)
     b = clf.predict_proba(FS)

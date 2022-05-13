@@ -91,5 +91,5 @@ def train_segmentation(dataset_dir: str, model_dir: str):
         all_possible_states=True
     )
     crf.fit(train_feat, train_label)
-    with open(model_dir + '/crf_model.pkl', 'wb') as fid:
-        pickle.dump(crf, fid)
+    with open(os.path.join(model_dir, 'crf_model.pkl'), 'wb') as file:
+        pickle.dump(crf, file)

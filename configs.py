@@ -1,11 +1,10 @@
-import os
+import os, pickle
 from enum import Enum
 
 venue_address = '/app/' if os.path.isdir('/app/') else os.path.dirname(os.path.abspath(__file__))
 data_address = venue_address + '/Data/'
 
 version = "0.2.0"
-
 
 def get_version():
     return version
@@ -177,3 +176,21 @@ class DatasetDirs(Enum):
     TEST_LYT = "TEST_LYT"
     TEST_REFS = "TEST_REFS"
     TEST_SEG = "TEST_SEG"
+
+# Model data in global vars
+class ModelObjects:
+    rf = None
+    crf = None
+    kde_ltag = None
+    kde_ntag = None
+    kde_dtag = None
+    kde_atag = None
+    kde_wtag = None
+    kde_gtag = None
+    kde_llen = None
+    kde_tlen = None
+
+
+
+
+
