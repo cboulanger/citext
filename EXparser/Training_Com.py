@@ -226,8 +226,8 @@ def train_completeness(dataset_dir: str, model_dir:str):
         with open(file_path, 'wb') as fid:
             pickle.dump(obj, fid)
 
-    dump_pickle("kde_ntag", "en", kde_ntag)
     dump_pickle("kde_atag", "en", kde_atag)
+    dump_pickle("kde_ntag", "en", kde_ntag)
     dump_pickle("kde_wtag", "en", kde_wtag)
 
     # dump_pickle("kde_ltag", "en", kde_ltag)

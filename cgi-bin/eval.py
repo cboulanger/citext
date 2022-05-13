@@ -7,7 +7,7 @@ from configs import *
 from commands.split import split_model
 from commands.model_list import list_models
 from commands.model_delete import delete_model_folders
-from commands.training import call_segmentation_training, call_extraction_training
+from commands.training import *
 from commands.run_exparser import call_exparser_extraction
 from evaluation import eval_extraction, eval_segmentation
 from commands.run_segmentation import call_exparser_segmentation
@@ -50,6 +50,8 @@ try:
 
     if not skip_segmentation:
         call_segmentation_training(split_model_name)
+
+    call_completeness_training(split_model_name)
 
     # evaluation
     if not skip_extraction:

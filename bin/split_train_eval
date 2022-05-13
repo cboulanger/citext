@@ -3,7 +3,9 @@
 set -o errexit
 
 MODEL_NAME=${1:-default}
-EVAL_MODEL_NAME="${MODEL_NAME}_eval_$(date +%s)"
+EVAL_MODEL_NAME="${2:-test_${MODEL_NAME}_$(date +%s)}"
+
+echo "Evaluation model $MODEL_NAME as model $EVAL_MODEL_NAME"
 
 [[ -f logfile.log ]] && rm logfile.log
 

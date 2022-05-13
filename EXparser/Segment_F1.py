@@ -25,8 +25,8 @@ def load_models(model_dir: str):
     def load_pickle(model_file):
         return pickle.load(open(os.path.join(model_dir, model_file), "rb"), encoding="latin1")
 
-    ModelObjects.kde_ntag = load_pickle('kde_ntag_en.pkl')
     ModelObjects.kde_atag = load_pickle('kde_atag_en.pkl')
+    ModelObjects.kde_ntag = load_pickle('kde_ntag_en.pkl')
     ModelObjects.kde_wtag = load_pickle('kde_wtag_en.pkl')
 
     # Unused model files
