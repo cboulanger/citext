@@ -126,7 +126,7 @@ def download_package(package_name, model_name):
     print("Uncompressing files...")
     with ZipFile(zip_path, 'r') as zip_file:
         for name in zip_file.namelist():
-            targetpath = name.replace(f'/{package_name}/', f'/{model_name}/')
+            targetpath = name.replace('app/','').replace(f'/{package_name}/', f'/{model_name}/')
             os.makedirs(os.path.dirname(targetpath), exist_ok=True)
             with zip_file.open(name) as source, open(targetpath, "wb") as target:
                 shutil.copyfileobj(source, target)
