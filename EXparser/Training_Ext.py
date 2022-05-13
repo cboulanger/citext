@@ -19,27 +19,27 @@ def row_count(filename):
         return sum(1 for row in in_file)
 
 
-def train_extraction(data_dir: str, model_dir: str):
+def train_extraction(dataset_dir: str, model_dir: str):
     idxx = np.load(os.path.join(config_exparser_dir(), 'idxx.npy'))
 
     # Training
     FS = np.empty((0, 50 * 3), float)  # feature space
     SM = np.empty((0, 1), float)  # feature space
-    fold = data_dir + "/LYT"
-    fdir = os.listdir(fold)
-    total = len(fdir)
+    lyt_dir = os.path.join(dataset_dir, DatasetDirs.LYT.value)
+    lyt_files = os.listdir(lyt_dir)
+    total = len(lyt_files)
     counter = 0
     progress_bar = get_progress_bar("Extraction training", total)
     log("Extraction training...")
     for u in range(total):
         counter += 1
         progress_bar.goto(counter)
-        curr_file = fdir[u]
+        curr_file = lyt_files[u]
         if curr_file.startswith(".") or not curr_file.endswith(".csv"):
             continue
         log(f" - {curr_file}")
         try:
-            fpath = os.path.join(data_dir, "Features", curr_file)
+            fpath = os.path.join(dataset_dir, "Features", curr_file)
             with open(fpath) as file:
                 reader = str(file.read())
         except FileNotFoundError:
@@ -51,7 +51,7 @@ def train_extraction(data_dir: str, model_dir: str):
         reader = reader.split('\r')
         reader = reader[0:-1] if reader[-1] == '' else reader
         try:
-            fpath = os.path.join(data_dir, "RefLD", fdir[u])
+            fpath = os.path.join(dataset_dir, DatasetDirs.REFLD.value, curr_file)
             with open(fpath) as file:
                 reader2 = str(file.read())
         except FileNotFoundError:

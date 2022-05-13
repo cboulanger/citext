@@ -20,6 +20,7 @@ class Commands(Enum):
     EXMATCHER = "exmatcher"
     TRAIN_EXTRACTION = "train_extraction"
     TRAIN_SEGMENTATION = "train_segmentation"
+    TRAIN_COMPLETENESS = "train_completeness"
 
 
 def run_command(command):
@@ -64,8 +65,6 @@ def call_segmentation(model_name=None, input_dir=None):
 
 
 if __name__ == "__main__":
-
-
 
     # https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser(description='Run exparser tools.', prog="")
@@ -265,6 +264,12 @@ if __name__ == "__main__":
                 raise RuntimeError("Please provide a name for the model")
             from commands.training import call_segmentation_training
             call_segmentation_training(sys.argv[2])
+
+        elif func_name == Commands.TRAIN_COMPLETENESS.value:
+            if len(sys.argv) < 3:
+                raise RuntimeError("Please provide a name for the model")
+            from commands.training import call_completeness_training
+            call_completeness_training(sys.argv[2])
 
         else:
             raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +

@@ -11,14 +11,14 @@ def merge_models(target_model: str, source_models: list = [], omit_test_data=Fal
     :param source_models:list
     :return:
     """
-    target_dir = os.path.join("EXparser", "Dataset", target_model)
+    target_dir = os.path.join(config_dataset_dir(), target_model)
     if not os.path.exists(target_dir):
         raise ValueError(f"Model '{target_model}' does not exist")
 
-    training_data_dirs = ["LYT", "LRT", "SEG"]
+    training_data_dirs = [DatasetDirs.LRT.value, DatasetDirs.LYT.value, DatasetDirs.SEG.value]
 
     for source_model in source_models:
-        source_dir = os.path.join("EXparser", "Dataset", source_model)
+        source_dir = os.path.join(config_dataset_dir(), source_model)
         if not os.path.exists(source_dir):
             raise ValueError(f"Model '{source_model}' does not exist")
         for traindir_name in training_data_dirs:

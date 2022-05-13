@@ -8,26 +8,26 @@ from lib.logger import log
 from lib.pogressbar import get_progress_bar
 from configs import *
 
-def train_segmentation(data_dir: str, model_dir: str):
+def train_segmentation(dataset_dir: str, model_dir: str):
 
     # preparing training data
-    fold = os.path.join(data_dir, DatasetDirs.TRAIN_SEG.value)
-    fdir = os.listdir(fold)
     train_sents = []
     train_feat = []
     train_label = []
-    total = len(fdir)
+    seg_dir = os.path.join(dataset_dir, DatasetDirs.SEG.value)
+    seg_files = os.listdir(seg_dir)
+    total = len(seg_files)
     counter = 0
     progress_bar = get_progress_bar("Segmentation training", total)
     log("Segmentation training")
     for u in range(total):
         counter += 1
         progress_bar.goto(counter)
-        curr_file = fdir[u]
+        curr_file = seg_files[u]
         if curr_file.startswith(".") or not curr_file.endswith(".xml"):
             continue
         log(f" - {curr_file}")
-        fname = os.path.join(fold, curr_file)
+        fname = os.path.join(seg_dir, curr_file)
         file = open(fname, encoding="utf-8")
         reader = csv.reader(file, delimiter='\t', quoting=csv.QUOTE_NONE)  # , quotechar='|'
         linenum = 0

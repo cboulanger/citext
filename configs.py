@@ -139,11 +139,24 @@ def config_exparser_version_file():
     return os.path.join(config_tmp_dir(), "exparser-version.txt")
 
 
-def config_dataset_dir():
+def config_dataset_dir(model_name=None):
+    if model_name:
+        return os.path.join(config_dataset_dir(), model_name)
     return os.path.join(venue_address, "Dataset")
 
 
-def config_model_dir():
+def config_model_dir(model_name=None, version=None):
+    """
+    Returns the path to the dir containing the trained model files. If no argument is passed,
+    return the root path where all trained model data is located. If the model name is passed,
+    return the path to this model's data, for the current engine version. If a version is passed,
+    return the path to the model data for this version. No check is done if the path exists.
+    :param model_name:str
+    :param version:str
+    :return:str
+    """
+    if model_name:
+        return os.path.join(config_model_dir(None, version), version or get_version(), model_name)
     return os.path.join(venue_address, "Models")
 
 
@@ -157,10 +170,10 @@ def config_tmp_dir():
 
 class DatasetDirs(Enum):
     FEATURES = "Features"
-    LAYOUT = "LYT"
-    TRAIN_LYT = "LRT"
+    LYT = "LYT"
+    LRT = "LRT"
     REFLD = "RefLD"
-    TRAIN_SEG = "SEG"
+    SEG = "SEG"
     TEST_LYT = "TEST_LYT"
     TEST_REFS = "TEST_REFS"
     TEST_SEG = "TEST_SEG"
