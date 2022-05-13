@@ -98,7 +98,10 @@ try:
         try:
             source = os.path.join(tempfile.gettempdir(), filename + ".csv")
             target = os.path.join(config_url_Refs(), filename + ".csv")
-            shutil.move(source, target)
+            shutil.copy(source, target)
+            os.remove(source)
+        except PermissionError as err:
+            sys.stderr.write(str(err)+'\n')
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
         result_path = os.path.join(config_url_Refs_segment(), filename + ".xml")

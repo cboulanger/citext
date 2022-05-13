@@ -24,9 +24,13 @@ def execute(model_names, non_interactive=False):
             "*") else [model_name_or_prefix]
         for model_name in model_names_expanded:
             if model_name == "default":
-                print("The default model cannot be deleted")
+                sys.stderr.write("The default model cannot be deleted\n")
                 sys.exit(1)
             models.append(model_name)
+
+    if len(models) == 0:
+        sys.stderr.write("No matching models found\n")
+        sys.exit(1)
 
     if non_interactive == False:
         model_list = "', '".join(models[:-1]) + f"' and '{models[-1]}" if len(models) > 1 else models[0]
