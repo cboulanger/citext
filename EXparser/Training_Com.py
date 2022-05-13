@@ -222,23 +222,14 @@ def train_completeness(dataset_dir: str, model_dir:str):
         with open(file_path, 'wb') as fid:
             pickle.dump(obj, fid)
 
-    dump_pickle("kde_ntag", "de", kde_ntag) # kde_dtag
     dump_pickle("kde_ntag", "en", kde_ntag)
-    dump_pickle("kde_ltag", "de", kde_ltag) # kde_ltag
     dump_pickle("kde_ltag", "en", kde_ltag)
-    dump_pickle("kde_dtag", "de", kde_dtag) # kde_dtag
     dump_pickle("kde_dtag", "en", kde_dtag)
-    dump_pickle("kde_atag", "de", kde_atag) # kde_atag
     dump_pickle("kde_atag", "en", kde_atag)
-    dump_pickle("kde_wtag", "de", kde_wtag) # kde_wtag
     dump_pickle("kde_wtag", "en", kde_wtag)
-    dump_pickle("kde_gtag", "de", kde_gtag) # kde_gtag
     dump_pickle("kde_gtag", "en", kde_gtag)
-    dump_pickle("kde_wtag", "de", kde_wtag) # kde_wtag
     dump_pickle("kde_wtag", "en", kde_wtag)
-    dump_pickle("kde_llen", "de", kde_llen) # kde_llen
     dump_pickle("kde_llen", "en", kde_llen)
-    dump_pickle("kde_tlen", "de", kde_tlen) # kde_tlen
     dump_pickle("kde_tlen", "en", kde_tlen)
 
     """
