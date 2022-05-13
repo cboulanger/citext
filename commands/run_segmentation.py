@@ -5,7 +5,7 @@ from lib.logger import *
 from lib.pogressbar import get_progress_bar
 
 def call_exparser_segmentation(model_dir: str, input_base_dir=None):
-    load_models(model_dir) # populates
+    load_models(model_dir)
     if input_base_dir is None:
         input_base_dir = config_url_data()
     list_of_files = []
@@ -27,12 +27,14 @@ def call_exparser_segmentation(model_dir: str, input_base_dir=None):
         progress_bar.goto(counter)
         log(f" - {filename}")
         t11 = time.time()
-        #path_refs = os.path.join(input_base_dir, config_dirname_refs(), filename + ".csv")
+        path_refs = os.path.join(input_base_dir, config_dirname_refs(), filename + ".csv")
         path_segs = os.path.join(input_base_dir, config_dirname_refs_seg(), filename + ".xml")
         path_refs_and_bibtex = os.path.join(input_base_dir, config_dirname_bibtex(), filename + '.bib')
         path_segs_prob = os.path.join(input_base_dir, config_dirname_seg_prob(), filename + '.csv')
         path_segs_dict = os.path.join(input_base_dir, config_dirname_seg_dict(), filename + '.csv')
 
+        with open(path_refs) as file:
+            reader = str(file.read())
         # txt, valid, _, ref_prob0 = ref_ext(reader)
         reader = re.sub(r'[\r\n]+', '\n', str(reader))
         reader = reader.split('\n')

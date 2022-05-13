@@ -1105,7 +1105,9 @@ class GUI {
           }
         } else if (text.trim()) {
           const onCloseClick = type === "info" ? () => {
-            Actions.run_cgi_script("abort.py", {id: channel_id})
+            if (confirm("Cancel the current server process?")) {
+              Actions.run_cgi_script("abort.py", {id: channel_id})
+            }
           } : undefined;
           toast = toastr[type](text, title, {
             positionClass: "toast-bottom-full-width",

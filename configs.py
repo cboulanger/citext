@@ -181,14 +181,14 @@ class DatasetDirs(Enum):
 class ModelObjects:
     rf = None
     crf = None
-    kde_ltag = None
     kde_ntag = None
-    kde_dtag = None
     kde_atag = None
     kde_wtag = None
-    kde_gtag = None
-    kde_llen = None
-    kde_tlen = None
+    # kde_ltag = None
+    # kde_dtag = None
+    # kde_gtag = None
+    # kde_llen = None
+    # kde_tlen = None
 
 
 

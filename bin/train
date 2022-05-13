@@ -40,6 +40,13 @@ start_segmentation=`date +%s`
 docker run -it --rm -v $(pwd):/app excite_toolchain train_segmentation $MODEL_NAME
 end_segmentation=`date +%s`
 
+echo
+echo "=========================================================================================="
+echo "Training model completeness for $MODEL_NAME model, please wait..."
+echo "=========================================================================================="
+echo
+docker run -it --rm -v $(pwd):/app excite_toolchain train_completeness $MODEL_NAME
+
 # Report performance
 convertsecs() {
  ((h=${1}/3600))

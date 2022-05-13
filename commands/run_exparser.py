@@ -91,6 +91,7 @@ def call_exparser_extraction(model_dir: str, input_base_dir: str = None):
         t22 = time.time()
         temp = t22 - t11
         list_of_time.append(temp)
+    progress_bar.finish()
     t2 = time.time()
     log('Sum time: %s' % (t2 - t1))
     if len(list_of_time) > 0:

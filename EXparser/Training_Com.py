@@ -196,26 +196,30 @@ def train_completeness(dataset_dir: str, model_dir:str):
         progress_bar.goto(int(counter / 2))
         with open(os.path.join(refld_folder, refld_file)) as file:
             reader = file.read()
-        reader = re.sub(r'\.[0]+e\+00\r\n', '', reader)
+        reader = re.sub(r'\.[0]+e\+00\r?\n', '', reader)
         x = re.findall('12*3*', reader)
         [llen.append([len(t)]) for t in x]
         with open(os.path.join(lyt_dir, refld_file)) as file:
             reader2 = file.read()
-        reader2 = reader2.split('\r\n')
+        reader2 = re.sub(r'\r\n', '\n', reader2)
+        reader2 = reader2.split('\n')
         tmp0 = re.finditer('12*3*', reader)
         tmp = [(m.start(0), m.end(0)) for m in tmp0]
         for uu in tmp:
             tlen.append(
                 [sum([len((y.split('\t')[0]).split()) for y in reader2[uu[0]:uu[1] + 1]])])  # number of token per ref
 
-    kde_ltag = KernelDensity(kernel='gaussian', bandwidth=1).fit(ltag)
+    progress_bar.finish()
+
     kde_ntag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(ntag)
-    kde_dtag = KernelDensity(kernel='gaussian', bandwidth=1).fit(dtag)
     kde_atag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(atag)
     kde_wtag = KernelDensity(kernel='gaussian', bandwidth=0.5).fit(wtag)
-    kde_gtag = KernelDensity(kernel='gaussian', bandwidth=1).fit(gtag)
-    kde_llen = KernelDensity(kernel='gaussian', bandwidth=1).fit(llen)
-    kde_tlen = KernelDensity(kernel='gaussian', bandwidth=1).fit(tlen)
+
+    # kde_ltag = KernelDensity(kernel='gaussian', bandwidth=1).fit(ltag)
+    # kde_dtag = KernelDensity(kernel='gaussian', bandwidth=1).fit(dtag)
+    # kde_gtag = KernelDensity(kernel='gaussian', bandwidth=1).fit(gtag)
+    # kde_llen = KernelDensity(kernel='gaussian', bandwidth=1).fit(llen)
+    # kde_tlen = KernelDensity(kernel='gaussian', bandwidth=1).fit(tlen)
 
     def dump_pickle(file_name, lng, obj):
         file_path = os.path.join(model_dir, f"{file_name}_{lng}.pkl")
@@ -223,33 +227,12 @@ def train_completeness(dataset_dir: str, model_dir:str):
             pickle.dump(obj, fid)
 
     dump_pickle("kde_ntag", "en", kde_ntag)
-    dump_pickle("kde_ltag", "en", kde_ltag)
-    dump_pickle("kde_dtag", "en", kde_dtag)
     dump_pickle("kde_atag", "en", kde_atag)
     dump_pickle("kde_wtag", "en", kde_wtag)
-    dump_pickle("kde_gtag", "en", kde_gtag)
-    dump_pickle("kde_wtag", "en", kde_wtag)
-    dump_pickle("kde_llen", "en", kde_llen)
-    dump_pickle("kde_tlen", "en", kde_tlen)
 
-    """
-    original code: 
-    # with open('Utils/kde_ltag.pkl', 'wb') as fid:
-    #     pickle.dump(kde_ltag, fid)
-    with open('Utils/kde_ntag' + sfx + '.pkl', 'wb') as fid:
-        pickle.dump(kde_ntag, fid)
-    # with open('Utils/kde_dtag.pkl', 'wb') as fid:
-    #     pickle.dump(kde_dtag, fid)
-    with open('Utils/kde_atag' + sfx + '.pkl', 'wb') as fid:
-        pickle.dump(kde_atag, fid)
-    with open('Utils/kde_wtag' + sfx + '.pkl', 'wb') as fid:
-        pickle.dump(kde_wtag, fid)
-    # with open('Utils/kde_gtag.pkl', 'wb') as fid:
-    #     pickle.dump(kde_gtag, fid)
-    with open('Utils/kde_llen.pkl', 'wb') as fid:
-        pickle.dump(kde_llen, fid)
-    with open('Utils/kde_tlen.pkl', 'wb') as fid:
-        pickle.dump(kde_tlen, fid)
-    
-    """
+    # dump_pickle("kde_ltag", "en", kde_ltag)
+    # dump_pickle("kde_dtag", "en", kde_dtag)
+    # dump_pickle("kde_gtag", "en", kde_gtag)
+    # dump_pickle("kde_llen", "en", kde_llen)
+    # dump_pickle("kde_tlen", "en", kde_tlen)
 

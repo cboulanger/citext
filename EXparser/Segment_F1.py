@@ -26,14 +26,15 @@ def load_models(model_dir: str):
         return pickle.load(open(os.path.join(model_dir, model_file), "rb"), encoding="latin1")
 
     ModelObjects.kde_ntag = load_pickle('kde_ntag_en.pkl')
-    ModelObjects.kde_ltag = load_pickle('kde_ltag_en.pkl')
-    ModelObjects.kde_dtag = load_pickle('kde_dtag_en.pkl')
     ModelObjects.kde_atag = load_pickle('kde_atag_en.pkl')
     ModelObjects.kde_wtag = load_pickle('kde_wtag_en.pkl')
-    ModelObjects.kde_gtag = load_pickle('kde_gtag_en.pkl')
-    ModelObjects.kde_llen = load_pickle('kde_llen_en.pkl')
-    ModelObjects.kde_tlen = load_pickle('kde_tlen_en.pkl')
 
+    # Unused model files
+    # ModelObjects.kde_tlen = load_pickle('kde_tlen_en.pkl')
+    # ModelObjects.kde_llen = load_pickle('kde_llen_en.pkl')
+    # ModelObjects.kde_ltag = load_pickle('kde_ltag_en.pkl')
+    # ModelObjects.kde_dtag = load_pickle('kde_dtag_en.pkl')
+    # ModelObjects.kde_gtag = load_pickle('kde_gtag_en.pkl')
 
 def get_score(prob, n, p):
     # predicted probability, number of tags and the position beginning (b) or end (e) or all (a)
