@@ -50,20 +50,6 @@ def call_run_layout_extractor():
     run_command(command)
 
 
-def call_run_exmatcher():
-    run_command('python3.6 run-crossref.py')
-
-
-def call_run_exparser(model_name=None, input_dir=None):
-    from commands.run_exparser import call_exparser_extraction
-    call_exparser_extraction(os.path.join(config_model_dir(), get_version(), model_name), input_dir)
-
-
-def call_segmentation(model_name=None, input_dir=None):
-    from commands.run_segmentation import call_exparser_segmentation
-    call_exparser_segmentation(os.path.join(config_model_dir(), get_version(), model_name), input_dir)
-
-
 if __name__ == "__main__":
 
     # https://docs.python.org/3/library/argparse.html
@@ -190,9 +176,9 @@ if __name__ == "__main__":
 
     # engine use
     p = engine_subcommands.add_parser("use", help="Use a particular version of the engine")
-    p.add_argument("version", type=str, help="Use a particular version of the recognition engine, which must be installed first")
+    p.add_argument("version", type=str,
+                   help="Use a particular version of the recognition engine, which must be installed first")
     p.set_defaults(command="engine", func_name="exec_use")
-
 
     # add legacy commands
     parsers = []
@@ -208,6 +194,7 @@ if __name__ == "__main__":
             version = f.read()
         if version != get_version():
             from commands.engine import check_version
+
             check_version(version)
             sys.path.insert(0, config_exparser_dir(version))
 
@@ -238,38 +225,45 @@ if __name__ == "__main__":
             call_run_layout_extractor()
 
         elif func_name == Commands.EXPARSER.value:
+            from commands.extraction import call_extraction
+
             if len(sys.argv) == 3:
-                call_run_exparser(sys.argv[2])
+                call_extraction(os.path.join(config_model_dir(), get_version(), sys.argv[2]))
             else:
-                call_run_exparser()
+                call_extraction("default")
 
         elif func_name == Commands.SEGMENTATION.value:
+            from commands.segmentation import call_segmentation
+
             if len(sys.argv) == 3:
-                call_segmentation(sys.argv[2])
+                call_segmentation(os.path.join(config_model_dir(), get_version(), sys.argv[2]), input_dir)
             elif len(sys.argv) == 4:
-                call_segmentation(sys.argv[2], sys.argv[3])
+                call_segmentation(os.path.join(config_model_dir(), get_version(), sys.argv[2]), sys.argv[3])
             else:
-                call_segmentation()
+                call_segmentation("default")
 
         elif func_name == Commands.EXMATCHER.value:
-            call_run_exmatcher()
+            run_command('python3.6 run-crossref.py')
 
         elif func_name == Commands.TRAIN_EXTRACTION.value:
             if len(sys.argv) < 3:
                 raise RuntimeError("Please provide a name for the model")
             from commands.training import call_extraction_training
+
             call_extraction_training(sys.argv[2])
 
         elif func_name == Commands.TRAIN_SEGMENTATION.value:
             if len(sys.argv) < 3:
                 raise RuntimeError("Please provide a name for the model")
             from commands.training import call_segmentation_training
+
             call_segmentation_training(sys.argv[2])
 
         elif func_name == Commands.TRAIN_COMPLETENESS.value:
             if len(sys.argv) < 3:
                 raise RuntimeError("Please provide a name for the model")
             from commands.training import call_completeness_training
+
             call_completeness_training(sys.argv[2])
 
         else:

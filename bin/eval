@@ -55,7 +55,7 @@ echo "Running segmentation on correctly extracted lines, please wait..."
 echo "=========================================================================================="
 echo
 
-docker run -it --rm -v $(pwd):/app excite_toolchain segmentation $MODEL_NAME $TEST_REFS_DIR
+docker run -it --rm -v $(pwd):/app excite_toolchain segmentation $MODEL_NAME
 
 echo
 echo "=========================================================================================="

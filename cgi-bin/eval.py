@@ -8,9 +8,9 @@ from commands.split import split_model
 from commands.model_list import list_models
 from commands.model_delete import delete_model_folders
 from commands.training import *
-from commands.run_exparser import call_exparser_extraction
+from commands.extraction import call_extraction
 from evaluation import eval_extraction, eval_segmentation
-from commands.run_segmentation import call_exparser_segmentation
+from commands.segmentation import call_segmentation
 from commands.report import compute_accuracy_info
 
 params = cgi.parse()
@@ -68,7 +68,7 @@ try:
                 sys.stderr.write(f"Warning: {str(err)}\n")
 
         # run extraction
-        call_exparser_extraction(split_model_dir, split_dataset_dir)
+        call_extraction(split_model_dir, split_dataset_dir)
 
         # evaluate extraction
         eval_extraction(
@@ -93,7 +93,7 @@ try:
                 sys.stderr.write(f"Warning: {str(err)}\n")
 
         # run segmentation
-        call_exparser_segmentation(split_model_dir, split_dataset_dir)
+        call_segmentation(split_model_dir, split_dataset_dir)
 
         # eval segmentation
         eval_segmentation(

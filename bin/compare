@@ -11,10 +11,10 @@ if [[ "$first" == "" ]] || [[ "$second" == "" ]]; then
   echo "Command needs two arguments: names of models to be compared"
 fi
 
-prefix="test_$(date +%s)"
-first_eval="${prefix}_${first}"
-second_eval="${prefix}_${second}"
-combined_eval="${prefix}_${first}_${second}"
+timestamp="$(date +%s)"
+first_eval="test_${first}_${timestamp}"
+second_eval="test_${second}_${timestamp}"
+combined_eval="test_${first}_${second}_${timestamp}"
 
 bin/split $first $first_eval
 
