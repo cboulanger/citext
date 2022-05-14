@@ -39,5 +39,5 @@ bin/train $combined_eval
 bin/eval $combined_eval
 
 # save data to csv
-bin/run report $first_eval $second_eval $combined_eval -o "${prefix}.csv"
-echo "A comparison of the accuracy of the models has been written to ${prefix}.csv"
+bin/run report $first_eval $second_eval $combined_eval -o "${combined_eval}.csv"
+echo "A comparison of the accuracy of the models has been written to ${combined_eval}.csv"
