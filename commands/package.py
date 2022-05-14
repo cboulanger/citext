@@ -126,7 +126,7 @@ def download_package(package_name, model_name):
     print("Uncompressing files...")
     with ZipFile(zip_path, 'r') as zip_file:
         for name in zip_file.namelist():
-            targetpath = name.replace('app/','').replace(f'/{package_name}/', f'/{model_name}/')
+            targetpath = name.replace('app/', '').replace(f'/{package_name}/', f'/{model_name}/')
             os.makedirs(os.path.dirname(targetpath), exist_ok=True)
             with zip_file.open(name) as source, open(targetpath, "wb") as target:
                 shutil.copyfileobj(source, target)
@@ -138,6 +138,7 @@ def delete_package(package_name):
     if not package_exists(package_name):
         raise RuntimeError(f'Package "{package_name}" does not exist')
     client.clean(get_package_path(package_name))
+
 
 def delete_packages(package_names, non_interactive=False):
     packages_to_delete = []
@@ -152,7 +153,8 @@ def delete_packages(package_names, non_interactive=False):
             packages_to_delete.append(pn)
 
     if non_interactive == False:
-        pkg_list = "', '".join(packages_to_delete[:-1]) + f"' and '{packages_to_delete[-1]}" if len(packages_to_delete) > 1 else packages_to_delete[0]
+        pkg_list = "', '".join(packages_to_delete[:-1]) + f"' and '{packages_to_delete[-1]}" if len(
+            packages_to_delete) > 1 else packages_to_delete[0]
         print(f"This will delete model(s) '{pkg_list}'.")
         answer = input("Proceed? [y/n] ").lower()
         if answer != "y":

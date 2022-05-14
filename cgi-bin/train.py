@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-import sys,os, time, cgi, builtins, traceback
+import sys, os, time, cgi, builtins, traceback
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from lib.utils import push_event, redirectPrintToEvent
 from commands.training import *
@@ -26,6 +27,6 @@ except Exception as err:
     response = traceback.format_exc()
     sys.stderr.write(response)
 finally:
-    push_event(channel_id, "info", title+":")
+    push_event(channel_id, "info", title + ":")
     oldprint("Content-Type: text/plain\n")
     oldprint(response)

@@ -24,6 +24,7 @@ def list_models():
     for file in os.listdir(curr_model_dir):
         if os.path.isdir(os.path.join(curr_model_dir, file)):
             models.append(file)
+    models.sort()
     return models
 
 def execute():
