@@ -1,3 +1,5 @@
+import os
+import sys
 import time
 from EXparser.Segment_F1 import *
 from lib.JsonParser import *
@@ -41,6 +43,7 @@ def call_segmentation(model_dir: str, input_base_dir=None):
         reader = reader[0:-1] if reader[-1] == '' else reader
 
         txt = []
+        # Why? There is no layout info in the refs files
         for row in reader:
             row = row.split('\t')
             txt.append(row[0])
@@ -48,12 +51,14 @@ def call_segmentation(model_dir: str, input_base_dir=None):
         valid = [1] * len(txt)
         ref_prob0 = [(0, 1, 0, 0)] * len(txt)
 
+        # segment all lines in the document
         refs = segment(txt, ref_prob0, valid)
+
         # refs = list(range(0, len(txt)))
         reslt, refstr, retex = sg_ref(txt, refs, 2)
 
         # reslt: segmented references # refstr: refstr references # retex: bibtex
-        #print ('Number of references: ' + str(len(refstr)))
+        log('Number of references: ' + str(len(refstr)))
         # create references file
         # wf = open(path_refs, 'w')
         # for item in refstr:
@@ -96,8 +101,14 @@ def call_segmentation(model_dir: str, input_base_dir=None):
         t22 = time.time()
         temp = t22 - t11
         list_of_time.append(temp)
+    progress_bar.finish()
     t2 = time.time()
     log('Sum time: %s' % (t2 - t1))
     if len(list_of_time) > 0:
         log('Average time: %s' % (sum(list_of_time) / float(len(list_of_time))))
+
+
+def execute(model_name, input_base_dir=None):
+    model_dir = os.path.join(config_model_dir(model_name))
+    call_segmentation(model_dir, input_base_dir)
 

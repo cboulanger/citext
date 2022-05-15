@@ -3,71 +3,14 @@
 set -o errexit
 
 MODEL_NAME=${1:-default}
-MODEL_DATASET_DIR="./Dataset/${MODEL_NAME}"
-
-if ! [[ -d "${MODEL_DATASET_DIR}" ]]; then
-  echo "Model $MODEL_NAME does not exist"
-  exit 1
-fi
-
-TEST_LYT_DIR="${MODEL_DATASET_DIR}/TEST_LYT"
-TEST_REFS_DIR="${MODEL_DATASET_DIR}/TEST_REFS"
-TEST_SEG_DIR="${MODEL_DATASET_DIR}/TEST_SEG"
-EXPARSER_LAYOUT_DIR=./Data/2-layouts
-EXPARSER_REFS_DIR=./Data/3-refs
-EXPARSER_SEG_DIR=./Data/3-refs_seg
-
-
-if ! [[ -d "$TEST_LYT_DIR" ]] || ! [[ -d "${TEST_REFS_DIR}" ]] || ! [[ -d "${TEST_SEG_DIR}" ]]; then
-  echo "Model $MODEL_NAME is missing the TEST_LYT and/or TEST_REFS and/or TEST_SEG folders"
-  exit 1
-fi
 
 echo
 echo "=========================================================================================="
-echo "Running Exparser, please wait..."
+echo "Running the evaluation worklow, please wait..."
 echo "=========================================================================================="
 echo
-
-# clean subfolders and copy layout evaluation data
-find ./Data/ -type f -not -name '.*' -exec rm {} +
-cp $TEST_LYT_DIR/* $EXPARSER_LAYOUT_DIR
 
 # run exparser to produce extracted references
-docker run -it --rm -v $(pwd):/app excite_toolchain exparser $MODEL_NAME
+docker run -it --rm -v $(pwd):/app excite_toolchain eval_full_workflow $MODEL_NAME --add-logfile
 
-echo
-echo "=========================================================================================="
-echo "Evaluating extraction, please wait..."
-echo "=========================================================================================="
-echo
-
-#  gold: SEG files without tags, input: exparser extraction output
-docker run -it --rm -v $(pwd):/app excite_toolchain eval $MODEL_NAME \
-  --extraction \
-  --gold-dir $TEST_REFS_DIR \
-  --exparser-result-dir $EXPARSER_REFS_DIR \
-  --output-filename-prefix=""
-
-echo
-echo "=========================================================================================="
-echo "Running segmentation on correctly extracted lines, please wait..."
-echo "=========================================================================================="
-echo
-
-docker run -it --rm -v $(pwd):/app excite_toolchain segmentation $MODEL_NAME
-
-echo
-echo "=========================================================================================="
-echo "Evaluating segmentation, please wait..."
-echo "=========================================================================================="
-echo
-
-# gold: original SEG files, input: output of exparser segmentation
-docker run -it --rm -v $(pwd):/app excite_toolchain eval $MODEL_NAME \
-  --segmentation \
-  --gold-dir $TEST_SEG_DIR \
-  --exparser-result-dir  $EXPARSER_SEG_DIR \
-  --output-filename-prefix=""
-
-echo "Logfiles and CSV data have been written to ${MODEL_DATASET_DIR}."
+echo "Logfiles and CSV data have been written to the dataset dir of ${MODEL_NAME}."

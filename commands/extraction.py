@@ -1,5 +1,6 @@
-import time
-from langdetect import detect
+import sys
+import time, traceback
+#from langdetect import detect
 from EXparser.Segment_F1 import *
 from lib.JsonParser import *
 from lib.logger import *
@@ -39,11 +40,7 @@ def call_extraction(model_dir: str, input_base_dir: str = None):
 
         file = open(path_layout, encoding="utf-8")
         reader = file.read()
-        try:
-            txt, valid, _, ref_prob0 = ref_ext(reader, idxx, rf)
-        except RuntimeWarning as warning:
-            log(warning)
-            continue
+        txt, valid, _, ref_prob0 = ref_ext(reader, idxx, rf)
         refs = segment(txt, ref_prob0, valid)
         reslt, refstr, retex = sg_ref(txt, refs, 2)
 
@@ -96,3 +93,7 @@ def call_extraction(model_dir: str, input_base_dir: str = None):
     log('Sum time: %s' % (t2 - t1))
     if len(list_of_time) > 0:
         log('Average Time: %s' % (sum(list_of_time) / float(len(list_of_time))))
+
+def execute(model_name, input_base_dir=None):
+    model_dir = os.path.join(config_model_dir(model_name))
+    call_extraction(model_dir, input_base_dir)

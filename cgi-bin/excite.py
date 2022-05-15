@@ -82,8 +82,7 @@ try:
             except FileNotFoundError as err:
                 raise RuntimeError(str(err))
             except PermissionError:
-                # works around Windows WSL issue
-                pass
+                pass # works around Windows WSL issue
             finally:
                 os.remove(source)
 
@@ -99,9 +98,8 @@ try:
             source = os.path.join(tempfile.gettempdir(), filename + ".csv")
             target = os.path.join(config_url_Refs(), filename + ".csv")
             shutil.copy(source, target)
-            os.remove(source)
         except PermissionError as err:
-            sys.stderr.write(str(err)+'\n')
+            sys.stderr.write('Warning: ' + str(err) + '\n')
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
         result_path = os.path.join(config_url_Refs_segment(), filename + ".xml")
@@ -133,8 +131,9 @@ try:
         # subprocess returned with error
         if return_code != 0:
             lines = [line.strip('\n') for line in proc.stderr.readlines() if line.strip('\n')]
-            err_msg = '\n'.join(lines)
-            raise RuntimeError(err_msg)
+            err_msg = '\n > '.join(lines)
+            sys.stderr.write(f'Last process returned with code {str(return_code)} and the following error output:\n{err_msg}\n\n')
+            raise RuntimeError(lines[-1] if len(lines) > 0 else "Unknown Error")
 
     if result_path is None:
         result["success"] = True
