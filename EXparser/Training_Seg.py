@@ -2,7 +2,7 @@ import csv
 import os
 import pickle
 import sklearn_crfsuite
-from .src.gle_fun import *
+from .src.word_lists import *
 from .src.gle_fun_seg import *
 from lib.logger import log
 from lib.pogressbar import get_progress_bar
@@ -45,21 +45,21 @@ def train_segmentation(dataset_dir: str, model_dir: str):
                 a, b, l = findtag(w, l)
 
                 train_sents.append([(a, b)])
-                train_feat.append([word2feat(a, stopw, 0, len(ln), b1, b2, b3, b4, b5, b6)])
+                train_feat.append([word2feat(a, 0, len(ln))])
                 train_label.append([b])
 
                 if 1 < len(ln):
                     w1 = ln[1]
                     a, b, l = findtag(w1, l)
                     train_sents[len(train_sents) - 1].extend([(a, b)])
-                    train_feat[len(train_feat) - 1].extend([word2feat(a, stopw, 1, len(ln), b1, b2, b3, b4, b5, b6)])
+                    train_feat[len(train_feat) - 1].extend([word2feat(a, 1, len(ln))])
                     train_label[len(train_label) - 1].extend([b])
 
                 if 2 < len(ln):
                     w2 = ln[2]
                     a, b, l = findtag(w2, l)
                     train_sents[len(train_sents) - 1].extend([(a, b)])
-                    train_feat[len(train_feat) - 1].extend([word2feat(a, stopw, 2, len(ln), b1, b2, b3, b4, b5, b6)])
+                    train_feat[len(train_feat) - 1].extend([word2feat(a, 2, len(ln))])
                     train_label[len(train_label) - 1].extend([b])
                 # update features
                 train_feat[len(train_feat) - 1] = add2feat(train_feat[len(train_feat) - 1], 0)
@@ -71,7 +71,7 @@ def train_segmentation(dataset_dir: str, model_dir: str):
                         a, b, l = findtag(w, l)
                         train_sents[len(train_sents) - 1].extend([(a, b)])
                         train_feat[len(train_feat) - 1].extend(
-                            [word2feat(a, stopw, i + 2, len(ln), b1, b2, b3, b4, b5, b6)])
+                            [word2feat(a, i + 2, len(ln))])
                         train_label[len(train_label) - 1].extend([b])
                     # add their features to w
                     # update features

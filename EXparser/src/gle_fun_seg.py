@@ -3,11 +3,8 @@
 
 import regex as re
 import numpy as np
-from .gle_fun import stopw
+from .word_lists import *
 
-# variables:
-acc = '\p{Lu}'  # all capital characters
-asc = '\p{Ll}'  # all lower-case characters
 ftag = ['given-names', 'surname', 'year', 'title', 'editor', 'source', 'publisher', 'other', 'page', 'volume',
         'author', 'fpage', 'lpage', 'issue', 'url', 'identifier']  # full name of tags
 atag = ['FN', 'LN', 'YR', 'AT', 'ED', 'SR', 'PB', 'OT', 'PG', 'VL', 'AR', 'FP', 'LP', 'IS', 'UR',
@@ -26,7 +23,7 @@ def preproc(ln):
 
     # remove space between two given names A. B.
     ln = re.sub(
-        r"((?<![" + acc + asc + "0-9])[" + acc + "][\.])([\s]+[" + acc + "][\.](?![" + acc + asc + "0-9]))", r"\1\2",
+        r"((?<![\p{Lu}\p{Ll}0-9])[\p{Lu}][\.])([\s]+[\p{Lu}][\.](?![\p{Lu}\p{Ll}0-9]))", r"\1\2",
         ln)
 
     # remove empty tags
@@ -46,7 +43,7 @@ def preproc(ln):
         tmp0 = re.finditer(r'[^\s\(\[\{]<[^/]', ln)
         tmp = [m.start(0) for m in tmp0]
 
-    # add space before new tag with parenthese
+    # add space before new tag with parentheses
     tmp0 = re.finditer(r'[^\s][\(\[\{]<[^/]', ln)
     tmp = [m.start(0) for m in tmp0]
     while tmp:
@@ -124,33 +121,38 @@ def get_len(w):
     return ln
 
 
-def get_rne(w):  # ratio number to everything
+def get_rne(w):
+    # ratio number to everything
     rne = 1.0 * len(re.findall(r'[0-9]+', w)) / max(1, len(re.sub(r'\b\s', '', w)))
     return rne
 
 
-def get_rce(w):  # ratio character to everything
-    rce = 1.0 * len(re.findall(r'[' + acc + asc + ']+', w)) / max(1, len(re.sub(r'\b\s', '', w)))
+def get_rce(w):
+    # ratio character to everything
+    rce = 1.0 * len(re.findall(r'[\p{L}]+', w)) / max(1, len(re.sub(r'\b\s', '', w)))
     return rce
 
 
-def get_rse(w):  # ratio special character to everything
-    rse = 1.0 * len(re.findall(r'[^0-9' + acc + asc + ']+', w)) / max(1, len(re.sub(r'\b\s', '', w)))
+def get_rse(w):
+    # ratio special character to everything
+    rse = 1.0 * len(re.findall(r'[^0-9\p{L}]+', w)) / max(1, len(re.sub(r'\b\s', '', w)))
     return rse
 
 
-def get_rca(w):  # ratio capital letter to all letters
-    rca = 1.0 * len(re.findall(r'[A' + acc + ']+', w)) / max(1, len(re.findall(r'[' + acc + asc + ']', w)))
+def get_rca(w):
+    # ratio capital letter to all letters
+    rca = 1.0 * len(re.findall(r'[\p{Lu}]+', w)) / max(1, len(re.findall(r'[\p{L}]', w)))
     return rca
 
 
-def get_rsa(w):  # ratio small letter to all letters
-    rsa = 1.0 * len(re.findall(r'[a' + asc + ']+', w)) / max(1, len(re.findall(r'[' + acc + asc + ']', w)))
+def get_rsa(w):
+    # ratio small letter to all letters
+    rsa = 1.0 * len(re.findall(r'[\p{Ll}]+', w)) / max(1, len(re.findall(r'[\p{L}]', w)))
     return rsa
 
 
 def get_yr(w):  # [2]
-    # extract all 4 digits from 1000 to 2999
+    # extract all 4 digits from 1000 to 2099
     yr = re.findall(r'1[8-9]{1}[0-9]{2}|20[0-2]{1}[0-9]{1}', w)
     yr = bool(yr)
     return yr
@@ -163,7 +165,6 @@ def get_pg(w):  # [3]
 
 
 def get_lex1(w):  # [4]
-    # tmp=re.findall(r'\s[Ii]n:', w)    # to be checked
     tmp = re.sub(r'[ ]+(In[:]*|in:)[ ]*', '', w)  # different from testing
     lex1 = not bool(tmp)
     return lex1
@@ -171,8 +172,7 @@ def get_lex1(w):  # [4]
 
 def get_cd(w):  # [20]
     # extract all 4 digits from 1000 to 2999
-    tmp = re.findall(r'(?<![' + acc + asc + '0-9])([' + acc + '][\.]){1,2}(?![' + acc + asc + '0-9])',
-                     w)
+    tmp = re.findall(r'(?<![\p{L}0-9])([\p{Lu}][\.]){1,2}(?![\p{L}0-9])', w)
     cd = bool(tmp)
     return cd
 
@@ -250,13 +250,13 @@ def get_vol(w):  # [*2]   #is vol.
 
 
 def get_und(w):  # [*2]   #is und
-    tmp = re.findall(r'[^0-9' + acc + asc + '](u\.|and|und)[^0-9' + acc + asc + ']', w)
+    tmp = re.findall(r'[^0-9\p{L}](u\.|and|und)[^0-9\p{L}]', w)
     und = bool(tmp)
     return und
 
 
 def get_amo(w):  # [*2]   #is among others
-    tmp = re.findall(r'[^0-9A' + acc + asc + ']u\.a\.[^0-9' + acc + asc + ']', w)
+    tmp = re.findall(r'[^0-9A\p{L}]u\.a\.[^0-9\p{L}]', w)
     if tmp:
         amo = True
     else:
@@ -270,10 +270,21 @@ def get_num(w):  # [*2]   #is link
     return num
 
 
-def fin_db(w, stopw, b1, b2, b3, b4, b5, b6):  # [1,10]    # search in databases
-    tmp0 = re.sub(r'[^' + acc + asc + ']', '', w).casefold()
-    db = {'name': tmp0 in b1, 'abv': tmp0 in b2, 'city': tmp0 in b3, 'edit': tmp0 in b4, 'jornal': tmp0 in b5,
-          'publish': tmp0 in b6}
+def find_in_word_lists(w):  # [1,10]
+    """
+    Search word in wordlists and return a map of candidate features
+    :param w:
+    :return:
+    """
+    tmp0 = w.casefold()
+    db = {
+        'name': tmp0 in wl_names,
+        'abv': tmp0 in wl_abbrev,
+        'city': tmp0 in wl_cities,
+        'edit': tmp0 in wl_names,
+        'jornal': tmp0 in wl_journals,
+        'publish': tmp0 in wl_publishers
+    }
     return db
 
 
@@ -283,7 +294,7 @@ def get_last(w):  # [5,6,17,19,22,23,27,28]   c is the last character of the wor
     else:
         c = w[-1] * 2
 
-    tmp1 = re.sub(r'[^' + acc + asc + ']', '', c[1])
+    tmp1 = re.sub(r'[^\p{L}]', '', c[1])
     tmp2 = re.sub(r'[^0-9]', '', c[1])
     if (c[0] == ',') | (c[1] == ','):
         lst = {'cum': True, 'parnt': False, 'dot': False, 'dpt': False, 'qot': False, 'slash': False, 'pvir': False,
@@ -322,8 +333,8 @@ def get_last(w):  # [5,6,17,19,22,23,27,28]   c is the last character of the wor
 
 
 def get_first(c):
-    tmp1 = re.sub(r'[^' + acc + ']', '', c)
-    tmp3 = re.sub(r'[^' + asc + ']', '', c)
+    tmp1 = re.sub(r'[^\p{Lu}]', '', c)
+    tmp3 = re.sub(r'[^\p{Ll}]', '', c)
     tmp2 = re.sub(r'[^0-9]', '', c)
     if (c == '{') | (c == '(') | (c == '['):
         fst = {'parntl': True, 'qotl': False, 'slashl': False, 'nonchl': False,
@@ -349,7 +360,7 @@ def get_first(c):
     return fst
 
 
-def word2feat(w, stopw, i, l, b1, b2, b3, b4, b5, b6):  # pw is the previous word and nw is the next word
+def word2feat(w, i, l):  # pw is the previous word and nw is the next word
     feat = {
         'wl': w.casefold(),
         'year': get_yr(w),
@@ -380,7 +391,7 @@ def word2feat(w, stopw, i, l, b1, b2, b3, b4, b5, b6):  # pw is the previous wor
     }
     feat.update(get_last(w))
     feat.update(get_first(w[0]))
-    feat.update(fin_db(w, stopw, b1, b2, b3, b4, b5, b6))
+    feat.update(find_in_word_lists(w))
 
     if i == 1:
         feat['SOS'] = True
@@ -480,9 +491,11 @@ def restriction(lab, ln, mll, o):  # this heuristic should be replaced in the co
     elif o == 2:
         tmp = [i for i, x in enumerate(lab) if ((x == 'FN') | (x == 'LN'))]
         p1 = 1. / np.exp((tmp[-1] - len(tmp) - 1) * 0.1) if bool(tmp) else 0.5
+
+
     elif o == 3:
-        tmp = ln[-1]
-        if ((tmp == '-') | (tmp == ',')):
+        tmp = ln[-1] if len(ln) > 0 else ""
+        if (tmp == '-') | (tmp == ','):
             p1 = 1
         # elif tmp=='.':
         # p1=0.4
@@ -494,9 +507,9 @@ def restriction(lab, ln, mll, o):  # this heuristic should be replaced in the co
     # p1=1 if ((tmp=='-')|(bool(tmp2))) else 0.5
     elif o == 4:
         # tmp=re.findall(r'.(?=\-[ \s]*[\n\r]+)',ln)
-        tmp = ln[-1]
+        tmp = ln[-1] if len(ln) > 0 else ""
         # tmp2=re.findall(r'^((\[.*\])|(\(.*\))|([0-9]+\. ))',ln)
-        if ((tmp == '-') | (tmp == ',')):
+        if (tmp == '-') | (tmp == ','):
             p1 = 0.01
         # elif tmp=='.':
         # p1=0.6

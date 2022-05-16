@@ -49,7 +49,7 @@ def train_extraction(dataset_dir: str, model_dir: str):
             continue
         reader = re.sub(r'[\r\n]+', '\r', reader)
         reader = reader.split('\r')
-        reader = reader[0:-1] if reader[-1] == '' else reader
+        reader = reader[0:-1] if len(reader) > 0 and reader[-1] == '' else reader
         try:
             fpath = os.path.join(dataset_dir, DatasetDirs.REFLD.value, curr_file)
             with open(fpath) as file:
@@ -61,7 +61,7 @@ def train_extraction(dataset_dir: str, model_dir: str):
             continue
         reader2 = re.sub(r'[\r\n]+', '|', reader2)
         reader2 = reader2.split('|')
-        reader2 = reader2[0:-1] if reader2[-1] == '' else reader2
+        reader2 = reader2[0:-1] if len(reader2) > 0 and reader2[-1] == '' else reader2
 
         Fs = np.empty((0, 50 * 3), float)  # feature space
         Sm = np.empty((0, 1), float)  # feature space

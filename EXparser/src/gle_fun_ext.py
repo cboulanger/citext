@@ -5,7 +5,7 @@
 
 import regex as re
 import numpy as np
-
+from .word_lists import *
 
 def get_cc(ln):  # [1]
     """
@@ -450,28 +450,21 @@ def get_num_re(ln):  # [*2]
     return num
 
 
-def fin_db_re(ln, stopw, b1, b2, b3, b4, b5, b6):
+def vector_from_word_lists(ln):
     """
-    TODO document
-    :param ln:
+    Given a
+    :param words:
     :return:
     """
-    ln = re.split(' ', ln)
-    a = [0] * 6
-    for w in ln:
-        tmp0 = re.sub(r'[^\p{L}]', '', w).casefold()
-        a[0] = a[0] + 1 if tmp0 in b1 else a[0]
-        a[1] = a[1] + 1 if tmp0 in b2 else a[1]
-        a[2] = a[2] + 1 if tmp0 in b3 else a[2]
-        a[3] = a[3] + 1 if tmp0 in b4 else a[3]
-        a[4] = a[4] + 1 if tmp0 in b5 else a[4]
-        a[5] = a[5] + 1 if tmp0 in b6 else a[5]
-    a[0] = 1.0 * a[0] / len(ln) if len(ln) > 0 else 0
-    a[1] = 1.0 * a[1] / len(ln) if len(ln) > 0 else 0
-    a[2] = 1.0 * a[2] / len(ln) if len(ln) > 0 else 0
-    a[3] = 1.0 * a[3] / len(ln) if len(ln) > 0 else 0
-    a[4] = 1.0 * a[4] / len(ln) if len(ln) > 0 else 0
-    a[5] = 1.0 * a[5] / len(ln) if len(ln) > 0 else 0
+    a = [0] * len(word_lists)
+    words = [ word for word in ln.casefold().split(" ") if len(word) > 3 and word not in stopw ]
+    nw = len(words)
+    if nw > 0:
+        for (i, word_list) in enumerate(word_lists):
+            for word in words:
+                if word.strip(",.()'\"") in word_list:
+                    a[i] = a[i] + 1
+            a[i] = 1.0 * a[i] / nw
     return a
 
 

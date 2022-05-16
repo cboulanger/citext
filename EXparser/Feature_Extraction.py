@@ -1,7 +1,7 @@
 import jenkspy
 import numpy as np
 from itertools import groupby
-from .src.gle_fun import *
+from .src.word_lists import *
 from .src.gle_fun_ext import *
 from lib.logger import log
 from lib.pogressbar import get_progress_bar
@@ -33,7 +33,7 @@ def extract_features(data_dir: str):
             file.close()
             reader = re.sub(r'[\r\n]+', '\n', reader)
             reader = reader.split('\n')
-            reader = reader[0:-1] if reader[-1] == '' else reader
+            reader = reader[0:-1] if len(reader) > 0 and reader[-1] == '' else reader
             # reader = csv.reader(file, delimiter='\t',quoting=csv.QUOTE_NONE)   #, quotechar='|'
             lh = []  # length of words
             ch = []  # Capital distance
@@ -101,7 +101,7 @@ def extract_features(data_dir: str):
             file.close()
             reader = re.sub(r'[\r\n]+', '\n', reader)
             reader = reader.split('\n')
-            reader = reader[0:-1] if reader[-1] == '' else reader
+            reader = reader[0:-1] if len(reader) > 0 and reader[-1] == '' else reader
             # reader = csv.reader(file, delimiter='\t',quoting=csv.QUOTE_NONE)  #, quotechar='|'
             pvsl = 0  # Prior vertical space.
             uu = 0
@@ -154,7 +154,7 @@ def extract_features(data_dir: str):
                 f30 = get_amo_re(row[0])  # 1 value
                 f31 = get_num_re(row[0])  # 1 value
 
-                [f32, f35, f36, f37, f38, f39] = fin_db_re(row[0], stopw, b1, b2, b3, b4, b5, b6)  # 6 value
+                [f32, f35, f36, f37, f38, f39] = vector_from_word_lists(row[0])  # 6 value
 
                 f33 = get_ll(row[0], bins5)  # 2 value
                 f34 = get_llw(row[0], bins6)  # 2 value

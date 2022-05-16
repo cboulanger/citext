@@ -1,12 +1,11 @@
 # -*- coding: UTF-8 -*- 
 import jenkspy
 
-from .gle_fun import *
+from .word_lists import *
 from .gle_fun_ext import *
 from .gle_fun_seg import *
 from itertools import groupby
 import numpy as np
-
 
 def check_num_page(row, hc, vsl):  # this function checks whether the current line is only a page number
     check = True if len(row[0].split()) <= 1 else False  # length in terms of token (<=1 for page number)
@@ -254,7 +253,7 @@ def ref_ext(reader, idxx, clf):
         f30 = get_amo_re(row[0])  # 1 value
         f31 = get_num_re(row[0])  # 1 value
 
-        [f32, f35, f36, f37, f38, f39] = fin_db_re(row[0], stopw, b1, b2, b3, b4, b5, b6)  # 6 value
+        [f32, f35, f36, f37, f38, f39] = vector_from_word_lists(row[0])  # 6 value
 
         f33 = get_ll(row[0], bins5)  # 2 value
         f34 = get_llw(row[0], bins6)  # 2 value
@@ -279,10 +278,8 @@ def ref_ext(reader, idxx, clf):
         del tp
 
     FS = np.empty((0, 50 * 3), float)  # feature space
-    FSN = []
     for u in range(len(F)):
         r = F[u]
-
         if (u == 0):
             r1 = F[u + 1]
             r2 = np.array([0] * 65)

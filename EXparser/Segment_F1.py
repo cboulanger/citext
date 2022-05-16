@@ -88,13 +88,14 @@ def comp_prob(label_pred, llin, tlin):
             a.extend([0])
     # g=np.concatenate((l,a,[w],n))   #best
 
-    # g=np.concatenate((n,[w]))
-    # g=np.exp(ModelObjects.kde_gtag.score([g]))
     n = np.exp(ModelObjects.kde_ntag.score([n]))
-    # l=np.exp(ModelObjects.kde_ltag.score([l]))
-    # d=np.exp(ModelObjects.kde_dtag.score([d]))
     a = np.exp(ModelObjects.kde_atag.score([a]))
     w = np.exp(ModelObjects.kde_wtag.score([w]))
+
+    # g=np.concatenate((n,[w]))
+    # g=np.exp(ModelObjects.kde_gtag.score([g]))
+    # l=np.exp(ModelObjects.kde_ltag.score([l]))
+    # d=np.exp(ModelObjects.kde_dtag.score([d]))
     # ll=np.exp(ModelObjects.kde_llen.score(llin))
     # tl=np.exp(ModelObjects.kde_tlen.score(tlin))
 
@@ -115,17 +116,17 @@ def main_sg(ln, vtag):
     ln = ln.split()
     w = ln[0]
     test_sents.append([w])
-    test_feat.append([word2feat(w, stopw, 0, len(ln), b1, b2, b3, b4, b5, b6)])
+    test_feat.append([word2feat(w, 0, len(ln))])
 
     if 1 < len(ln):
         w1 = ln[1]
         test_sents[len(test_sents) - 1].extend([w1])
-        test_feat[len(test_feat) - 1].extend([word2feat(w1, stopw, 1, len(ln), b1, b2, b3, b4, b5, b6)])
+        test_feat[len(test_feat) - 1].extend([word2feat(w1, 1, len(ln))])
 
     if 2 < len(ln):
         w2 = ln[2]
         test_sents[len(test_sents) - 1].extend([w2])
-        test_feat[len(test_feat) - 1].extend([word2feat(w2, stopw, 2, len(ln), b1, b2, b3, b4, b5, b6)])
+        test_feat[len(test_feat) - 1].extend([word2feat(w2, 2, len(ln))])
     # update features
     test_feat[len(test_feat) - 1] = add2feat(test_feat[len(test_feat) - 1], 0)
 
@@ -134,7 +135,7 @@ def main_sg(ln, vtag):
         if i < len(ln) - 2:
             w = ln[i + 2]
             test_sents[len(test_sents) - 1].extend([w])
-            test_feat[len(test_feat) - 1].extend([word2feat(w, stopw, i + 2, len(ln), b1, b2, b3, b4, b5, b6)])
+            test_feat[len(test_feat) - 1].extend([word2feat(w, i + 2, len(ln))])
         # add their features to w
         # update features
         test_feat[len(test_feat) - 1] = add2feat(test_feat[len(test_feat) - 1], i)
