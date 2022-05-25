@@ -2,6 +2,7 @@ import json
 import os, sys, subprocess, re, builtins
 import socket
 from configs import *
+from lib.logger import log
 
 def get_message_path(channel_id) -> str:
     if not channel_id:
@@ -127,3 +128,24 @@ def checkForAbortSignal(channel_id):
         os.remove(abort_signal_path)
         raise InterruptedError("Canceled")
 
+def run_command(command) -> str:
+    msg = f">>> Executing '{command}'\n"
+    log(msg)
+    proc = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True, shell=True)
+    lines = []
+    while True:
+        return_code = proc.poll()
+        if return_code is not None:
+            break
+        line = str(proc.stdout.readline()).strip()
+        if line != "":
+            log(line)
+            lines.append(line)
+
+    # subprocess returned with error
+    if return_code != 0:
+        lines = [line.strip('\n') for line in proc.stderr.readlines() if line.strip('\n')]
+        err_msg = '\n'.join(lines)
+        raise RuntimeError(err_msg)
+
+    return "\n".join(lines)

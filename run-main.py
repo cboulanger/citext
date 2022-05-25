@@ -11,48 +11,17 @@ from configs import *
 
 load_dotenv()
 
-
-# legacy commands not yet migrated to argparse implementation
-class Commands(Enum):
-    LAYOUT = "layout"
-    EXMATCHER = "exmatcher"
-    TRAIN_EXTRACTION = "train_extraction"
-    TRAIN_SEGMENTATION = "train_segmentation"
-    TRAIN_COMPLETENESS = "train_completeness"
-
-
-def run_command(command):
-    log(command)
-    proc = subprocess.Popen([command], stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True,
-                            shell=True)
-    while True:
-        return_code = proc.poll()
-        if return_code is not None:
-            break
-        line = str(proc.stdout.readline()).strip()
-        if line != "":
-            print(line)
-    # subprocess returned with error
-    if return_code != 0:
-        lines = [line.strip('\n') for line in proc.stderr.readlines() if line.strip('\n')]
-        err_msg = '\n'.join(lines)
-        raise RuntimeError(err_msg)
-
-
-def call_run_layout_extractor():
-    os.chdir(config_url_venu())
-    command = 'java -jar cermine.layout.extractor-0.0.1-jar-with-dependencies.jar '
-    command += config_url_pdfs() + ' '
-    command += config_url_Layouts() + ' '
-    command += '90000000'
-    run_command(command)
-
-
 if __name__ == "__main__":
 
     # https://docs.python.org/3/library/argparse.html
     parser = argparse.ArgumentParser(description='Run exparser tools.', prog="")
     subcommands = parser.add_subparsers()
+
+    # layout
+    p = subcommands.add_parser("layout", help="Extract layout information from PDF files")
+    p.add_argument("--input-dir", "-i", help="The directory containing the PDFs")
+    p.add_argument("--output-dir", "-o", help="The directory into which to save the layout files")
+    p.set_defaults(command="layout", func_name="call_run_layout_extractor")
 
     # model
     model_parser = subcommands.add_parser("model", help="Tools to work with models")
@@ -88,25 +57,43 @@ if __name__ == "__main__":
     p.add_argument("--non-interactive", "-I", action="store_true", help="Do not ask for confirmation")
     p.set_defaults(command="model_merge")
 
+    # layout
+
     # exparser = extraction
     p = subcommands.add_parser("exparser", help="Run extraction & segmentation")
     p.add_argument("model_name", type=str, help="The name of the model to use", default="default")
-    p.add_argument("--input-base-dir", "-d", type=str, help="The parent directory of the workflow folders", default=None)
-    p.set_defaults(command="extraction")
-
-    # train_extraction
-    p = subcommands.add_parser("train_extraction", help="Train the extraction moded")
-    p.add_argument("model_name", type=str, help="The name of the model to use", default="default")
-    p.add_argument("--input-base-dir", "-d", type=str, help="The parent directory of the workflow folders", default=None)
+    p.add_argument("--input-base-dir", "-d", type=str, help="The parent directory of the workflow folders",
+                   default=None)
     p.set_defaults(command="extraction")
 
     # segmentation
     p = subcommands.add_parser("segmentation", help="Run segmentation")
     p.add_argument("model_name", type=str, help="The name of the model to use", default="default")
-    p.add_argument("--input-base-dir", "-d", type=str, help="The parent directory of the workflow folders", default=None)
+    p.add_argument("--input-base-dir", "-d", type=str, help="The parent directory of the workflow folders",
+                   default=None)
     p.set_defaults(command="segmentation")
 
+    # train
+    train_parser = subcommands.add_parser("train", help="Commands to train the models")
+    train_subcommands = train_parser.add_subparsers()
 
+    # train extraction
+    p = train_subcommands.add_parser("extraction", help="Train the extraction model")
+    p.add_argument("model_name", type=str, help="The name of the model to use", default="default")
+    p.add_argument("--version", "-v", type=str, help="The exparser engine version to use for training", default=None)
+    p.set_defaults(command="training", func_name="call_extraction_training")
+
+    # train segmentation
+    p = train_subcommands.add_parser("segmentation", help="Train the segmentation model")
+    p.add_argument("model_name", type=str, help="The name of the model to use", default="default")
+    p.add_argument("--version", "-v", type=str, help="The exparser engine version to use for training", default=None)
+    p.set_defaults(command="training", func_name="call_segmentation_training")
+
+    # train completeness
+    p = train_subcommands.add_parser("completeness", help="Train the completeness of the models")
+    p.add_argument("model_name", type=str, help="The name of the model to use", default="default")
+    p.add_argument("--version", "-v", type=str, help="The exparser engine version to use for training", default=None)
+    p.set_defaults(command="training", func_name="call_completeness_training")
 
     # eval
     p = subcommands.add_parser("eval", help="Evaluate a pretrained model")
@@ -129,11 +116,13 @@ if __name__ == "__main__":
     # eval_full_workflow
     p = subcommands.add_parser("eval_full_workflow", help="Splits, trains and evaluates model")
     p.add_argument("model_name", type=str, help="The name of the model to evaluate")
-    p.add_argument("--prefix", "-p", type=str, help="The prefix to use for the split model which is evaluated", default="test_")
+    p.add_argument("--prefix", "-p", type=str, help="The prefix to use for the split model which is evaluated",
+                   default="test_")
     p.add_argument("--skip_splitting", "-P", help="Skip the splitting step", action="store_true")
     p.add_argument("--skip_extraction", "-X", help="Skip extraction training and evaluation", action="store_true")
     p.add_argument("--skip_segmentation", "-S", help="Skip segmentation training and evaluation", action="store_true")
-    p.add_argument("--add-logfile", "-l", help="Output additional log information in the model folder", action="store_true")
+    p.add_argument("--add-logfile", "-l", help="Output additional log information in the model folder",
+                   action="store_true")
     p.set_defaults(command="eval_full_workflow", func_name="run_full_eval_workflow")
 
     # report
@@ -208,31 +197,23 @@ if __name__ == "__main__":
                    help="Use a particular version of the recognition engine, which must be installed first")
     p.set_defaults(command="engine", func_name="exec_use")
 
-    # add legacy commands
-    parsers = []
-    for data in Commands:
-        cmd = subcommands.add_parser(data.value, help=f"Run the {data.value} command")
-        cmd.add_argument("args", nargs="+")
-        cmd.set_defaults(command=data.value)
-        parsers.append(cmd)
-
     # set the exparser engine path
     if os.path.exists(config_exparser_version_file()):
         with open(config_exparser_version_file()) as f:
             version = f.read()
         if version != get_version():
             from commands.engine import check_version
-
             check_version(version)
             sys.path.insert(0, config_exparser_dir(version))
 
+    # parse arguments
     try:
         args = parser.parse_args()
     except Exception as err:
         sys.stderr.write(str(err) + "\n")
         sys.exit(1)
 
-    # check if argparse implementation of command exists, import and run it
+    # import command module and run command
     command = importlib.import_module("commands." + args.command)
     func_name = "execute"
     if hasattr(args, "func_name"):
@@ -242,43 +223,7 @@ if __name__ == "__main__":
     if 'func_name' in kwargs:
         del kwargs['func_name']
     try:
-        try:
-            getattr(command, func_name)(**kwargs)
-        except ModuleNotFoundError as err:
-            # is is a legacy command not yet converted to argparse?
-            if len(sys.argv) > 1:
-                func_name = sys.argv[1]
-
-                if func_name == Commands.LAYOUT.value:
-                    call_run_layout_extractor()
-
-                elif func_name == Commands.EXMATCHER.value:
-                    run_command('python3.6 run-crossref.py')
-
-                elif func_name == Commands.TRAIN_EXTRACTION.value:
-                    if len(sys.argv) < 3:
-                        raise RuntimeError("Please provide a name for the model")
-                    from commands.training import call_extraction_training
-
-                    call_extraction_training(sys.argv[2])
-
-                elif func_name == Commands.TRAIN_SEGMENTATION.value:
-                    if len(sys.argv) < 3:
-                        raise RuntimeError("Please provide a name for the model")
-                    from commands.training import call_segmentation_training
-
-                    call_segmentation_training(sys.argv[2])
-
-                elif func_name == Commands.TRAIN_COMPLETENESS.value:
-                    if len(sys.argv) < 3:
-                        raise RuntimeError("Please provide a name for the model")
-                    from commands.training import call_completeness_training
-
-                    call_completeness_training(sys.argv[2])
-
-                else:
-                    raise RuntimeError("Wrong input command: '" + func_name + "'; valid commands are: " +
-                                       ", ".join([c.value for c in Commands]) + "\n")
+        getattr(command, func_name)(**kwargs)
     except KeyboardInterrupt:
         sys.stderr.write("\nAborted\n")
         log("\nAborted")

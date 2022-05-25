@@ -88,8 +88,9 @@ In order to train a new model from scratch, you need to do the following:
 7. "Save" the training files after each annotation, they will be stored
    in the model directory
 8. On the command line, run `./bin/train <model_name>`. If
-you want to train extraction and segmentation models separately, use
-`./bin/run train_extraction <model_name>` or `train_segmentation
+you want to train extraction, segmentation and model completeness separately, use
+`./bin/run train extraction <model_name>`, `train segmentation
+<model_name>` or `train completeness
 <model_name>`
 
 Training data lives in the `Dataset/<model_name>`

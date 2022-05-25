@@ -27,7 +27,7 @@ echo "Training reference extraction for $MODEL_NAME model, please wait..."
 echo "=========================================================================================="
 echo
 start_extraction=`date +%s`
-docker run -it --rm -v $(pwd):/app excite_toolchain train_extraction $MODEL_NAME
+docker run -it --rm -v $(pwd):/app excite_toolchain train extraction $MODEL_NAME
 end_extraction=`date +%s`
 runtime_extraction=$((end_extraction-start_extraction))
 
@@ -37,7 +37,7 @@ echo "Training reference segmentation for $MODEL_NAME model, please wait..."
 echo "=========================================================================================="
 echo
 start_segmentation=`date +%s`
-docker run -it --rm -v $(pwd):/app excite_toolchain train_segmentation $MODEL_NAME
+docker run -it --rm -v $(pwd):/app excite_toolchain train segmentation $MODEL_NAME
 end_segmentation=`date +%s`
 
 echo
@@ -45,7 +45,7 @@ echo "==========================================================================
 echo "Training model completeness for $MODEL_NAME model, please wait..."
 echo "=========================================================================================="
 echo
-docker run -it --rm -v $(pwd):/app excite_toolchain train_completeness $MODEL_NAME
+docker run -it --rm -v $(pwd):/app excite_toolchain train completeness $MODEL_NAME
 
 # Report performance
 convertsecs() {

@@ -50,8 +50,6 @@ try:
 
     if command is None:
         raise RuntimeError("No command")
-    if filename is None and command != "train_extraction":
-        raise RuntimeError("No filename")
 
     # OCR
     if command == "ocr":
@@ -104,17 +102,16 @@ try:
             raise RuntimeError(str(err))
         result_path = os.path.join(config_url_Refs_segment(), filename + ".xml")
 
-    elif command == "train_extraction":
-        result_path = None
-
     else:
         raise RuntimeError("Invalid command: " + command)
 
     # only call docker command if file doesn't already exist
     if run_docker_command and (result_path is None or not os.path.isfile(result_path)):
         # run docker command and write output to server output
-        args = ['python3', '/app/run-main.py', command, model_name]
-        sys.stderr.write("Executing " + " ".join(args) + "\n")
+        args = ['python3', '/app/run-main.py', command]
+        if command != "layout":
+            args.append(model_name)
+        sys.stderr.write(f">>> Executing '{' '.join(args)}'\n")
         proc = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.PIPE, universal_newlines=True)
 
         # check for process completion and copy output to stderr
