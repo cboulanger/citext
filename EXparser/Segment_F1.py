@@ -55,7 +55,7 @@ def get_score(prob, n, p):
     return score
 
 
-def comp_prob(label_pred, llin, tlin):
+def comp_prob(label_pred):
     abv = ['FN', 'YR', 'AT', 'PG', 'SR', 'ED']
     label_pred = [tmp for tmp in label_pred if tmp in abv]
     n = []
@@ -194,7 +194,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                 pb, lb, _ = main_sg(' '.join(l), 0)
                 # rp=restriction(lb,l)
                 p = get_score(pb, len(' '.join(l).split()), 'a')
-                cp = comp_prob(lb, llin, tlin)
+                cp = comp_prob(lb)
                 s1 = lim[0] - 1
                 s2 = lim[2] + 1
                 if ((w == 0) & (s1 >= 0)):
@@ -212,7 +212,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                         rp = restriction(lb, txt[s1], mll, 4) * restriction(lb, l[0], mll, 1) * restriction(lb, l[0],
                                                                                                             mll, 6)
                         p0 = get_score(pb, len(' '.join(l).split()), 'e')
-                        cp0 = comp_prob(lb0, llin + 1, tlin0)
+                        cp0 = comp_prob(lb0)
                         pn0 = max(ref_prob0[s1][1:3])
                         pn = ref_prob0[s1][3]
 
@@ -244,7 +244,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                                                                                                              txt[s2],
                                                                                                              mll, 6)
                         p0 = get_score(pb, len(' '.join(l).split()), 'b')
-                        cp0 = comp_prob(lb0, llin + 1, tlin0)
+                        cp0 = comp_prob(lb0)
                         pn0 = max(ref_prob0[s2][2::])
                         pn = ref_prob0[s2][1]
 
@@ -332,9 +332,9 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
         # ii=random.randint(0,len(Z)-1)
         id = np.where(ref_id == Z[ii])[0]
         l = [txt[idd] for idd in id]
-        b, lb, _ = main_sg(' '.join(l), 0)
+        pb, lb, _ = main_sg(' '.join(l), 0)
         p = get_score(pb, len(' '.join(l).split()), 'a')
-        cp = comp_prob(lb, llin, tlin)
+        cp = comp_prob(lb)
         w = random.randint(0, 1)  # top or buttom
         if ii > 0:
             id1 = np.where(ref_id == Z[ii - 1])[0]
@@ -361,7 +361,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                                                                                                2) * restriction(lb1,
                                                                                                                 l[0],
                                                                                                                 mll, 2)
-            cp0 = comp_prob(lb0, llin + 1, tlin0)
+            cp0 = comp_prob(lb0)
 
             # with open('rrr.txt','ab') as fid:
             # fid.write(str(i)+'(up):'+str([pn0,rp0,cp0,p0,p10])+':'+' '.join(l0)+'\r'+str([pn,rp,cp,p,p1])+':'+' '.join(l)+'\r\r\r')
@@ -391,7 +391,7 @@ def segment(txt, ref_prob0, valid):  # ref_prob is the probability given by refe
                                                                                                 2) * restriction(lb1,
                                                                                                                  l[0],
                                                                                                                  mll, 2)
-            cp0 = comp_prob(lb0, llin + 1, tlin0)
+            cp0 = comp_prob(lb0)
             # with open('rrr.txt','ab') as fid:
             # fid.write(str(i)+'(down):'+str([pn0,rp0,cp0,p0,p10])+':'+' '.join(l0)+'\r'+str([pn,rp,cp,p,p1])+':'+' '.join(l)+'\r\r\r')
             if (pn0 * rp0 * cp0 * p0 * p10) > (pn * rp * cp * p * p1):
