@@ -94,20 +94,8 @@ def config_url_Refs_crossref():
     return os.path.join(data_address, config_dirname_crossref())
 
 
-def config_url_exmatcher_crossref_package():
-    return venue_address + 'exmatcher_crossref_package/'
-
-
 def email_address():
-    return 'azam.hosseini@gesis.org'
-
-
-def config_url_layout_extractor():
-    return venue_address + 'cermine-layout-extractor/'
-
-
-def config_layout_extractor_function_name():
-    return 'gesis.cermine.layout.extractor.CermineLineLayoutExtractor'
+    return 'boulanger@lhlt.mpg.de'
 
 
 def config_data_dirnames():
