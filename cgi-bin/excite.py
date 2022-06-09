@@ -25,16 +25,16 @@ except:
 cleanup_dirs = [
     config_url_pdfs_no_ocr(),
     config_url_pdfs(),
-    config_url_Refs(),
-    config_url_Refs_segment(),
-    config_url_Refs_segment_dict(),
-    config_url_Refs_segment_prob(),
-    config_url_Refs_bibtex(),
-    config_url_Refs_crossref()
+    config_url_refs(),
+    config_url_refs_segment(),
+    config_url_refs_segment_dict(),
+    config_url_refs_segment_prob(),
+    config_url_refs_bibtex(),
+    config_url_refs_crossref()
 ]
 
 if command != "exparser":
-    cleanup_dirs.append(config_url_Layouts())
+    cleanup_dirs.append(config_url_layouts())
 
 result = {}
 run_docker_command = True
@@ -84,23 +84,23 @@ try:
             finally:
                 os.remove(source)
 
-        result_path = os.path.join(config_url_Layouts(), filename + ".csv")
+        result_path = os.path.join(config_url_layouts(), filename + ".csv")
 
     # Identify citations
     elif command == "exparser":
-        result_path = os.path.join(config_url_Refs(), filename + ".csv")
+        result_path = os.path.join(config_url_refs(), filename + ".csv")
 
     # Segment citations
     elif command == "segmentation":
         try:
             source = os.path.join(tempfile.gettempdir(), filename + ".csv")
-            target = os.path.join(config_url_Refs(), filename + ".csv")
+            target = os.path.join(config_url_refs(), filename + ".csv")
             shutil.copy(source, target)
         except PermissionError as err:
             sys.stderr.write('Warning: ' + str(err) + '\n')
         except FileNotFoundError as err:
             raise RuntimeError(str(err))
-        result_path = os.path.join(config_url_Refs_segment(), filename + ".xml")
+        result_path = os.path.join(config_url_refs_segment(), filename + ".xml")
 
     else:
         raise RuntimeError("Invalid command: " + command)

@@ -73,6 +73,16 @@ if __name__ == "__main__":
                    default=None)
     p.set_defaults(command="segmentation")
 
+    # match
+    match_parser = subcommands.add_parser("match", help="Commands to match the extracted references against databases")
+    match_subcommands = match_parser.add_subparsers()
+
+    # match crossref
+    p = match_subcommands.add_parser("crossref", help="Match references using the CrossRef API")
+    p.add_argument("--input-base-dir", "-d", type=str, help="The parent directory of the workflow folders",
+                   default=None)
+    p.set_defaults(command="match_crossref")
+
     # train
     train_parser = subcommands.add_parser("train", help="Commands to train the models")
     train_subcommands = train_parser.add_subparsers()

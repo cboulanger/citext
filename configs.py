@@ -42,7 +42,7 @@ def config_dirname_layouts():
     return '2-layouts/'
 
 
-def config_url_Layouts():
+def config_url_layouts():
     return os.path.join(data_address, config_dirname_layouts())
 
 
@@ -50,7 +50,7 @@ def config_dirname_refs():
     return '3-refs/'
 
 
-def config_url_Refs():
+def config_url_refs():
     return os.path.join(data_address, config_dirname_refs())
 
 
@@ -58,7 +58,7 @@ def config_dirname_refs_seg():
     return '3-refs_seg/'
 
 
-def config_url_Refs_segment():
+def config_url_refs_segment():
     return os.path.join(data_address, config_dirname_refs_seg())
 
 
@@ -66,7 +66,7 @@ def config_dirname_bibtex():
     return '3-refs_bibtex/'
 
 
-def config_url_Refs_bibtex():
+def config_url_refs_bibtex():
     return os.path.join(data_address, config_dirname_bibtex())
 
 
@@ -74,7 +74,7 @@ def config_dirname_seg_prob():
     return '3-refs_seg_prob/'
 
 
-def config_url_Refs_segment_prob():
+def config_url_refs_segment_prob():
     return os.path.join(data_address, config_dirname_seg_prob())
 
 
@@ -82,7 +82,7 @@ def config_dirname_seg_dict():
     return '3-refs_seg_dict/'
 
 
-def config_url_Refs_segment_dict():
+def config_url_refs_segment_dict():
     return os.path.join(data_address, config_dirname_seg_dict())
 
 
@@ -90,7 +90,7 @@ def config_dirname_crossref():
     return '4-refs_crossref/'
 
 
-def config_url_Refs_crossref():
+def config_url_refs_crossref():
     return os.path.join(data_address, config_dirname_crossref())
 
 

@@ -42,7 +42,7 @@ def crossref_from_json(ref_json, ref_text, email=None, whole_crossref=False):
     return result_dict
 
 def match_with_crossref(file_name):
-    with open(os.path.join(config_url_Refs_segment_dict(),file_name)) as f:
+    with open(os.path.join(config_url_refs_segment_dict(), file_name)) as f:
         lines = f.readlines()
     i = 0
     list_of_results = []
@@ -58,27 +58,24 @@ def match_with_crossref(file_name):
             sys.stderr.write(f"{file_name}:{i}: {str(result)}")
         i+= 1
 
-    with open(os.path.join(config_url_Refs_crossref(), file_name),"w") as rf:
+    with open(os.path.join(config_url_refs_crossref(), file_name), "w") as rf:
         for result in list_of_results:
             json_result = json.dumps(result)
             rf.write(json_result + '\n')
 
-def execute():
-    fold = config_url_Refs_segment_dict()
-    fdir = os.listdir(fold)
-    total = len(fdir)
-    counter = 0
+def execute(input_base_dir=None):
+    dir_path = os.path.join(input_base_dir or data_address, config_dirname_seg_dict())
+    files = os.listdir(dir_path)
+    total = len(files)
     progress_bar = get_progress_bar("Matching with Crossref", total)
     log("Matching with crossref...")
-    for u in range(0, total):
-        counter += 1
-        progress_bar.goto(counter)
-        curr_file = fdir[u]
-        if curr_file.startswith(".") or not curr_file.endswith(".csv"):
+    for i, file_name in enumerate(files):
+        progress_bar.goto(i+1)
+        if file_name.startswith(".") or not file_name.endswith(".csv"):
             continue
-        log(f" - {curr_file}")
+        log(f" - {file_name}")
         try:
-            match_with_crossref(curr_file)
+            match_with_crossref(file_name)
         except Exception as e:
             sys.stderr.write(f"\n{str(e)}\n")
             log(traceback.format_exc())
