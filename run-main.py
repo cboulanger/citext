@@ -202,10 +202,21 @@ if __name__ == "__main__":
     p.set_defaults(command="engine", func_name="exec_list")
 
     # engine use
-    p = engine_subcommands.add_parser("use", help="Use a particular version of the engine")
+    p = engine_subcommands.add_parser("use", help="Use a particular version of the exparser engine")
     p.add_argument("version", type=str,
                    help="Use a particular version of the recognition engine, which must be installed first")
     p.set_defaults(command="engine", func_name="exec_use")
+
+    # dataset
+    dataset_parser = subcommands.add_parser("dataset", help="Commands to work with different datasets")
+    dataset_subcommands = dataset_parser.add_subparsers()
+
+    # dataset convert
+    p = dataset_subcommands.add_parser("convert", help="Convert the (excite) dataset into a different format")
+    p.add_argument("model_name", type=str, help="The name of the model which has been trained with the given dataset")
+    p.add_argument("--format", "-f", dest="target_format", type=str, default="anystyle", help="The format into which to convert the dataset")
+    p.add_argument("--out-dir", "-o", dest="target_dir", type=str, help="The output directory, must exist. If not given, a subdirectory is created in the dataset folder")
+    p.set_defaults(command="dataset", func_name="dataset_convert")
 
     # set the exparser engine path
     if os.path.exists(config_exparser_version_file()):

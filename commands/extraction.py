@@ -94,6 +94,8 @@ def call_extraction(model_dir: str, input_base_dir: str = None):
     if len(list_of_time) > 0:
         log('Average Time: %s' % (sum(list_of_time) / float(len(list_of_time))))
 
+
+
 def execute(model_name, input_base_dir=None):
     model_dir = os.path.join(config_model_dir(model_name))
     call_extraction(model_dir, input_base_dir)
