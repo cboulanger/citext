@@ -1,6 +1,6 @@
-*
 !README.md
 !.gitignore
-!default/anystyle
-!default/LRT
-!default/SEG
+/*/*
+!/default/anystyle
+!/default/LRT
+!/default/SEG
