@@ -15,7 +15,8 @@ from configs import *
 #         else:
 #             text += line
 
-
+def xstr(s) -> str:
+    return '' if s is None else str(s)
 
 def convert_lrt_to_anystyle(doc: str) -> str:
     ttx = []
@@ -73,6 +74,7 @@ def convert_lrt_to_anystyle(doc: str) -> str:
     return "\n".join(ttx)
 
 
+
 def convert_seg_to_anystyle(source_dir) -> etree.ElementTree:
     files = os.listdir(source_dir)
     target_root = etree.Element("dataset")
@@ -96,7 +98,7 @@ def convert_seg_to_anystyle(source_dir) -> etree.ElementTree:
                 if tag == "editor":
                     if not editors_done:
                         # merge editors
-                        editor = "".join([str(node.text) + str(node.tail) for node in ref.findall("editor")])
+                        editor = "".join([xstr(node.text) + xstr(node.tail) for node in ref.findall("editor")])
                         last_node = etree.SubElement(sequence, "editor")
                         last_node.text = editor
                         editors_done = True
@@ -106,9 +108,9 @@ def convert_seg_to_anystyle(source_dir) -> etree.ElementTree:
                 elif tag == "fpage":
                     last_node = etree.SubElement(sequence, "pages")
                     lpage = ref.find("lpage")
-                    last_node.text = str(child.text) + str(child.tail)
+                    last_node.text = xstr(child.text) + xstr(child.tail)
                     if lpage is not None:
-                        last_node.text = str(last_node.text) + str(lpage.text) + str(lpage.tail)
+                        last_node.text = xstr(last_node.text) + xstr(lpage.text) + xstr(lpage.tail)
                     continue
                 elif tag == "lpage":
                     continue
@@ -122,7 +124,7 @@ def convert_seg_to_anystyle(source_dir) -> etree.ElementTree:
                 elif tag == "issue":
                     vol_node = sequence.find("volume")
                     if vol_node is not None:
-                        vol_node.text = str(vol_node.text) + str(child.text) + str(child.tail)
+                        vol_node.text = xstr(vol_node.text) + xstr(child.text) + xstr(child.tail or '')
                         continue
                     tag = "volume"
                 elif tag == "identifier":
@@ -132,7 +134,7 @@ def convert_seg_to_anystyle(source_dir) -> etree.ElementTree:
                         tag = "isbn"
                 # add node
                 last_node = etree.SubElement(sequence, tag)
-                last_node.text = str(child.text) + str(child.tail)
+                last_node.text = xstr(child.text) + xstr(child.tail)
     return etree.ElementTree(target_root)
 
 def convert_extraction_file(source_path, target_dir, target_format):
@@ -178,6 +180,24 @@ def convert_segmentation_files(model_name, target_format, target_dir=None):
     target_file = os.path.join(target_dir, model_name + ".xml")
     tree.write(target_file, pretty_print=True, method='xml', encoding="UTF-8", xml_declaration=True)
     print(f"Converted {len(os.listdir(source_dir))} SEG files.")
+
+def dataset_fix(model_name):
+    model_dir = config_dataset_dir(model_name)
+    seg_dir = os.path.join(model_dir, "SEG")
+    count = 0
+    for file_name in os.listdir(seg_dir):
+        file_path = os.path.join(seg_dir, file_name)
+        with open(file_path, "r", encoding="utf-8") as f:
+            xml = f.read()
+        if xml.startswith("<?xml"):
+            continue
+        xml = '<?xml version="1.0" encoding="utf-8"?>\n<seganno>\n' + "\n".join('<ref>' + line + '</ref>' for line in xml.split('\n')) + '\n</seganno>'
+        with open(file_path, "w", encoding="utf-8") as f:
+            f.write(xml)
+        count += 1
+    print(f"Fixed {count} files.")
+
+
 
 def dataset_convert(model_name, target_format, target_dir=None):
     convert_extraction_files(model_name, target_format, target_dir=target_dir)

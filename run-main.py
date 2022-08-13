@@ -218,6 +218,11 @@ if __name__ == "__main__":
     p.add_argument("--out-dir", "-o", dest="target_dir", type=str, help="The output directory, must exist. If not given, a subdirectory is created in the dataset folder")
     p.set_defaults(command="dataset", func_name="dataset_convert")
 
+    # dataset fix
+    p = dataset_subcommands.add_parser("fix", help="Fixes problems in EXcite datasets")
+    p.add_argument("model_name", type=str, help="The name of the model which has been trained with the given dataset")
+    p.set_defaults(command="dataset", func_name="dataset_fix")
+
     # set the exparser engine path
     if os.path.exists(config_exparser_version_file()):
         with open(config_exparser_version_file()) as f:
