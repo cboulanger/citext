@@ -1403,7 +1403,6 @@ class GUI {
 
     // clean up text
     text = text.replace(/\r/g, "")
-    text = text.replace(/<?xml[^>]*>/, "")
     while (text.match(/\n\n/)) {
       text = text.replace(/\n\n/g, "\n");
     }
@@ -1430,9 +1429,10 @@ class GUI {
         let yval = 0;
         this.__numPages = 0;
         let ttx_curr_tag;
+
         for (let i = 0; i < text_Lines.length; i++) {
           let line = text_Lines[i]
-          if (textFileName.endsWith(".csv") || textFileExt === "csv") {
+          if (parserEngine === "exparser") {
             //
             // EXparser
             //
@@ -1450,7 +1450,7 @@ class GUI {
               }
               yval = lineYval;
             }
-          } else if (textFileName.endsWith(".ttx") || textFileExt === "ttx") {
+          } else if (parserEngine === "anystyle") {
             //
             // AnyStyle
             //
@@ -1533,18 +1533,25 @@ class GUI {
           $(".exparser,.visible-in-document-mode").addClass("excluded")
         }
         if (parserEngine === "exparser") {
-          let textLines = text.split("\n");
-          // remove root node
-          textLines.splice(0, 2);
-          textLines.splice(-1, 1);
-          // remove enclosing <ref> and <author> tags
-          textLines = textLines
-            .map(line => line
-              .replace(/<\/?author>/g, '')
-              .replace(/<\/?ref>/g, ''));
-          text = textLines.join("\n");
+          //
+          // exparser
+          //
+          if (text.startsWith("<?xml")) {
+            let textLines = text.split("\n");
+            // remove root node
+            textLines.splice(0, 2);
+            textLines.splice(-1, 1);
+            // remove enclosing <ref> and <author> tags
+            textLines = textLines
+              .map(line => line
+                .replace(/<\/?author>/g, '')
+                .replace(/<\/?ref>/g, ''));
+            text = textLines.join("\n");
+          }
         } else {
+          //
           // anystyle
+          //
           if (text.startsWith("<?xml")) {
             let textLines = text.split("\n");
             //remove root node
@@ -1552,7 +1559,9 @@ class GUI {
             textLines.splice(-1, 1);
             text = textLines.join(" ");
             // remove enclosing <sequence>tags
-            text = text.replace(/<sequence>/g, "").replace(/<\/sequence>/g, "\n")
+            text = text
+              .replace(/<sequence>/g, "")
+              .replace(/<\/sequence>/g, "\n")
           }
         }
         // count references
@@ -1678,7 +1687,7 @@ class GUI {
       }
       case DISPLAY_MODES.REFERENCES: {
         if (parserEngine === "exparser") {
-          markedUpText = markedUpText.split("\n").map(line => this.addAuthorTag(line)).join("\n");
+          //markedUpText = markedUpText.split("\n").map(line => this.addAuthorTag(line)).join("\n");
         }
         $(".enabled-if-refs").removeClass("ui-state-disabled");
         $(".enabled-if-segmented").toggleClass("ui-state-disabled", !(markedUpText.match(REGEX.TAG)));
