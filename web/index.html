@@ -42,7 +42,7 @@
         </div>
         <input type="file" id="btn-upload" style="display:none"
                onchange="Actions.load(); this.value=null; return false;"
-               accept="text/plain, application/pdf, application/xml, text/csv" multiple/>
+               accept="text/plain, application/pdf, application/xml, text/csv, .ttx" multiple/>
         <!-- model -->
         <div class="btn-group">
             <button id="btn-model"
@@ -85,10 +85,6 @@
                        class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.run_excite_command('exparser');" href="#">
                     Extract references from PDF</a></li>
-                <li><a id="btn-identify-with-regex"
-                       class="enabled-if-document"
-                       onclick="Actions.addRefTagWithRegex();" href="#">
-                    Identify with RegExpr</a></li>
             </ul>
         </div>
         <!-- segmentation view -->
@@ -187,13 +183,13 @@
 <div id="main-container" class="grid-container">
     <!-- text to mark up -->
     <div class="view-text">
-        <div class="view-text-display" id="text-content">
+        <div class="view-text-display" id="text-content" contenteditable="true">
         </div>
         <div class="view-text-label">
             <label id="text-label"></label>
         </div>
         <div class="view-text-buttons unselectable">
-            <span id="refs-navigation" class="hidden visible-if-refs visible-in-document-mode">
+            <span id="refs-navigation" class="hidden visible-if-refs visible-in-document-mode anystyle exparser">
                 <i class="fas fa-address-card"></i>&nbsp;
                 <button id="btnfindPrevRef" onclick="GUI.findNextRef(-1,this)">
                     <i class="fas fa-arrow-up"></i>
@@ -202,7 +198,7 @@
                     <i class="fas fa-arrow-down"></i>
                 </button>
             </span>
-            <span id="page-navigation" class="hidden visible-if-pages visible-in-document-mode">
+            <span id="page-navigation" class="hidden visible-if-pages visible-in-document-mode anystyle exparser">
                 <i class="fas fa-book-open"></i>&nbsp;
                 <button id="btn-prev-page" onclick="GUI.goToPrevPage()">
                     <i class="fas fa-arrow-left"></i>
@@ -252,83 +248,155 @@
 <div class="loader loader-default" id="spinner"></div>
 <!-- context menu -->
 <ul id="context-menu" class="dropdown-menu" role="menu">
+
     <!-- document mode -->
-    <li><a id="btn-ref-part" class="visible-in-document-mode enabled-if-selection"
-           tabindex="-1" onclick="Actions.addTag('ref');" href="#">
+
+    <li><a id="btn-ref-part" class="visible-in-document-mode enabled-if-selection exparser"
+           onclick="Actions.addTag('ref');" href="#">
         <i class="fas fa-sticky-note"></i>Markup selection as reference
     </a></li>
-    <li><a id="btn-ref-line" class="visible-in-document-mode enabled-if-selection"
-           tabindex="-1" onclick="Actions.addTag('ref', true);" href="#">
-        Markup whole lines as reference
+    <li><a id="btn-ref-line" class="visible-in-document-mode enabled-if-selection exparser"
+           onclick="Actions.addTag('ref', true);" href="#">
+        Markup whole line(s) as reference
     </a></li>
-    <li><a id="btn-oth" class="visible-in-document-mode enabled-if-selection"
-           tabindex="-1" onclick="Actions.addTag('oth');" href="#">
+    <li><a id="btn-oth" class="visible-in-document-mode enabled-if-selection exparser"
+           onclick="Actions.addTag('oth');" href="#">
         Ignore
     </a></li>
+
+    <div class="refs-button-grid anystyle visible-in-document-mode enabled-if-selection">
+        <li><a data-tag="reference" onclick="Actions.addTag('reference', true);" href="#">
+            Reference
+        </a></li>
+        <li><a data-tag="meta" onclick="Actions.addTag('meta', true);" href="#">
+            Meta
+        </a></li>
+        <li><a data-tag="pages" onclick="Actions.addTag('pages');" href="#">
+            Page Number
+        </a></li>
+        <li><a data-tag="text" onclick="Actions.addTag('text', true);" href="#">
+            Text
+        </a></li>
+        <li><a data-tag="title" onclick="Actions.addTag('title', true);" href="#">
+            Title
+        </a></li>
+        <li><a data-tag="author" onclick="Actions.addTag('author', true);" href="#">
+            Author
+        </a></li>
+        <li><a data-tag="abstract" onclick="Actions.addTag('abstract', true);" href="#">
+            Abstract
+        </a></li>
+    </div>
     <!-- references mode -->
-    <div class="refs-button-grid">
-        <li><a id="btn-surname" class="visible-in-refs-mode enabled-if-selection" data-tag="surname"
+    <div class="refs-button-grid anystyle visible-in-refs-mode enabled-if-selection">
+        <li><a data-tag="author" onclick="Actions.addTag('author');" href="#">
+            Author(s)
+        </a></li>
+        <li><a data-tag="year" onclick="Actions.addTag('year');" href="#">
+            Date
+        </a></li>
+        <li><a data-tag="title" onclick="Actions.addTag('title');" href="#">
+            Title
+        </a></li>
+        <li><a data-tag="editor" onclick="Actions.addTag('editor');" href="#">
+            Editor(s)
+        </a></li>
+        <li><a data-tag="location" onclick="Actions.addTag('location');" href="#">
+            Location
+        </a></li>
+        <li><a data-tag="publisher" onclick="Actions.addTag('publisher');" href="#">
+            Publisher
+        </a></li>
+        <li><a data-tag="journal" onclick="Actions.addTag('journal');" href="#">
+            Journal
+        </a></li>
+        <li><a data-tag="container-title" onclick="Actions.addTag('container-title');" href="#">
+            Container
+        </a></li>
+        <li><a data-tag="collection-title" onclick="Actions.addTag('collection-title');" href="#">
+            Collection
+        </a></li>
+        <li><a data-tag="volume" onclick="Actions.addTag('volume');" href="#">
+            Volume
+        </a></li>
+        <li><a data-tag="pages" onclick="Actions.addTag('pages');" href="#">
+            Pages
+        </a></li>
+        <li><a data-tag="doi" onclick="Actions.addTag('doi');" href="#">
+            DOI
+        </a></li>
+        <li><a data-tag="isbn" onclick="Actions.addTag('isbn');" href="#">
+            ISBN
+        </a></li>
+        <li><a data-tag="url" onclick="Actions.addTag('url');" href="#">
+            URL
+        </a></li>
+    </div>
+
+    <div class="refs-button-grid exparser visible-in-refs-mode enabled-if-selection">
+        <li><a id="btn-surname" data-tag="surname"
                tabindex="-1" onclick="Actions.addTag('surname');" href="#">
             Surname
         </a></li>
-        <li><a id="btn-given-names" class="visible-in-refs-mode enabled-if-selection" data-tag="given-names"
+        <li><a id="btn-given-names" data-tag="given-names"
                tabindex="-1" onclick="Actions.addTag('given-names');" href="#">
             Given&#8209;names
         </a></li>
-        <li><a id="btn-year" class="visible-in-refs-mode enabled-if-selection" data-tag="year"
+        <li><a id="btn-year" data-tag="year"
                tabindex="-1" onclick="Actions.addTag('year');" href="#">
             Year
         </a></li>
-        <li><a id="btn-title" class="visible-in-refs-mode enabled-if-selection" data-tag="title"
+        <li><a id="btn-title" data-tag="title"
                tabindex="-1" onclick="Actions.addTag('title');" href="#">
             Title
         </a></li>
-        <li><a id="btn-editor" class="visible-in-refs-mode enabled-if-selection" data-tag="editor"
+        <li><a id="btn-editor" data-tag="editor"
                tabindex="-1" onclick="Actions.addTag('editor');" href="#">
-            Editors
+            Editor(s)
         </a></li>
-        <li><a id="btn-publisher" class="visible-in-refs-mode enabled-if-selection" data-tag="publisher"
+        <li><a id="btn-publisher" data-tag="publisher"
                tabindex="-1" onclick="Actions.addTag('publisher');" href="#">
             Publisher
         </a></li>
-        <li><a id="btn-source" class="visible-in-refs-mode enabled-if-selection" data-tag="source"
+        <li><a id="btn-source" data-tag="source"
                tabindex="-1" onclick="Actions.addTag('source');" href="#">
             Source
         </a></li>
-        <li><a id="btn-volume" class="visible-in-refs-mode enabled-if-selection" data-tag="volume"
+        <li><a id="btn-volume" data-tag="volume"
                tabindex="-1" onclick="Actions.addTag('volume');" href="#">
             Volume
         </a></li>
-        <li><a id="btn-issue" class="visible-in-refs-mode enabled-if-selection" data-tag="issue"
+        <li><a id="btn-issue" data-tag="issue"
                tabindex="-1" onclick="Actions.addTag('issue');" href="#">
             Issue
         </a></li>
-        <li><a id="btn-fpage" class="visible-in-refs-mode enabled-if-selection" data-tag="fpage"
+        <li><a id="btn-fpage" data-tag="fpage"
                tabindex="-1" onclick="Actions.addTag('fpage');" href="#">
             First page
         </a></li>
-        <li><a id="btn-lpage" class="visible-in-refs-mode enabled-if-selection" data-tag="lpage"
+        <li><a id="btn-lpage" data-tag="lpage"
                tabindex="-1" onclick="Actions.addTag('lpage');" href="#">
             Last Page
         </a></li>
-        <li><a id="btn-identifier" class="visible-in-refs-mode enabled-if-selection" data-tag="identifier"
+        <li><a id="btn-identifier" data-tag="identifier"
                tabindex="-1" onclick="Actions.addTag('identifier');" href="#">
             Identifier
         </a></li>
-        <li><a id="btn-url" class="visible-in-refs-mode enabled-if-selection" data-tag="url"
+        <li><a id="btn-url" data-tag="url"
                tabindex="-1" onclick="Actions.addTag('url');" href="#">
             URL
         </a></li>
-        <li><a id="btn-other" class="visible-in-refs-mode enabled-if-selection" data-tag="other"
+        <li><a id="btn-other" data-tag="other"
                tabindex="-1" onclick="Actions.addTag('other');" href="#">
             Ignore
         </a></li>
-        <li><a id="btn-insert-linebreak" class="visible-in-refs-mode enabled-if-selection"
-               tabindex="-1" onclick="Actions.insertBefore('\n');" href="#">
-            Linebreak
-        </a></li>
     </div>
-    <!-- visible in both modes -->
+
+    <!-- visible in all modes -->
+    <li><a id="btn-insert-linebreak" class="visible-in-refs-mode enabled-if-selection"
+           tabindex="-1" onclick="Actions.insertBefore('\n');" href="#">
+        Linebreak
+    </a></li>
     <li><a id="btn-remove-tag" class="ui-state-disabled enabled-if-selection" tabindex="-1"
            onclick="Actions.removeTag();" href="#">
         <i class="fas fa-trash"></i>Remove Tag
@@ -364,28 +432,15 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title" style="float: left">EXcite Citation Identification and Segmentation</h3>
+                <h3 class="modal-title" style="float: left">Citation extraction and segmentation annotation for AnyStyle and EXparser</h3>
             </div>
             <div class="modal-body">
-                <ul>
-                    <li><a href="https://github.com/cboulanger/excite-docker/blob/main/docs/readme.md" target="_blank">
-                        Dcoumentation on GitHub</a></li>
-                    <li>For integration with Zotero, you need to download and install the following two Zotero Add-ons:
-                        <ul>
-                            <li><a href="../zotero/zotero-api-endpoint.xpi" download>Zotero API Endpoints</a></li>
-                            <li><a href="../zotero/cita.xpi" download>Cita</a></li>
-                        </ul>
-
-                    </li>
-                    <li><a href="https://exparser.readthedocs.io/en/latest/ReferenceExtraction/" rel="nofollow"
-                           target="_blank">
-                        Information on training the reference extraction model</a></li>
-                    <li><a href="https://exparser.readthedocs.io/en/latest/ReferenceParsing/" rel="nofollow"
-                           target="_blank">
-                        Information on training the reference parsing model</a>
-                    </li>
-                </ul>
-
+                <p>This web application is meant to help the annotation of training documents for machine learning-based reference extraction.</p>
+                <p>It supports the annotation formats of <a href="https://github.com/inukshuk/anystyle">AnyStyle</a> and
+                    of <a href="http://exparser.readthedocs.io">EXparser</a>.
+                </p>
+                <p>See the <a href="https://github.com/cboulanger/excite-docker/blob/main/docs/readme.md" target="_blank">
+                        Dcoumentation on GitHub</a></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary"

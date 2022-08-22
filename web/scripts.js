@@ -1,6 +1,5 @@
-// global vars should be moved to config map and persisted in IndexedDB
+// global vars are leftovers of the previous implementation, should be moved into config object
 // noinspection JSJQueryEfficiency
-
 let pdfFileName = "";
 let pdfFile = null;
 let textFileName = "";
@@ -11,7 +10,7 @@ let colorCounter = 0;
 let clipboard = "";
 let versions = [];
 let displayMode;
-let lastDocument;
+let parserEngine;
 let zoteroAttachmentFilepath;
 let modelName = "default"
 
@@ -97,7 +96,6 @@ class Actions {
     this.loadFile(file);
   }
 
-
   static async loadFromZotero() {
     try {
       GUI.showSpinner("Loading PDF of first selected Zotero item...");
@@ -154,6 +152,8 @@ class Actions {
     let filename = file.name;
     // FIXME ad-hoc filename fix to remave ".pdfa" infix, needs to be configurable
     filename = filename.replace(/\.pdfa\./, ".")
+    pdfFileName = "";
+    textFileName = "";
     let type = file.type;
     let fileExt;
     if (filename) {
@@ -168,30 +168,33 @@ class Actions {
     switch (type) {
       case "pdf":
       case "application/pdf":
-        $("#pdf-label").html(filename);
         pdfFileName = filename;
         pdfFile = file;
         let objectURL = URL.createObjectURL(file);
         GUI.loadPdfFile(objectURL);
-
         $(".enabled-if-document").removeClass("ui-state-disabled");
         return;
       case "xml":
       case "application/xml":
         GUI.setDisplayMode(DISPLAY_MODES.REFERENCES);
         $(".enabled-if-document").addClass("ui-state-disabled");
+        textFileName = filename
         break;
       case "txt":
       case "text/plain":
       case "csv":
       case "text/csv":
+      case "ttx":
         $(".enabled-if-document").removeClass("ui-state-disabled");
+        textFileName = filename
         GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
         break;
       default:
         alert("Invalid file extension: " + fileExt);
         return;
     }
+    $("#text-label").html(textFileName);
+    $("#pdf-label").html(pdfFileName);
     const fileReader = new FileReader();
     fileReader.onload = (e) => {
       let text = String(e.target.result);
@@ -208,6 +211,7 @@ class Actions {
   }
 
   static removeTag() {
+    GUI.saveState();
     let sel = window.getSelection();
     if (!sel) return;
     let el = sel.focusNode;
@@ -221,6 +225,7 @@ class Actions {
   }
 
   static removeAllTags(wholeLine = false) {
+    GUI.saveState()
     let sel = window.getSelection();
     if (!sel) return;
     if (wholeLine) {
@@ -414,18 +419,12 @@ class Actions {
     GUI.setTextContent(textContent);
   }
 
-  static addRefTagWithRegex() {
-    if (displayMode !== DISPLAY_MODES.DOCUMENT) {
-      console.warn("addRefTagWithRegex can only be used in document mode.");
+  static identifyPagenumbers() {
+    if (displayMode !== DISPLAY_MODES.DOCUMENT || parserEngine !== "anystyle") {
+      console.warn("Can only be used in AnyStyle finder documents.");
       return;
     }
-    let regexStr = prompt("Enter regular expression to identify references");
-    if (regexStr === null) return;
-    try {
-      GUI.addTagWithRegex("ref", regexStr);
-    } catch (e) {
-      alert(e.message);
-    }
+    alert ("Not implemented")
   }
 
   static extractReferences(markedUpText) {
@@ -433,11 +432,11 @@ class Actions {
     // remove cermine layout info if exists
     textLines = textLines.map(line => line.split('\t').shift())
     let tmp = textLines
-      .map(line => line.trim().replace(/[-]$/, "~~HYPHEN~~"))
+      //  .map(line => line.trim().replace(/[-]$/, "~~HYPHEN~~"))
       .join(" ")
-      .replace(/~~HYPHEN~~ /g, "");
+    //  .replace(/~~HYPHEN~~ /g, "");
     textLines = [];
-    for (let match of tmp.matchAll(/<ref>(.*?)<\/ref>/g)) {
+    for (let match of tmp.matchAll(/<ref[^>]*>(.*?)<\/ref[^>]*>/g)) {
       textLines.push(match[1]);
     }
     let text = textLines.filter(line => Boolean(line.trim())).join("\n");
@@ -503,15 +502,57 @@ class Actions {
     let filenameNoExt = textFileName.split('.').slice(0, -1).join(".");
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT:
-        textToExport = GUI.getTextToExport();
-        filename = filenameNoExt + ".csv";
+        if (parserEngine === "exparser") {
+          textToExport = GUI.getTextToExport();
+          filename = filenameNoExt + ".csv";
+        } else {
+          // anystyle: replace tags with line prefix
+          let currentTag;
+          let xmlLines = GUI.getTextToExport(false).split("\n")
+          let ttxLines = [];
+          for (let xmlLine of xmlLines) {
+            // replace tags with prefix
+            let ttxLine = xmlLine.replace(
+              /^(.*)<([^/>]+)>(.*)$/,
+              (m, prefix, tag, suffix) => {
+                if (tag === "reference") {
+                  tag = "ref"
+                }
+                if (currentTag && tag === currentTag) {
+                  tag = ""
+                } else {
+                  tag = tag || "text"
+                  currentTag = tag
+                }
+                return tag.padEnd(14, " ") + "| " + prefix + suffix
+              }
+            );
+            // no tag found
+            if (ttxLine === xmlLine) {
+              ttxLine = " ".repeat(14) + "| " + xmlLine
+            }
+            ttxLine = ttxLine.replace(/<\/?[^>]+>/g, "");
+            ttxLines.push(ttxLine)
+          }
+          textToExport = ttxLines.join("\n")
+          filename = filenameNoExt + ".ttx";
+        }
         break;
       case DISPLAY_MODES.REFERENCES:
+        let rootTag, sequenceTag;
+        if (parserEngine === "exparser") {
+          sequenceTag = "ref"
+          rootTag = "seganno"
+        } else {
+          // anystyle
+          sequenceTag = "sequence"
+          rootTag = "dataset"
+        }
         textToExport = GUI.getTextToExport(false)
           .split("\n")
-          .map(line => `<ref>${line}</ref>`)
+          .map(line => `<${sequenceTag}>${line}</${sequenceTag}`)
           .join("\n");
-        textToExport = `<?xml version="1.0" encoding="utf-8"?>\n<seganno>\n${textToExport}\n</seganno>`
+        textToExport = `<?xml version="1.0" encoding="utf-8"?>\n<${rootTag}>\n${textToExport}\n</${rootTag}>`
         filename = filenameNoExt + ".xml";
         break;
     }
@@ -672,7 +713,7 @@ class Actions {
     let text;
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT:
-        text = GUI.getTextToExport();
+        text = GUI.getTextToExport(parserEngine === "exparser");
         localStorage.setItem(LOCAL_STORAGE.DOCUMENT, text);
         break;
       case DISPLAY_MODES.REFERENCES:
@@ -1097,7 +1138,7 @@ class GUI {
         //console.log({title, text})
         let toastId = type + "|" + title;
         let toast = toasts[toastId];
-        if ( toast && toast.css("visibility")) {
+        if (toast && toast.css("visibility")) {
           if (text.trim()) {
             toast.find(".toast-message").text(text)
           } else {
@@ -1157,6 +1198,7 @@ class GUI {
     textContent.on("contextmenu", e => {
       e.preventDefault();
       e.stopPropagation();
+      GUI._showPopupOnSelect(e)
       return false;
     });
 
@@ -1193,7 +1235,7 @@ class GUI {
     textContent.on('click', e => {
       if (!longpress) return;
       let sel = window.getSelection();
-      if (sel.toString().length) return; // so that <oth> element can be inserted into selection
+      //if (sel.toString().length) return; // so that <oth> element can be inserted into selection
       if (!sel.focusNode || !sel.focusNode.parentElement) return;
       let p = sel.focusNode.parentElement;
       if (e.target !== p) return;
@@ -1211,7 +1253,7 @@ class GUI {
     });
     $(document).on('pointerup', function () {
       endTime = new Date().getTime();
-      longpress = (endTime - startTime >= 300);
+      longpress = (endTime - startTime >= 500);
     });
 
     // synchronize scroll positions
@@ -1266,7 +1308,6 @@ class GUI {
       GUI.setDisplayMode(savedDisplayMode);
       if (text) {
         GUI.setTextContent(text);
-        $(".enabled-if-document").toggleClass("ui-state-disabled", textFileExt === "xml")
         return true;
       }
     }
@@ -1349,25 +1390,54 @@ class GUI {
   }
 
   static setTextContent(text) {
-    text = text.replace(/\r/g, "")
 
+    // determine parser engine
+    if (textFileExt === "csv") {
+      parserEngine = "exparser"
+    } else if (textFileExt === "xml" && !text.includes("<dataset>")) {
+      parserEngine = "exparser"
+    } else {
+      // default
+      parserEngine = "anystyle"
+    }
+
+    // clean up text
+    text = text.replace(/\r/g, "")
+    text = text.replace(/<?xml[^>]*>/, "")
     while (text.match(/\n\n/)) {
       text = text.replace(/\n\n/g, "\n");
     }
 
     let html = "";
+    cols1text=[];
+    cols2numbers=[];
+
     switch (displayMode) {
       // Display document contents
       case DISPLAY_MODES.DOCUMENT: {
+        if (parserEngine === "exparser") {
+          $(".exparser,.visible-in-refs-mode").addClass("excluded")
+          $(".exparser,.visible-in-document-mode").removeClass("excluded")
+          $(".anystyle,.visible-in-refs-mode").addClass("excluded")
+        } else {
+          $(".anystyle,.visible-in-refs-mode").addClass("excluded")
+          $(".anystyle,.visible-in-document-mode").removeClass("excluded")
+          $(".exparser,.visible-in-refs-mode").addClass("excluded")
+        }
         let text_Lines = text
           .split('\n')
           .map(line => line.trim());
         let yval = 0;
         this.__numPages = 0;
+        let ttx_curr_tag;
         for (let i = 0; i < text_Lines.length; i++) {
+          let line = text_Lines[i]
           if (textFileName.endsWith(".csv") || textFileExt === "csv") {
+            //
+            // EXparser
+            //
             // we have layout info in the file, remove from text to re-add later
-            let line_parts = text_Lines[i].split('\t');
+            let line_parts = line.split('\t');
             if (line_parts.length >= 7) {
               let layout_info = line_parts.slice(-6);
               let text_content = line_parts.slice(0, -6).join(' ');
@@ -1376,58 +1446,118 @@ class GUI {
               let lineYval = layout_info[1];
               if (yval === 0 || yval - lineYval > 300) {
                 this.__numPages++;
-                cols1text[i] = `<div class="page-marker" data-page="${this.__numPages}"></div>\n` + cols1text[i];
+                line = `<div class="page-marker" data-page="${this.__numPages}"></div>` + cols1text[i];
               }
               yval = lineYval;
-            } else {
-              cols1text[i] = text_Lines[i];
             }
-          } else {
-            cols1text[i] = text_Lines[i];
-          }
-          if (i === text_Lines.length - 1) {
-            html = html + cols1text[i];
-          } else {
-            html = html + cols1text[i] + '<br>';
+          } else if (textFileName.endsWith(".ttx") || textFileExt === "ttx") {
+            //
+            // AnyStyle
+            //
+            let pipe_idx = line.indexOf("|");
+            let tag;
+            if (pipe_idx >= 0) {
+              // text is in "ttx" format, convert it to xml-style tags
+              tag = line.slice(0, pipe_idx).trim()
+              line = line.slice(pipe_idx + 1).trim()
+              let text = line
+              // automatically tag pages
+              if (text.match(/^[0-9]{1,3}$/)) {
+                if (!tag || tag === "meta") {
+                  tag = "pages"
+                }
+              }
+              switch (tag) {
+                case "":
+                  tag = ttx_curr_tag || "text"
+                  break
+                case "ref":
+                  tag = "reference"
+                  break
+              }
+              if (tag !== ttx_curr_tag) {
+                line = ""
+                if (ttx_curr_tag) {
+                  cols1text[i - 1] += `</${ttx_curr_tag}>`
+                }
+                if (tag === "pages") {
+                  this.__numPages++;
+                  line += `<div class="page-marker" data-page="${this.__numPages}"></div>`;
+                }
+                line += `<${tag}>${text}`
+                ttx_curr_tag = tag
+              }
+              if (i === text_Lines.length - 1) {
+                if (ttx_curr_tag) {
+                  line += `</${ttx_curr_tag}>`
+                }
+              }
+
+            } else {
+              // text already is in xml-ish format
+              if (line.includes("<pages>")) {
+                this.__numPages++;
+                line += `<div class="page-marker" data-page="${this.__numPages}"></div>`;
+              }
+            }
+            // save
+            cols1text[i] = line;
           }
         }
+        html = cols1text.join("<br>")
         if (this.__numPages > 0) {
           $("#label-page-number").html("1");
-          $(".visible-if-pages").removeClass("hidden");
+          $(".visible-if-pages").removeClass("hidden").removeClass("excluded");
         } else {
           $("#label-page-number").html("");
           $(".visible-if-pages").addClass("hidden");
         }
         // count references
-        const num_refs = text.split("<ref>").length - 1;
-        let label = ""
-        if (textFileName) {
-          label = textFileName + ` (${num_refs} identified references)`;
-        }
-        $("#text-label").html(label);
+        // const num_refs = text.split("<ref>").length - 1;
+        // let label = ""
+        // if (textFileName) {
+        //   label = textFileName + ` (${num_refs} identified references)`;
+        // }
+        // $("#text-label").html(label);
         break;
       }
       // Display references
       case DISPLAY_MODES.REFERENCES: {
-        if (text.includes("<?xml ")) {
+        if (parserEngine === "exparser") {
+          $(".exparser,.visible-in-document-mode").addClass("excluded")
+          $(".exparser,.visible-in-refs-mode").removeClass("excluded")
+          $(".anystyle,.visible-in-document-mode").addClass("excluded")
+        } else {
+          $(".anystyle,.visible-in-document-mode").addClass("excluded")
+          $(".anystyle,.visible-in-refs-mode").removeClass("excluded")
+          $(".exparser,.visible-in-document-mode").addClass("excluded")
+        }
+        if (parserEngine === "exparser") {
           let textLines = text.split("\n");
-          // if standard-compliant xml from , remove declaration and top node
+          // remove root node
           textLines.splice(0, 2);
           textLines.splice(-1, 1);
           // remove enclosing <ref> and <author> tags
           textLines = textLines
             .map(line => line
-              .replace(/<author>/g, '')
-              .replace(/<\/author>/g, '')
-              .replace(/<ref>/g, '')
-              .replace(/<\/ref>/g, ''));
+              .replace(/<\/?author>/g, '')
+              .replace(/<\/?ref>/g, ''));
           text = textLines.join("\n");
+        } else {
+          // anystyle
+          if (text.startsWith("<?xml")) {
+            let textLines = text.split("\n");
+            //remove root node
+            textLines.splice(0, 2);
+            textLines.splice(-1, 1);
+            text = textLines.join(" ");
+            // remove enclosing <sequence>tags
+            text = text.replace(/<sequence>/g, "").replace(/<\/sequence>/g, "\n")
+          }
         }
         // count references
         const num_refs = text.split("\n").length;
-        html = text
-          .replace(/\n/g, "<br>")
-          .replace(/<\/?author>/g, "");
+        html = text.replace(/\n/g, "<br>");
         let label = "";
         if (textFileName) {
           label = textFileName + ` (${num_refs} references)`;
@@ -1439,12 +1569,14 @@ class GUI {
     // translate tag names to data-tag attributes
     let tag_names = [];
     let tag_name;
-    for (let match of html.matchAll(/<([a-z_\-]+)>/g)) {
+    for (let match of html.matchAll(/<([^>\/ ]+)>/g)) {
       tag_name = match[1];
+      if (tag_name === "br") continue
       if (!tag_names.includes(tag_name)) {
         tag_names.push(tag_name);
       }
     }
+    console.log(`Document includes following tags: ${tag_names.join(', ')}`)
     for (tag_name of tag_names) {
       let regex = new RegExp(`<${tag_name}>(.*?)</${tag_name}>`, 'g');
       let replacement = `<span data-tag="${tag_name}">$1</span>`;
@@ -1473,28 +1605,43 @@ class GUI {
     let text = sel.toString();
     if (text.trim() === "") return;
     if (wholeLine) {
-      sel.setBaseAndExtent(sel.anchorNode, 0, sel.focusNode, 0);
+      sel.setBaseAndExtent(sel.anchorNode, 0, sel.focusNode, sel.focusNode.length);
     }
     // prevent nesting of tag inside other tag
     let node = sel.focusNode;
-    do {
-      if (node && node.dataset) {
-        let tag = node.dataset.tag;
-        if (tag) {
-          // replace node tag
-          node.dataset.tag = tag_name;
-          GUI.updateMarkedUpText();
-          return;
+    if (!node || !node.parentNode) {
+      return
+    }
+    let tag = node.dataset && node.dataset.tag;
+    if (tag) {
+      // replace node tag
+      node.dataset.tag = tag_name;
+    } else {
+      // wrap selection in new span
+      let newParentNode = document.createElement("span");
+      newParentNode.setAttribute("data-tag", tag_name);
+      sel.getRangeAt(0).surroundContents(newParentNode);
+      // remove all <span>s from selected text
+      $(newParentNode).html($(newParentNode).html().replace(REGEX.SPAN, ""));
+      // check if grandparent node has a tag and split node if so
+      let grandParent = newParentNode.parentNode
+      let grandParentTag = grandParent.dataset && grandParent.dataset.tag
+      if (grandParentTag) {
+        if (grandParentTag === tag_name) {
+          // if same tag, simply remove the span
+          $(grandParent).html($(grandParent).html().replace(REGEX.SPAN, ""));
+        } else {
+          // split grandparent via regexes
+          let outerHTML = grandParent.outerHTML
+          grandParent.outerHTML = outerHTML
+            .replace(/(?!^)<span/, "</spxn><span")
+            .replace(/<\/span>(?!$)/, `</span><span data-tag="${grandParentTag}">`)
+            .replace(/<\/spxn>/, "</span>")
+            .replace(/(<span [^>]+>)<br ?\/?>/, "<br>$1")
+            .replace(/<span[^>]*><\/span>/g, "");
         }
       }
-      node = node.parentNode;
-    } while (node)
-    // wrap selection in new span
-    let parentNode = document.createElement("span");
-    parentNode.setAttribute("data-tag", tag_name);
-    sel.getRangeAt(0).surroundContents(parentNode);
-    // remove all <span>s from selected text
-    $(parentNode).html($(parentNode).html().replace(REGEX.SPAN, ""));
+    }
     GUI.updateMarkedUpText();
   }
 
@@ -1530,7 +1677,9 @@ class GUI {
         break;
       }
       case DISPLAY_MODES.REFERENCES: {
-        markedUpText = markedUpText.split("\n").map(line => this.addAuthorTag(line)).join("\n");
+        if (parserEngine === "exparser") {
+          markedUpText = markedUpText.split("\n").map(line => this.addAuthorTag(line)).join("\n");
+        }
         $(".enabled-if-refs").removeClass("ui-state-disabled");
         $(".enabled-if-segmented").toggleClass("ui-state-disabled", !(markedUpText.match(REGEX.TAG)));
         break;
@@ -1543,8 +1692,7 @@ class GUI {
     }
 
     // update <pre> element
-    let html = markedUpText
-      .replace(/</g, "&lt;")
+    let html = markedUpText.replace(/</g, "&lt;")
     $("#markup-content").html(html);
     return markedUpText;
   }
@@ -1671,26 +1819,21 @@ class GUI {
   }
 
   static setDisplayMode(nextDisplayMode) {
+    $(".enabled-if-document").toggleClass("ui-state-disabled", textFileExt === "xml")
     if (nextDisplayMode === displayMode) {
       return;
     }
     displayMode = nextDisplayMode;
     switch (displayMode) {
       case DISPLAY_MODES.DOCUMENT:
-        $(".visible-in-document-mode").removeClass("hidden");
-        $(".visible-in-refs-mode").addClass("hidden");
         $("#btn-segmentation").removeClass("active");
         $("#btn-identification").addClass("active");
-        $("#text-label").html(textFileName + " (Document)");
         $("#text-content").addClass("document-view");
         $("#text-content").removeClass("references-view");
         break;
       case DISPLAY_MODES.REFERENCES:
-        $(".visible-in-document-mode").addClass("hidden");
-        $(".visible-in-refs-mode").removeClass("hidden");
         $("#btn-segmentation").addClass("active");
         $("#btn-identification").removeClass("active");
-        $("#text-label").html(textFileName + " (References)");
         $("#text-content").addClass("references-view");
         $("#text-content").removeClass("document-view");
         break;

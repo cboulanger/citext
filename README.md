@@ -1,17 +1,24 @@
-# EXParser Docker image & web frontend
+# EXcite-Docker: Tool for the annotation of training material for ML-based reference extraction and segmentation
 
-This is a docker image of a collection of
-[tools](https://excite.informatik.uni-stuttgart.de/#software) from the [EXcite
-project](https://excite.informatik.uni-stuttgart.de/) which serve to extract
-citation data from PDF Documents. In particular, it provides a Web UI for
-producing training material which is needed to improve citation recognition for
-particular corpora of scholarly literature where the current algorithm does not
-perform well; and provides a powerful CLI to run the excite commands, manage
-multiple sets of model training data and model data, and support an evaluation
-workflow that can measure the performance of the model.
+This is a docker image that provides a web application to produce training
+material for two ML-based reference extraction & segmentation engines:
+
+- [EXParser](http://exparser.readthedocs.io)
+- [AnyStyle](https://github.com/inukshuk/anystyle)
+
+Both serve to extract citation data from PDF Documents. 
+
+The image provides a Web UI for producing training material which is needed to
+improve citation recognition for particular corpora of scholarly literature
+where the current models does not perform well; and provides a CLI to run the
+EXcite commands, manage multiple sets of model training data and model data, and
+support an evaluation workflow that can measure the performance of the model.
+The AnyStyle toolkit has its own CLI and evaluation built in. Currently, support 
+for AnyStyle is limited to editing .ttx documents, more comprehensive integration 
+will follow. 
 
 The code has been forked from https://git.gesis.org/hosseiam/excite-docker, but
-has been in many parts completely rewritten.
+there is little of the original code left except the core EXparser algorithm.
 
 A demo of the web frontend (without backend functionality) is available 
 [here](https://cboulanger.github.io/excite-docker/web/index.html).
@@ -21,27 +28,13 @@ A demo of the web frontend (without backend functionality) is available
 1. Install [Docker](https://docs.docker.com/install)
 2. Clone this repo with: `git clone https://github.com/cboulanger/excite-docker.git && cd excite-docker`
 3. Build docker image: `./bin/build`
-4. If you want to connect the web app with a locally running Zotero instance,
-   install the following Zotero add-ons from the files shipped with this repo:
-   - [cita](zotero/cita.xpi)
-   - [zotero-apt-endpoint](zotero/zotero-api-endpoint.xpi)
+4. If you want to use AnyCite, please consult its GitHub page on how to install it: https://github.com/inukshuk/anystyle
 
 ## Use of the web frontend
 
 1. Run server: `./bin/start-servers`
 2. Open frontend at http://127.0.0.1:8000/web/index.html
 3. Click on "Help" for instructions (also lets you download the Zotero add-ons)
-
-## Zotero support
-
-If a [Zotero](https://zotero.org) with the appropriate add-ins (see above) is
-running, the webapp will enable additional commands that let you retrieve the
-PDF attachment(s) of the currently selected item/collection, extract references
-from them and store them with the citing item.
-
-If the Zotero storage folder is not located in `~/Zotero/storage`, you need to
-rename `.env.dist` to `.env` and in this file, set the `ZOTERO_STORAGE_PATH`
-environment variable to the path pointing to this directory.
 
 ## CLI
 
@@ -202,3 +195,18 @@ installed engines is available with `bin/run engine list`. Any commit tag on
 github can be used as a version (including branches and PRs) or the released
 versions listed at https://github.com/cboulanger/excite-docker/releases (except
 version 0.1.0, which is not compatible).
+
+## Zotero support 
+
+> Zotero integration is currently not supported because the plugin providing the
+required API is not compatible with Zotero 6. A native API is planned by the
+Zotero Devs.
+
+If a [Zotero](https://zotero.org) with the appropriate add-ins  is running, the
+webapp will enable additional commands that let you retrieve the PDF
+attachment(s) of the currently selected item/collection, extract references from
+them and store them with the citing item.
+
+If the Zotero storage folder is not located in `~/Zotero/storage`, you need to
+rename `.env.dist` to `.env` and in this file, set the `ZOTERO_STORAGE_PATH`
+environment variable to the path pointing to this directory.

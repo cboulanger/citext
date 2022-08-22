@@ -10,6 +10,13 @@ body {
     overflow: hidden;
 }
 
+.excluded {
+    visibility: collapse !important;
+    display: none !important;
+    height: 0 !important;
+    padding: 0 !important;
+}
+
 nav {
     border-width: 0px;
 }
@@ -156,7 +163,8 @@ nav {
     border-radius: 3px;
     padding-right: 2px;
     padding-left: 2px;
-    margin: 2px;
+    margin-right: 2px;
+    margin-bottom: 2px;
 }
 
 [data-tag]:hover {
@@ -165,6 +173,7 @@ nav {
 
 .references-view > [data-tag]:hover,
 #refs-button-grid > [data-tag]:hover {
+    padding: 2px;
     box-shadow: 0 0 5px rgba(33,33,33,.8);
 }
 
@@ -197,7 +206,38 @@ nav {
     height: 70% !important;
 }
 
-/* ref identification */
+/* ref identification anystyle */
+
+[data-tag] {
+    z-index: 0;
+}
+
+[data-tag="reference"] {
+    background-color: rgb(124, 176, 225);
+}
+
+[data-tag="author"] {
+    background-color: #fabd11;
+}
+
+[data-tag="title"] {
+    background-color: #adddcf;
+}
+
+[data-tag="abstract"] {
+    background-color: #88e3c9;
+}
+
+[data-tag="meta"] {
+    background-color: rgb(162, 165, 165);
+}
+
+[data-tag="text"] {
+    background-color: rgb(246, 248, 248);
+}
+
+/* ref identification exparser */
+
 [data-tag="ref"]:nth-child(7n) {
     background-color: rgb(255, 255, 153);
 }
@@ -230,7 +270,59 @@ nav {
     background-color: rgb(162, 165, 165);
 }
 
-/* ref segmentation */
+/* ref segmentation anystyle */
+
+[data-tag="author"] {
+    background-color: #fabd11;
+}
+
+[data-tag="authority"] {
+    background-color: #fdea84;
+}
+
+[data-tag="container-title"] {
+    background-color: #889cfd;
+}
+
+[data-tag="journal"] {
+    background-color: #1f91e0;
+}
+
+[data-tag="collection-title"] {
+    background-color: #4764f1;
+}
+
+[data-tag="date"] {
+    background-color: #9a74ea;
+}
+
+[data-tag="location"] {
+    background-color: #ffe446;
+}
+
+[data-tag="number"] {
+    background-color: #8de1ea;
+}
+
+[data-tag="doi"] {
+    background-color: #67a2a9;
+}
+
+[data-tag="isbn"] {
+    background-color: #426870;
+}
+
+[data-tag="pages"] {
+    background-color: #be293b;
+}
+
+[data-tag="note"] {
+    background-color: rgb(162, 165, 165);
+}
+
+
+/* ref segmentation exparser */
+
 [data-tag="surname"] {
     background-color: #fabd11;
 }
@@ -243,20 +335,8 @@ nav {
     background-color: #9a74ea;
 }
 
-[data-tag="title"] {
-    background-color: #adddcf;
-}
-
 [data-tag="source"] {
     background-color: #889cfd;
-}
-
-[data-tag="editor"] {
-    background-color: #de9150;
-}
-
-[data-tag="volume"] {
-    background-color: #4ab74f;
 }
 
 [data-tag="issue"] {
@@ -271,6 +351,28 @@ nav {
     background-color: #ee59ba;
 }
 
+[data-tag="identifier"] {
+    background-color: #8de1ea;
+}
+
+[data-tag="other"] {
+    background-color: rgb(162, 165, 165);
+}
+
+/* ref segmentation  anystyle + exparser */
+
+[data-tag="title"] {
+    background-color: #adddcf;
+}
+
+[data-tag="editor"] {
+    background-color: #de9150;
+}
+
+[data-tag="volume"] {
+    background-color: #4ab74f;
+}
+
 [data-tag="publisher"] {
     background-color: #efcd05;
 }
@@ -279,13 +381,7 @@ nav {
     background-color: #2187f8;
 }
 
-[data-tag="identifier"] {
-    background-color: #8de1ea;
-}
 
-[data-tag="other"] {
-    background-color: rgb(162, 165, 165);
-}
 /** tag grid in context menu */
 .refs-button-grid {
     display: grid !important;
