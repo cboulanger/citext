@@ -55,6 +55,12 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-model" id="model-names">
+                <li><a class="dropdown-item excluded anystyle"
+                       onclick="Actions.setParserEngine('exparser');" href="#">
+                    Use EXparser</a></li>
+                <li><a class="dropdown-item excluded exparser"
+                       onclick="Actions.setParserEngine('anystyle');" href="#">
+                    Use AnyStyle</a></li>
                 <li><a href="#" onclick="Excite.trainCurrentModel()">Train currently selected model</a></li>
                 <li><a href="#" onclick="Excite.evalCurrentModel()">Evaluate currently selected model</a></li>
                 <li role="separator" class="divider"></li>
@@ -66,13 +72,14 @@
         <div class="btn-group">
             <button id="btn-identification" type="button" class="btn btn-primary enabled-if-document"
                     onclick="Actions.setDisplayMode(DISPLAY_MODES.DOCUMENT)">
-                <i class="fas fa-search"></i><span class="button-label">Identification</span>
+                <i class="fas fa-search"></i><span class="button-label">Find/Extract</span>
             </button>
             <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle enabled-if-document"
                     aria-haspopup="true" aria-expanded="false">
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-view">
+
                 <li><a id="btn-run-ocr"
                        class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.run_excite_command('ocr');" href="#">
@@ -82,17 +89,17 @@
                        onclick="Actions.run_excite_command('layout');" href="#">
                     Extract text from PDF</a></li>
                 <li><a id="btn-run-exparser"
-                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf exparser"
                        onclick="Actions.run_excite_command('exparser');" href="#">
                     Extract references from PDF</a></li>
             </ul>
         </div>
-        <!-- segmentation view -->
+        <!-- references view -->
         <div class="btn-group">
             <button id="btn-segmentation" type="button" class="btn btn-primary"
                     onclick="Actions.setDisplayMode(DISPLAY_MODES.REFERENCES)"
                     aria-haspopup="true" aria-expanded="false">
-                <i class="fas fa-search-plus"></i><span class="button-label">Segmentation</span>
+                <i class="fas fa-search-plus"></i><span class="button-label">Parse/Segment</span>
             </button>
             <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle"
                     aria-haspopup="true" aria-expanded="false">
@@ -415,15 +422,18 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title" style="float: left">Citation extraction and segmentation annotation for AnyStyle and EXparser</h3>
+                <h3 class="modal-title" style="float: left">Citation extraction and segmentation annotation for AnyStyle
+                    and EXparser</h3>
             </div>
             <div class="modal-body">
-                <p>This web application is meant to help the annotation of training documents for machine learning-based reference extraction.</p>
+                <p>This web application is meant to help the annotation of training documents for machine learning-based
+                    reference extraction.</p>
                 <p>It supports the annotation formats of <a href="https://github.com/inukshuk/anystyle">AnyStyle</a> and
                     of <a href="http://exparser.readthedocs.io">EXparser</a>.
                 </p>
-                <p>See the <a href="https://github.com/cboulanger/excite-docker/blob/main/docs/readme.md" target="_blank">
-                        Dcoumentation on GitHub</a></p>
+                <p>See the <a href="https://github.com/cboulanger/excite-docker/blob/main/docs/readme.md"
+                              target="_blank">
+                    Dcoumentation on GitHub</a></p>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary"

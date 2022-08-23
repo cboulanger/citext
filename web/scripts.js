@@ -57,6 +57,48 @@ const KNOWN_IDENTIFIERS = [
 ];
 
 class Actions {
+
+  static setParserEngine(parser) {
+    let filename = textFileName.split('.').slice(0, -1).join(".")
+    let fileExt
+    if (parser === "exparser") {
+      $(`li > a.exparser`).removeClass("excluded")
+      $(`li > a.anystyle`).addClass("excluded")
+      fileExt = displayMode === DISPLAY_MODES.DOCUMENT ? "csv" : "xml"
+    } else {
+      $(`li > a.exparser`).addClass("excluded")
+      $(`li > a.anystyle`).removeClass("excluded")
+      fileExt = displayMode === DISPLAY_MODES.DOCUMENT ? "ttx" : "xml"
+    }
+    if (displayMode === DISPLAY_MODES.DOCUMENT) {
+      if (parser === "exparser") {
+        $(".exparser,.visible-in-refs-mode").addClass("excluded")
+        $(".exparser,.visible-in-document-mode").removeClass("excluded")
+        $(".anystyle,.visible-in-refs-mode").addClass("excluded")
+      } else {
+        $(".anystyle,.visible-in-refs-mode").addClass("excluded")
+        $(".anystyle,.visible-in-document-mode").removeClass("excluded")
+        $(".exparser,.visible-in-refs-mode").addClass("excluded")
+      }
+    } else {
+      if (parser === "exparser") {
+        $(".exparser,.visible-in-document-mode").addClass("excluded")
+        $(".exparser,.visible-in-refs-mode").removeClass("excluded")
+        $(".anystyle,.visible-in-document-mode").addClass("excluded")
+      } else {
+        $(".anystyle,.visible-in-document-mode").addClass("excluded")
+        $(".anystyle,.visible-in-refs-mode").removeClass("excluded")
+        $(".exparser,.visible-in-document-mode").addClass("excluded")
+      }
+    }
+
+    if (textFileName) {
+      GUI.setTextFileName(filename + "." + fileExt)
+      textFileExt = fileExt
+    }
+    parserEngine = parser
+  }
+
   static load() {
     colorCounter = 0;
     const uploadBtn = document.getElementById("btn-upload");
@@ -76,7 +118,8 @@ class Actions {
     }
   }
 
-  static async loadFromUrl(url, filename) {
+  static
+  async loadFromUrl(url, filename) {
     url = url || prompt(
       "Please enter a URL from which to load the file:",
       localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL) || "");
@@ -96,7 +139,8 @@ class Actions {
     this.loadFile(file);
   }
 
-  static async loadFromZotero() {
+  static
+  async loadFromZotero() {
     try {
       GUI.showSpinner("Loading PDF of first selected Zotero item...");
       let {libraryID, selectedItems} = await Zotero.getSelection();
@@ -153,7 +197,7 @@ class Actions {
     // FIXME ad-hoc filename fix to remave ".pdfa" infix, needs to be configurable
     filename = filename.replace(/\.pdfa\./, ".")
     pdfFileName = "";
-    textFileName = "";
+    GUI.setTextFileName("")
     let type = file.type;
     let fileExt;
     if (filename) {
@@ -178,7 +222,7 @@ class Actions {
       case "application/xml":
         GUI.setDisplayMode(DISPLAY_MODES.REFERENCES);
         $(".enabled-if-document").addClass("ui-state-disabled");
-        textFileName = filename
+        GUI.setTextFileName(filename)
         break;
       case "txt":
       case "text/plain":
@@ -186,19 +230,17 @@ class Actions {
       case "text/csv":
       case "ttx":
         $(".enabled-if-document").removeClass("ui-state-disabled");
-        textFileName = filename
+        GUI.setTextFileName(filename)
         GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
         break;
       default:
         alert("Invalid file extension: " + fileExt);
         return;
     }
-    $("#text-label").html(textFileName);
     $("#pdf-label").html(pdfFileName);
     const fileReader = new FileReader();
     fileReader.onload = (e) => {
       let text = String(e.target.result);
-      textFileName = filename;
       textFileExt = fileExt;
       GUI.setTextContent(text);
       this.saveToLocalStorage();
@@ -279,7 +321,8 @@ class Actions {
     $("#modal-citation-data-preview").show();
   }
 
-  static async run_cgi_script(name, params) {
+  static
+  async run_cgi_script(name, params) {
     let querystring = Object.keys(params).map(key => key + '=' + params[key]).join('&');
     const url = `${SERVER_URL}/${name}?${querystring}`
     try {
@@ -290,7 +333,8 @@ class Actions {
     }
   }
 
-  static async run_excite_command(command) {
+  static
+  async run_excite_command(command) {
     let confirmMsg;
     switch (command) {
       case "ocr":
@@ -379,7 +423,7 @@ class Actions {
         return;
       }
       textFileExt = "csv";
-      textFileName = filenameNoExt + ".csv";
+      GUI.setTextFileName(filenameNoExt + ".csv");
       textContent = result.success;
       GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
       $("#btn-run-exparser").removeClass("ui-state-disabled")
@@ -415,7 +459,6 @@ class Actions {
       textContent = result.success;
       GUI.setDisplayMode(DISPLAY_MODES.REFERENCES);
     }
-    $("#text-label").text(textFileName);
     GUI.setTextContent(textContent);
   }
 
@@ -424,7 +467,7 @@ class Actions {
       console.warn("Can only be used in AnyStyle finder documents.");
       return;
     }
-    alert ("Not implemented")
+    alert("Not implemented")
   }
 
   static extractReferences(markedUpText) {
@@ -495,7 +538,8 @@ class Actions {
     return layoutDoc
   }
 
-  static export() {
+  static export
+  () {
     let textToExport;
     if (!textFileName) return;
     let filename;
@@ -559,7 +603,8 @@ class Actions {
     Utils.download(textToExport, filename);
   }
 
-  static async exportToZotero() {
+  static
+  async exportToZotero() {
     if (displayMode !== DISPLAY_MODES.REFERENCES) {
       alert("You must be in segmentation mode to export references");
       return;
@@ -674,7 +719,8 @@ class Actions {
     }
   }
 
-  static async save() {
+  static
+  async save() {
     if (!textFileName) return;
     let data;
     let filename;
@@ -1288,7 +1334,7 @@ class GUI {
     let savedDisplayMode = localStorage.getItem(LOCAL_STORAGE.DISPLAY_MODE);
     let savedTextFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME);
     if (savedTextFileName) {
-      textFileName = savedTextFileName;
+      GUI.setTextFileName(savedTextFileName);
       textFileExt = textFileName.split(".").pop();
     }
     if (savedDisplayMode) {
@@ -1322,15 +1368,21 @@ class GUI {
     $("#spinner").removeClass("is-active");
   }
 
+  static setTextFileName(filename) {
+    textFileName = filename;
+    $("#text-label").html(filename);
+  }
+
   static removeTextFile() {
     if (!confirm("Do you really want to clear the document?")) {
       return;
     }
-    $("#text-label").html("");
+
     $("#text-content").html("");
     $("#markup-content").html("");
     $(".view-text-buttons").hide();
-    textFileName = "";
+    this.setTextFileName("");
+    cols1text = [];
     cols2numbers = [];
     versions = [];
     localStorage.removeItem(LOCAL_STORAGE.TEXT_FILE_NAME);
@@ -1393,12 +1445,12 @@ class GUI {
 
     // determine parser engine
     if (textFileExt === "csv") {
-      parserEngine = "exparser"
+      Actions.setParserEngine("exparser")
     } else if (textFileExt === "xml" && !text.includes("<dataset>")) {
-      parserEngine = "exparser"
+      Actions.setParserEngine("exparser")
     } else {
       // default
-      parserEngine = "anystyle"
+      Actions.setParserEngine("anystyle")
     }
 
     // clean up text
@@ -1408,21 +1460,12 @@ class GUI {
     }
 
     let html = "";
-    cols1text=[];
-    cols2numbers=[];
+    cols1text = [];
+    cols2numbers = [];
 
     switch (displayMode) {
       // Display document contents
       case DISPLAY_MODES.DOCUMENT: {
-        if (parserEngine === "exparser") {
-          $(".exparser,.visible-in-refs-mode").addClass("excluded")
-          $(".exparser,.visible-in-document-mode").removeClass("excluded")
-          $(".anystyle,.visible-in-refs-mode").addClass("excluded")
-        } else {
-          $(".anystyle,.visible-in-refs-mode").addClass("excluded")
-          $(".anystyle,.visible-in-document-mode").removeClass("excluded")
-          $(".exparser,.visible-in-refs-mode").addClass("excluded")
-        }
         let text_Lines = text
           .split('\n')
           .map(line => line.trim());
@@ -1523,15 +1566,6 @@ class GUI {
       }
       // Display references
       case DISPLAY_MODES.REFERENCES: {
-        if (parserEngine === "exparser") {
-          $(".exparser,.visible-in-document-mode").addClass("excluded")
-          $(".exparser,.visible-in-refs-mode").removeClass("excluded")
-          $(".anystyle,.visible-in-document-mode").addClass("excluded")
-        } else {
-          $(".anystyle,.visible-in-document-mode").addClass("excluded")
-          $(".anystyle,.visible-in-refs-mode").removeClass("excluded")
-          $(".exparser,.visible-in-document-mode").addClass("excluded")
-        }
         if (parserEngine === "exparser") {
           //
           // exparser
