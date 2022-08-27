@@ -35,6 +35,10 @@ try:
         dir_name = os.path.join(dir_name, "LRT")
     elif data_type == "ref_xml":
         dir_name = os.path.join(dir_name, "SEG")
+    elif data_type == "anystyle_finder":
+        dir_name = os.path.join(dir_name, "anystyle","finder")
+    elif data_type == "anystyle_parser":
+        dir_name = os.path.join(dir_name, "anystyle","parser")
     else:
         raise RuntimeError("Invalid type")
 

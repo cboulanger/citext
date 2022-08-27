@@ -18,3 +18,4 @@ python-dotenv
 webdavclient3
 regex
 lxml
+pyzotero

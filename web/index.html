@@ -79,7 +79,6 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-view">
-
                 <li><a id="btn-run-ocr"
                        class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.run_excite_command('ocr');" href="#">
@@ -278,7 +277,7 @@
         <li><a data-tag="meta" onclick="Actions.addTag('meta', true);" href="#">
             Meta
         </a></li>
-        <li><a data-tag="pages" onclick="Actions.addTag('pages');" href="#">
+        <li><a data-tag="pages" onclick="Actions.addTag('pages', true);" href="#">
             Page Number
         </a></li>
         <li><a data-tag="text" onclick="Actions.addTag('text', true);" href="#">

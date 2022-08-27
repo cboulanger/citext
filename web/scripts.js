@@ -1,106 +1,62 @@
-// global vars are leftovers of the previous implementation, should be moved into config object
 // noinspection JSJQueryEfficiency
-let pdfFileName = "";
-let pdfFile = null;
-let textFileName = "";
-let textFileExt = "";
-let cols1text = [];
-let cols2numbers = [];
-let colorCounter = 0;
-let clipboard = "";
-let versions = [];
-let displayMode;
-let parserEngine;
+
 let zoteroAttachmentFilepath;
 let modelName = "default"
 
-/* The url of the exparser backend */
-const SERVER_URL = "/cgi-bin/";
-/* The url of the server endpoint that proxies the zotero connection server */
-const ZOTERO_PROXY_URL = SERVER_URL + "zotero/proxy.py";
-
-const LOCAL_STORAGE = {
-  DOCUMENT: "excite_document",
-  REFERENCES: "excite_references",
-  TEXT_FILE_NAME: "excite_text_file_name",
-  PDF_IFRAME_SRC: "excite_pdf_iframe_source",
-  DISPLAY_MODE: "excite_display_mode",
-  LAST_LOAD_URL: "excite_last_load_url",
-  LAST_MODEL_NAME: "excite_last_model_name"
-}
-const DISPLAY_MODES = {
-  DOCUMENT: "document",
-  REFERENCES: "references"
-}
-
-const REGEX = {
-  TAG: /<\/?[^>]+>/g,
-  SPAN: /<\/?span[^>]*>/ig,
-  DIV: /<\/?div[^>]*>/ig,
-  BR: /<br[^>]*>/ig,
-  PUNCTUATION: /\p{P}/gu,
-  LAYOUT: /(\t[^\t]+){6}/g,
-  EMPTY_NODE: /<[^>]+><\/[^>]+>/g
-};
-
-const KNOWN_IDENTIFIERS = [
-  {
-    startsWith: "10.",
-    cslJson: "doi",
-    zoteroField: "DOI"
-  },
-  {
-    startsWith: "978",
-    cslJson: "isbn",
-    zoteroField: "ISBN"
+class Config {
+  /* The url of the exparser backend */
+  static SERVER_URL = "/cgi-bin/";
+  /* The url of the server endpoint that proxies the zotero connection server */
+  static ZOTERO_PROXY_URL = Config.SERVER_URL + "zotero/proxy.py";
+  static ENGINES = {
+    ANYSTYLE: "anystyle",
+    EXPARSER: "exparser"
   }
-];
+  static LOCAL_STORAGE = {
+    DOCUMENT: "excite_document",
+    REFERENCES: "excite_references",
+    TEXT_FILE_NAME: "excite_text_file_name",
+    PDF_IFRAME_SRC: "excite_pdf_iframe_source",
+    DISPLAY_MODE: "excite_display_mode",
+    LAST_LOAD_URL: "excite_last_load_url",
+    LAST_MODEL_NAME: "excite_last_model_name"
+  }
+  static REGEX = {
+    TAG: /<\/?[^>]+>/g,
+    SPAN: /<\/?span[^>]*>/ig,
+    DIV: /<\/?div[^>]*>/ig,
+    BR: /<br[^>]*>/ig,
+    PUNCTUATION: /\p{P}/gu,
+    LAYOUT: /(\t[^\t]+){6}/g,
+    EMPTY_NODE: /<[^>]+><\/[^>]+>/g,
+    DATA_TAG_SPAN: /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/gm
+  }
+  static KNOWN_IDENTIFIERS = [
+    {
+      startsWith: "10.",
+      cslJson: "doi",
+      zoteroField: "DOI"
+    },
+    {
+      startsWith: "978",
+      cslJson: "isbn",
+      zoteroField: "ISBN"
+    }
+  ]
+}
 
 class Actions {
+  static parserEngine;
 
   static setParserEngine(parser) {
-    let filename = textFileName.split('.').slice(0, -1).join(".")
-    let fileExt
-    if (parser === "exparser") {
-      $(`li > a.exparser`).removeClass("excluded")
-      $(`li > a.anystyle`).addClass("excluded")
-      fileExt = displayMode === DISPLAY_MODES.DOCUMENT ? "csv" : "xml"
-    } else {
-      $(`li > a.exparser`).addClass("excluded")
-      $(`li > a.anystyle`).removeClass("excluded")
-      fileExt = displayMode === DISPLAY_MODES.DOCUMENT ? "ttx" : "xml"
+    if (parser === this.parserEngine) {
+      return
     }
-    if (displayMode === DISPLAY_MODES.DOCUMENT) {
-      if (parser === "exparser") {
-        $(".exparser,.visible-in-refs-mode").addClass("excluded")
-        $(".exparser,.visible-in-document-mode").removeClass("excluded")
-        $(".anystyle,.visible-in-refs-mode").addClass("excluded")
-      } else {
-        $(".anystyle,.visible-in-refs-mode").addClass("excluded")
-        $(".anystyle,.visible-in-document-mode").removeClass("excluded")
-        $(".exparser,.visible-in-refs-mode").addClass("excluded")
-      }
-    } else {
-      if (parser === "exparser") {
-        $(".exparser,.visible-in-document-mode").addClass("excluded")
-        $(".exparser,.visible-in-refs-mode").removeClass("excluded")
-        $(".anystyle,.visible-in-document-mode").addClass("excluded")
-      } else {
-        $(".anystyle,.visible-in-document-mode").addClass("excluded")
-        $(".anystyle,.visible-in-refs-mode").removeClass("excluded")
-        $(".exparser,.visible-in-document-mode").addClass("excluded")
-      }
-    }
-
-    if (textFileName) {
-      GUI.setTextFileName(filename + "." + fileExt)
-      textFileExt = fileExt
-    }
-    parserEngine = parser
+    GUI.update()
+    this.parserEngine = parser
   }
 
   static load() {
-    colorCounter = 0;
     const uploadBtn = document.getElementById("btn-upload");
     switch (uploadBtn.files.length) {
       case 0:
@@ -118,13 +74,12 @@ class Actions {
     }
   }
 
-  static
-  async loadFromUrl(url, filename) {
+  static async loadFromUrl(url, filename) {
     url = url || prompt(
       "Please enter a URL from which to load the file:",
-      localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL) || "");
+      localStorage.getItem(Config.LOCAL_STORAGE.LAST_LOAD_URL) || "");
     if (url === null) return;
-    localStorage.setItem(LOCAL_STORAGE.LAST_LOAD_URL, url);
+    localStorage.setItem(Config.LOCAL_STORAGE.LAST_LOAD_URL, url);
     let here = new URL(document.URL);
     let there = new URL(url);
     let res;
@@ -139,8 +94,7 @@ class Actions {
     this.loadFile(file);
   }
 
-  static
-  async loadFromZotero() {
+  static async loadFromZotero() {
     try {
       GUI.showSpinner("Loading PDF of first selected Zotero item...");
       let {libraryID, selectedItems} = await Zotero.getSelection();
@@ -193,57 +147,74 @@ class Actions {
   }
 
   static loadFile(file) {
-    let filename = file.name;
+    let fileName = file.name;
     // FIXME ad-hoc filename fix to remave ".pdfa" infix, needs to be configurable
-    filename = filename.replace(/\.pdfa\./, ".")
-    pdfFileName = "";
-    GUI.setTextFileName("")
-    let type = file.type;
+    fileName = fileName.replace(/\.pdfa\./, ".")
+    let fileType = file.type;
     let fileExt;
-    if (filename) {
-      type = fileExt = filename.split('.').pop();
-    } else if (type) {
+    if (fileName) {
+      fileType = fileExt = fileName.split('.').pop();
+    } else if (fileType) {
       // remove encoding etc.
-      type = type.split(";").shift().trim();
+      fileType = fileType.split(";").shift().trim();
     } else {
-      alert("Cannot determine file type for " + filename);
+      alert("Cannot determine file type for " + fileName);
       return;
     }
-    switch (type) {
+    console.log(`Loading ${fileName} of type ${fileType}`)
+    let annotation;
+    switch (fileType) {
       case "pdf":
       case "application/pdf":
-        pdfFileName = filename;
-        pdfFile = file;
+        GUI.pdfFileName = fileName;
+        GUI.pdfFile = file;
         let objectURL = URL.createObjectURL(file);
         GUI.loadPdfFile(objectURL);
-        $(".enabled-if-document").removeClass("ui-state-disabled");
+        GUI.setPdfFileName(fileName)
         return;
       case "xml":
       case "application/xml":
-        GUI.setDisplayMode(DISPLAY_MODES.REFERENCES);
-        $(".enabled-if-document").addClass("ui-state-disabled");
-        GUI.setTextFileName(filename)
-        break;
       case "txt":
       case "text/plain":
       case "csv":
       case "text/csv":
       case "ttx":
-        $(".enabled-if-document").removeClass("ui-state-disabled");
-        GUI.setTextFileName(filename)
-        GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
         break;
       default:
         alert("Invalid file extension: " + fileExt);
         return;
     }
-    $("#pdf-label").html(pdfFileName);
+    // load file and determine type of Annotation
     const fileReader = new FileReader();
     fileReader.onload = (e) => {
       let text = String(e.target.result);
-      textFileExt = fileExt;
-      GUI.setTextContent(text);
-      this.saveToLocalStorage();
+      switch (fileType) {
+        case "xml":
+        case "text/xml":
+        case "application/xml":
+          if (text.includes("<dataset>")) {
+            annotation = new AnystyleParserAnnotation(text, fileName)
+          } else if (text.includes("<surname>")) {
+            annotation = new ExparserSegmentationAnnotation(text, fileName)
+          } else {
+            alert("Unknown XML format")
+            return
+          }
+          break;
+        case "csv":
+        case "text/csv":
+          annotation = new ExparserExtractionAnnotation(text, fileName)
+          break
+        case "text/plain":
+        case "txt":
+        case "ttx":
+          annotation = new AnystyleFinderAnnotation(text, fileName)
+          break;
+        default:
+          alert("Unknown file type: " + fileType);
+          return;
+      }
+      GUI.loadAnnotation(annotation);
     }
     fileReader.readAsText(file, "UTF-8");
   }
@@ -289,8 +260,8 @@ class Actions {
         container.appendChild(sel.getRangeAt(i).cloneContents());
       }
       let replacementText = container.innerHTML
-        .replace(REGEX.BR, "\n")
-        .replace(REGEX.TAG, "");
+        .replace(Config.REGEX.BR, "\n")
+        .replace(Config.REGEX.TAG, "");
       GUI.replaceSelection(replacementText);
     }
     GUI.updateMarkedUpText();
@@ -313,7 +284,7 @@ class Actions {
 
   static previewCitationData() {
     let refs = GUI
-      .getTextToExport(false)
+      .getTextToExport()
       .split("\n")
       .map(line => Zotero.convertRefsToJson(line));
     let html = `<pre>${JSON.stringify(refs, null, 2)}</pre>`;
@@ -321,10 +292,9 @@ class Actions {
     $("#modal-citation-data-preview").show();
   }
 
-  static
-  async run_cgi_script(name, params) {
+  static async run_cgi_script(name, params) {
     let querystring = Object.keys(params).map(key => key + '=' + params[key]).join('&');
-    const url = `${SERVER_URL}/${name}?${querystring}`
+    const url = `${Config.SERVER_URL}/${name}?${querystring}`
     try {
       return await fetch(url)
     } catch (e) {
@@ -333,8 +303,7 @@ class Actions {
     }
   }
 
-  static
-  async run_excite_command(command) {
+  static async run_excite_command(command) {
     let confirmMsg;
     switch (command) {
       case "ocr":
@@ -347,7 +316,7 @@ class Actions {
         confirmMsg = "Do you want to run layout analysis and reference extraction?";
         break;
       case "segmentation":
-        if (displayMode !== DISPLAY_MODES.REFERENCES) {
+        if (GUI.displayMode !== GUI.DISPLAY_MODES.REFERENCES) {
           alert("Segmentation can only be run in references view");
           return;
         }
@@ -366,12 +335,12 @@ class Actions {
     let file;
     let filename;
     if (command === "segmentation") {
-      let refs = GUI.getTextToExport().replace(REGEX.TAG, "");
+      let refs = GUI.getTextToExport().replace(Config.REGEX.TAG, "");
       file = new Blob([refs], {type: "text/plain;charset=utf8"});
-      filename = textFileName.split('.').slice(0, -1).join(".") + ".csv";
-    } else if (pdfFile) {
-      file = pdfFile;
-      filename = pdfFileName;
+      filename = GUI.getAnnotation().getFileName().split('.').slice(0, -1).join(".") + ".csv";
+    } else if (GUI.pdfFile) {
+      file = GUI.pdfFile;
+      filename = GUI.pdfFileName;
     }
     let filenameNoExt = filename.split('.').slice(0, -1).join(".");
     if (file) {
@@ -379,7 +348,7 @@ class Actions {
       formData.append("file", file, filename);
       GUI.showSpinner("Uploading...");
       try {
-        this.checkResult(await (await fetch(`${SERVER_URL}/upload.py`, {
+        this.checkResult(await (await fetch(`${Config.SERVER_URL}/upload.py`, {
           method: 'post', body: formData
         })).json());
       } catch (e) {
@@ -395,7 +364,7 @@ class Actions {
     // OCR
     if (command === "ocr") {
       GUI.showSpinner("Running OCR, please be patient...");
-      url = `${SERVER_URL}/excite.py?command=ocr&file=${filenameNoExt}`
+      url = `${Config.SERVER_URL}/excite.py?command=ocr&file=${filenameNoExt}`
       try {
         this.checkResult(await (await fetch(url)).json());
       } catch (e) {
@@ -408,7 +377,7 @@ class Actions {
     // layout
     if (command === "layout" || command === "exparser" || command === "ocr") {
       GUI.showSpinner("Analyzing Layout...");
-      url = `${SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}&model_name=${modelName}`
+      url = `${Config.SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}&model_name=${modelName}`
       try {
         result = this.checkResult(await (await fetch(url)).json());
       } catch (e) {
@@ -422,17 +391,16 @@ class Actions {
         }
         return;
       }
-      textFileExt = "csv";
       GUI.setTextFileName(filenameNoExt + ".csv");
       textContent = result.success;
-      GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
+      GUI.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT);
       $("#btn-run-exparser").removeClass("ui-state-disabled")
     }
 
     // reference identification
     if (command === "exparser") {
       GUI.showSpinner("Identifying references, this will take a while...");
-      url = `${SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}&model_name=${modelName}`
+      url = `${Config.SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}&model_name=${modelName}`
       try {
         result = this.checkResult(await (await fetch(url)).json());
       } catch (e) {
@@ -442,12 +410,12 @@ class Actions {
       }
       let refs = result.success;
       textContent = this.combineLayoutAndRefs(textContent, refs);
-      GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
+      GUI.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT);
     }
     // segmentation
     if (command === "segmentation") {
       GUI.showSpinner("Segmenting references...");
-      url = `${SERVER_URL}/excite.py?command=segmentation&file=${filenameNoExt}&model_name=${modelName}`;
+      url = `${Config.SERVER_URL}/excite.py?command=segmentation&file=${filenameNoExt}&model_name=${modelName}`;
       try {
         result = await (await fetch(url)).json();
         this.checkResult(result)
@@ -457,17 +425,9 @@ class Actions {
         GUI.hideSpinner();
       }
       textContent = result.success;
-      GUI.setDisplayMode(DISPLAY_MODES.REFERENCES);
+      GUI.setDisplayMode(GUI.DISPLAY_MODES.REFERENCES);
     }
-    GUI.setTextContent(textContent);
-  }
-
-  static identifyPagenumbers() {
-    if (displayMode !== DISPLAY_MODES.DOCUMENT || parserEngine !== "anystyle") {
-      console.warn("Can only be used in AnyStyle finder documents.");
-      return;
-    }
-    alert("Not implemented")
+    GUI.setHtmlContent(textContent);
   }
 
   static extractReferences(markedUpText) {
@@ -504,21 +464,21 @@ class Actions {
         for (i = 1; i < refWords.length; i++) {
           // compare ref word with tags and punctuation removed ...
           let refWord = refWords[i]
-            .replace(REGEX.TAG, "")
-            .replace(REGEX.PUNCTUATION, "")
+            .replace(Config.REGEX.TAG, "")
+            .replace(Config.REGEX.PUNCTUATION, "")
             .trim();
           // ... with current word without tags. punctuation and layout info
           let currWord = words[index + i]
-            .replace(REGEX.TAG, "")
-            .replace(REGEX.PUNCTUATION, "")
-            .replace(REGEX.LAYOUT, "")
+            .replace(Config.REGEX.TAG, "")
+            .replace(Config.REGEX.PUNCTUATION, "")
+            .replace(Config.REGEX.LAYOUT, "")
             .trim();
           // if word ends with a hyphen, join with next word if exists
           if (currWord.match(/\p{Pd}/gu) && words[index + i + 1]) {
             currWord = currWord + words[index + i + 1]
-              .replace(REGEX.TAG, "")
-              .replace(REGEX.PUNCTUATION, "")
-              .replace(REGEX.LAYOUT, "")
+              .replace(Config.REGEX.TAG, "")
+              .replace(Config.REGEX.PUNCTUATION, "")
+              .replace(Config.REGEX.LAYOUT, "")
               .trim();
           }
           if (refWord === currWord) continue;
@@ -538,53 +498,24 @@ class Actions {
     return layoutDoc
   }
 
-  static export
-  () {
+  static _export() {
     let textToExport;
-    if (!textFileName) return;
     let filename;
-    let filenameNoExt = textFileName.split('.').slice(0, -1).join(".");
-    switch (displayMode) {
-      case DISPLAY_MODES.DOCUMENT:
-        if (parserEngine === "exparser") {
+    let filenameNoExt = GUI.getAnnotation().getFileName().split('.').slice(0, -1).join(".");
+    switch (GUI.displayMode) {
+      case GUI.DISPLAY_MODES.DOCUMENT:
+        if (this.parserEngine === "exparser") {
           textToExport = GUI.getTextToExport();
           filename = filenameNoExt + ".csv";
         } else {
-          // anystyle: replace tags with line prefix
-          let currentTag;
-          let xmlLines = GUI.getTextToExport(false).split("\n")
-          let ttxLines = [];
-          for (let xmlLine of xmlLines) {
-            // replace tags with prefix
-            let ttxLine = xmlLine.replace(
-              /^(.*)<([^/>]+)>(.*)$/,
-              (m, prefix, tag, suffix) => {
-                if (tag === "reference") {
-                  tag = "ref"
-                }
-                if (currentTag && tag === currentTag) {
-                  tag = ""
-                } else {
-                  tag = tag || "text"
-                  currentTag = tag
-                }
-                return tag.padEnd(14, " ") + "| " + prefix + suffix
-              }
-            );
-            // no tag found
-            if (ttxLine === xmlLine) {
-              ttxLine = " ".repeat(14) + "| " + xmlLine
-            }
-            ttxLine = ttxLine.replace(/<\/?[^>]+>/g, "");
-            ttxLines.push(ttxLine)
-          }
+
           textToExport = ttxLines.join("\n")
           filename = filenameNoExt + ".ttx";
         }
         break;
-      case DISPLAY_MODES.REFERENCES:
+      case GUI.DISPLAY_MODES.REFERENCES:
         let rootTag, sequenceTag;
-        if (parserEngine === "exparser") {
+        if (this.parserEngine === "exparser") {
           sequenceTag = "ref"
           rootTag = "seganno"
         } else {
@@ -600,23 +531,28 @@ class Actions {
         filename = filenameNoExt + ".xml";
         break;
     }
+    return {textToExport, filename};
+  }
+
+  static export() {
+    if (!GUI.getAnnotation().getFileName()) return;
+    let {textToExport, filename} = this._export()
     Utils.download(textToExport, filename);
   }
 
-  static
-  async exportToZotero() {
-    if (displayMode !== DISPLAY_MODES.REFERENCES) {
+  static async exportToZotero() {
+    if (GUI.displayMode !== GUI.DISPLAY_MODES.REFERENCES) {
       alert("You must be in segmentation mode to export references");
       return;
     }
     let refs = GUI.getTextToExport(false);
-    if (!refs.match(REGEX.TAG)) {
+    if (!refs.match(Config.REGEX.TAG)) {
       alert("No references to export");
       return;
     }
-    let id = textFileName.split(".").slice(0, -1).join(".");
+    let id = GUI.getAnnotation().getFileName().split(".").slice(0, -1).join(".");
     let identifier;
-    for (let knownIdentifier of KNOWN_IDENTIFIERS) {
+    for (let knownIdentifier of Config.KNOWN_IDENTIFIERS) {
       if (id.startsWith(knownIdentifier.startsWith)) {
         identifier = knownIdentifier;
         break;
@@ -719,117 +655,82 @@ class Actions {
     }
   }
 
-  static
-  async save() {
-    if (!textFileName) return;
+  static async save() {
+    let filename = GUI.getAnnotation().getFileName();
+    if (!filename) return;
     let data;
-    let filename;
     let type;
-    let filenameNoExt = textFileName.split('.').slice(0, -1).join(".");
-    switch (displayMode) {
-      case DISPLAY_MODES.DOCUMENT:
+    let filenameNoExt = filename.split('.').slice(0, -1).join(".");
+    switch (GUI.displayMode) {
+      case GUI.DISPLAY_MODES.DOCUMENT:
         data = GUI.getTextToExport();
-        localStorage.setItem(LOCAL_STORAGE.DOCUMENT, data);
-        localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
-        if (!data.includes("<ref>")) {
-          alert("Text contains no markup.");
-          return;
+        localStorage.setItem(Config.LOCAL_STORAGE.DOCUMENT, data);
+        localStorage.setItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME, filename);
+        if (this.parserEngine === "exparser") {
+          type = "layout"
+          break
         }
-        filename = textFileName;
-        type = "layout";
+        type = "anystyle_finder";
+        data = this._export().textToExport;
         break;
-      case DISPLAY_MODES.REFERENCES:
+      case GUI.DISPLAY_MODES.REFERENCES:
         data = GUI.getTextToExport(false);
-        localStorage.setItem(LOCAL_STORAGE.REFERENCES, data);
+        localStorage.setItem(Config.LOCAL_STORAGE.REFERENCES, data);
         filename = filenameNoExt + ".xml";
-        type = "ref_xml"
+        if (this.parserEngine === "exparser") {
+          type = "ref_xml"
+          break
+        }
+        type = "anystyle_parser"
+        data = this._export().textToExport;
         break;
     }
     if (!confirm(`Save training data to model '${modelName}?'`)) return
     GUI.showSpinner(`Saving training data.`);
     let body = JSON.stringify({filename, type, data, modelName}) + "\n\n";
-    let result = await (await fetch(`${SERVER_URL}/save.py`, {
+    let result = await (await fetch(`${Config.SERVER_URL}/save.py`, {
       method: 'post', body
     })).json();
     GUI.hideSpinner();
     if (result.error) alert(result.error);
   }
 
-  static saveToLocalStorage() {
-    let text;
-    switch (displayMode) {
-      case DISPLAY_MODES.DOCUMENT:
-        text = GUI.getTextToExport(parserEngine === "exparser");
-        localStorage.setItem(LOCAL_STORAGE.DOCUMENT, text);
-        break;
-      case DISPLAY_MODES.REFERENCES:
-        text = GUI.getTextToExport(false);
-        localStorage.setItem(LOCAL_STORAGE.REFERENCES, text);
-        break;
-    }
-    localStorage.setItem(LOCAL_STORAGE.TEXT_FILE_NAME, textFileName);
-    localStorage.setItem(LOCAL_STORAGE.DISPLAY_MODE, displayMode);
-  }
-
-  static replaceSelection() {
-    $("context-menu").hide();
-    let defaultText = window.getSelection().toString();
-    if (!defaultText) return;
-    let replacementText = prompt("Please enter text to replace the selected text with:", defaultText);
-    if (replacementText === false) return;
-    GUI.replaceSelection(replacementText);
-    GUI.updateMarkedUpText();
-  }
-
-  static copy() {
-    clipboard = window.getSelection().toString();
-  }
-
-  static paste() {
-    GUI.replaceSelection(clipboard);
-  }
-
-  static insertBefore(text = "") {
-    text = (text || clipboard) + window.getSelection().toString();
-    GUI.replaceSelection(text);
-  }
-
   static undo() {
-    if (versions.length) {
-      $("#text-content").html(versions.pop());
+    if (this.versions.length) {
+      $("#text-content").html(this.versions.pop());
       GUI.updateMarkedUpText();
     }
-    if (!versions.length) {
+    if (!this.versions.length) {
       $("#btn-undo").addClass("ui-state-disabled")
     }
   }
 
   static setDisplayMode(nextDisplayMode) {
-    if (displayMode === nextDisplayMode) {
+    if (this.displayMode === nextDisplayMode) {
       return;
     }
     let text
-    switch (displayMode) {
-      case DISPLAY_MODES.DOCUMENT:
+    switch (this.displayMode) {
+      case GUI.DISPLAY_MODES.DOCUMENT:
         let document = GUI.getTextToExport();
-        localStorage.setItem(LOCAL_STORAGE.DOCUMENT, document);
+        localStorage.setItem(Config.LOCAL_STORAGE.DOCUMENT, document);
         text = this.extractReferences(document);
-        localStorage.setItem(LOCAL_STORAGE.REFERENCES, text);
+        localStorage.setItem(Config.LOCAL_STORAGE.REFERENCES, text);
         break;
-      case DISPLAY_MODES.REFERENCES:
-        if (versions.length > 0) {
+      case GUI.DISPLAY_MODES.REFERENCES:
+        if (this.versions.length > 0) {
           let confirmMsg = `This will switch the display to ${nextDisplayMode} view and discard any changes. Do you want to proceed?`;
           if (!confirm(confirmMsg)) {
             $("#btn-identification").removeClass("active");
             return;
           }
         }
-        text = localStorage.getItem(LOCAL_STORAGE.DOCUMENT) || "";
+        text = localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT) || "";
         break;
     }
     GUI.setDisplayMode(nextDisplayMode);
-    GUI.setTextContent(text);
-    versions = [];
+    GUI.setHtmlContent(text);
+    this.versions = [];
     $("#btn-undo").addClass("ui-state-disabled");
 
   }
@@ -838,7 +739,7 @@ class Actions {
     $("#btn-model-" + modelName).removeClass("btn-dropdown-radio-selected");
     modelName = name;
     $("#btn-model-" + modelName).addClass("btn-dropdown-radio-selected");
-    localStorage.setItem(LOCAL_STORAGE.LAST_MODEL_NAME, name);
+    localStorage.setItem(Config.LOCAL_STORAGE.LAST_MODEL_NAME, name);
   }
 }
 
@@ -880,7 +781,7 @@ class Zotero {
     const id = setTimeout(timeoutFunc, this.timeout);
     let result;
     try {
-      let response = await fetch(ZOTERO_PROXY_URL + "?" + endpoint, {
+      let response = await fetch(Config.ZOTERO_PROXY_URL + "?" + endpoint, {
         method: postData ? "POST" : "GET",
         cache: 'no-cache',
         signal: this.controller.signal,
@@ -1110,12 +1011,18 @@ class Excite {
   }
 }
 
-class Config {
-}
-
 Config.channel_id;
 
 class GUI {
+  static annotation;
+  static displayMode;
+  static versions;
+  static DISPLAY_MODES = {
+    DOCUMENT: "document",
+    REFERENCES: "references"
+  }
+  static pdfFile;
+  static pdfFileName;
 
   static init() {
     // internal vars
@@ -1129,7 +1036,7 @@ class GUI {
       this._setupEventListeners();
       GUI.toggleMarkedUpView(false);
       let hash = (new URL(document.URL)).hash;
-      let lastLoadUrl = localStorage.getItem(LOCAL_STORAGE.LAST_LOAD_URL) || false;
+      let lastLoadUrl = localStorage.getItem(Config.LOCAL_STORAGE.LAST_LOAD_URL) || false;
       let downloadUrl = hash.startsWith("#load=") && hash.substr(6).trim();
       let textInLocalStorage = this._hasTextInLocalStorage();
       if (textInLocalStorage && !(downloadUrl !== lastLoadUrl)) {
@@ -1152,19 +1059,19 @@ class GUI {
     window.onbeforeunload = Actions.saveToLocalStorage;
 
     // check if we have a backend and intialize UI
-    fetch(SERVER_URL + "status.py")
+    fetch(Config.SERVER_URL + "status.py")
       .then(response => response.json())
       .then(result => GUI._configureStatus(result))
 
     // check if Zotero is running
-    fetch(SERVER_URL + "zotero/proxy.py?connector/ping")
+    fetch(Config.SERVER_URL + "zotero/proxy.py?connector/ping")
       .then(response => response.text())
       .then(result => $(".visible-if-zotero-connection")
         .toggleClass("hidden", !result.includes("Zotero Connector Server is Available")));
 
     // SSE
     const channel_id = Config.channel_id = Math.random().toString().slice(2)
-    const source = new EventSource(SERVER_URL + "sse.py?" + channel_id);
+    const source = new EventSource(Config.SERVER_URL + "sse.py?" + channel_id);
     let toasts = {};
     source.addEventListener("open", () => {
       console.log("Initialized SSE connection with id " + channel_id)
@@ -1218,7 +1125,7 @@ class GUI {
 
   static _configureStatus(status) {
     $(".visible-if-backend").toggleClass("hidden", false);
-    let model_name = localStorage.getItem(LOCAL_STORAGE.LAST_MODEL_NAME) || "default";
+    let model_name = localStorage.getItem(Config.LOCAL_STORAGE.LAST_MODEL_NAME) || "default";
     if (status.model_names.length > 1) {
       $("#btn-model").removeClass("hidden");
       status.model_names
@@ -1308,7 +1215,7 @@ class GUI {
     });
 
     // force remove PDF because loading saved src doesn't work yet
-    //let dataUrl = localStorage.getItem(LOCAL_STORAGE.PDF_IFRAME_SRC);
+    //let dataUrl = localStorage.getItem(Config.LOCAL_STORAGE.PDF_IFRAME_SRC);
     //if (dataUrl) {
     //  fetch(dataUrl)
     //    .then(res => res.blob())
@@ -1325,39 +1232,80 @@ class GUI {
   }
 
   static _hasTextInLocalStorage() {
-    return Boolean(localStorage.getItem(LOCAL_STORAGE.DISPLAY_MODE)) &&
-      (Boolean(localStorage.getItem(LOCAL_STORAGE.DOCUMENT)) ||
-        Boolean(localStorage.getItem(LOCAL_STORAGE.REFERENCES)));
+    return Boolean(localStorage.getItem(Config.LOCAL_STORAGE.DISPLAY_MODE)) &&
+      (Boolean(localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT)) ||
+        Boolean(localStorage.getItem(Config.LOCAL_STORAGE.REFERENCES)));
   }
 
   static _loadTextFromLocalStorage() {
-    let savedDisplayMode = localStorage.getItem(LOCAL_STORAGE.DISPLAY_MODE);
-    let savedTextFileName = localStorage.getItem(LOCAL_STORAGE.TEXT_FILE_NAME);
-    if (savedTextFileName) {
-      GUI.setTextFileName(savedTextFileName);
-      textFileExt = textFileName.split(".").pop();
-    }
-    if (savedDisplayMode) {
+    let savedDisplayMode = localStorage.getItem(Config.LOCAL_STORAGE.DISPLAY_MODE);
+    let savedTextFileName = localStorage.getItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME);
       let text;
+    if (savedDisplayMode) {
       switch (savedDisplayMode) {
-        case DISPLAY_MODES.DOCUMENT:
-          text = localStorage.getItem(LOCAL_STORAGE.DOCUMENT);
+        case GUI.DISPLAY_MODES.DOCUMENT:
+          text = localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT);
           break;
-        case DISPLAY_MODES.REFERENCES:
-          text = localStorage.getItem(LOCAL_STORAGE.REFERENCES);
+        case GUI.DISPLAY_MODES.REFERENCES:
+          text = localStorage.getItem(Config.LOCAL_STORAGE.REFERENCES);
           break;
         default:
-          savedDisplayMode = DISPLAY_MODES.DOCUMENT;
+          savedDisplayMode = GUI.DISPLAY_MODES.DOCUMENT;
           text = "";
           break;
       }
       GUI.setDisplayMode(savedDisplayMode);
       if (text) {
-        GUI.setTextContent(text);
+        let type = savedTextFileName.endsWith(".xml") ? "text/xml" : "text/plain"
+        let file = new File([text], savedTextFileName, {
+          lastModified: 1534584790000,
+          type: `${type};charset=utf8`
+        });
+        Actions.loadFile(file)
         return true;
       }
     }
     return false;
+  }
+
+  static update() {
+    switch (Actions.parserEngine) {
+      case Config.ENGINES.EXPARSER:
+        $(`li > a.exparser`).removeClass("excluded")
+        $(`li > a.anystyle`).addClass("excluded")
+        break
+      case Config.ENGINES.ANYSTYLE:
+        $(`li > a.exparser`).addClass("excluded")
+        $(`li > a.anystyle`).removeClass("excluded")
+    }
+    switch (GUI.displayMode) {
+      case GUI.DISPLAY_MODES.DOCUMENT:
+        switch (Actions.parserEngine) {
+          case Config.ENGINES.EXPARSER:
+            $(".exparser,.visible-in-refs-mode").addClass("excluded")
+            $(".exparser,.visible-in-document-mode").removeClass("excluded")
+            $(".anystyle,.visible-in-refs-mode").addClass("excluded")
+            break
+          case Config.ENGINES.ANYSTYLE:
+            $(".anystyle,.visible-in-refs-mode").addClass("excluded")
+            $(".anystyle,.visible-in-document-mode").removeClass("excluded")
+            $(".exparser,.visible-in-refs-mode").addClass("excluded")
+        }
+        break
+      case GUI.DISPLAY_MODES.REFERENCES:
+        switch (Actions.parserEngine) {
+          case Config.ENGINES.EXPARSER:
+            $(".exparser,.visible-in-document-mode").addClass("excluded")
+            $(".exparser,.visible-in-refs-mode").removeClass("excluded")
+            $(".anystyle,.visible-in-document-mode").addClass("excluded")
+            break
+          case Config.ENGINES.ANYSTYLE:
+            $(".anystyle,.visible-in-document-mode").addClass("excluded")
+            $(".anystyle,.visible-in-refs-mode").removeClass("excluded")
+            $(".exparser,.visible-in-document-mode").addClass("excluded")
+        }
+        break
+    }
   }
 
   static showSpinner(text) {
@@ -1368,29 +1316,67 @@ class GUI {
     $("#spinner").removeClass("is-active");
   }
 
+  static loadAnnotation(annotation) {
+    if (!(annotation instanceof Annotation)) {
+      throw new Error("Argument must be annotation")
+    }
+    this.annotation = annotation;
+    Actions.setParserEngine(annotation.constructor.engine)
+    this.setTextFileName(annotation.getFileName())
+    this.setDisplayMode(annotation.type === Annotation.TYPE.FINDER ? GUI.DISPLAY_MODES.DOCUMENT : GUI.DISPLAY_MODES.REFERENCES)
+    if (annotation.numPages && annotation.numPages > 0) {
+      $("#label-page-number").html("1");
+      $(".visible-if-pages").removeClass("hidden").removeClass("excluded");
+    } else {
+      $("#label-page-number").html("");
+      $(".visible-if-pages").addClass("hidden");
+    }
+    this.setHtmlContent(annotation.toHtml())
+    this.saveToLocalStorage()
+  }
+
+  static saveToLocalStorage() {
+    let text;
+    switch (GUI.displayMode) {
+      case GUI.DISPLAY_MODES.DOCUMENT:
+        text = GUI.getTextToExport();
+        localStorage.setItem(Config.LOCAL_STORAGE.DOCUMENT, text);
+        break;
+      case GUI.DISPLAY_MODES.REFERENCES:
+        text = GUI.getTextToExport();
+        localStorage.setItem(Config.LOCAL_STORAGE.REFERENCES, text);
+        break;
+    }
+    localStorage.setItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME, GUI.getAnnotation().getFileName());
+    localStorage.setItem(Config.LOCAL_STORAGE.DISPLAY_MODE, GUI.displayMode);
+  }
+
   static setTextFileName(filename) {
-    textFileName = filename;
+    $(".enabled-if-document").addClass("ui-state-disabled");
     $("#text-label").html(filename);
+  }
+
+  static setPdfFileName(filename) {
+    GUI.pdfFileName = filename
+    $("#pdf-label").html(filename);
   }
 
   static removeTextFile() {
     if (!confirm("Do you really want to clear the document?")) {
       return;
     }
-
     $("#text-content").html("");
     $("#markup-content").html("");
     $(".view-text-buttons").hide();
     this.setTextFileName("");
-    cols1text = [];
-    cols2numbers = [];
-    versions = [];
-    localStorage.removeItem(LOCAL_STORAGE.TEXT_FILE_NAME);
-    localStorage.removeItem(LOCAL_STORAGE.DOCUMENT);
-    localStorage.removeItem(LOCAL_STORAGE.REFERENCES);
-    localStorage.removeItem(LOCAL_STORAGE.LAST_LOAD_URL);
+    this.annotation = null
+    this.versions = [];
+    localStorage.removeItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME);
+    localStorage.removeItem(Config.LOCAL_STORAGE.DOCUMENT);
+    localStorage.removeItem(Config.LOCAL_STORAGE.REFERENCES);
+    localStorage.removeItem(Config.LOCAL_STORAGE.LAST_LOAD_URL);
     document.location.href = document.URL.replace(/#.*$/, "#");
-    GUI.setDisplayMode(DISPLAY_MODES.DOCUMENT);
+    GUI.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT);
     this.toggleMarkedUpView(false);
   }
 
@@ -1399,7 +1385,8 @@ class GUI {
     pdfiframe.on("load", GUI._onPdfIframeLoaded);
     pdfiframe.prop("src", "web/viewer.html?file=" + objectURL);
     GUI.showPdfView(true);
-    this.setDisplayMode(DISPLAY_MODES.DOCUMENT);
+    this.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT);
+    $(".enabled-if-document").removeClass("ui-state-disabled");
     $(".enabled-if-pdf").removeClass("ui-state-disabled");
     $(".visible-if-pdf").addClass("hidden");
   }
@@ -1408,10 +1395,10 @@ class GUI {
     $("pdf-label").html("");
     document.getElementById("pdfiframe").src = 'about:blank';
     zoteroAttachmentFilepath = null;
-    pdfFileName = "";
+    GUI.pdfFileName = "";
     $(".enabled-if-pdf").addClass("ui-state-disabled");
     $(".visible-if-pdf").addClass("hidden");
-    localStorage.removeItem(LOCAL_STORAGE.LAST_LOAD_URL);
+    localStorage.removeItem(Config.LOCAL_STORAGE.LAST_LOAD_URL);
     document.location.href = document.URL.replace(/#.*$/, "#");
     GUI.showPdfView(false);
   }
@@ -1441,194 +1428,14 @@ class GUI {
     return currentRefNode;
   }
 
-  static setTextContent(text) {
-
-    // determine parser engine
-    if (textFileExt === "csv") {
-      Actions.setParserEngine("exparser")
-    } else if (textFileExt === "xml" && !text.includes("<dataset>")) {
-      Actions.setParserEngine("exparser")
-    } else {
-      // default
-      Actions.setParserEngine("anystyle")
-    }
-
-    // clean up text
-    text = text.replace(/\r/g, "")
-    while (text.match(/\n\n/)) {
-      text = text.replace(/\n\n/g, "\n");
-    }
-
-    let html = "";
-    cols1text = [];
-    cols2numbers = [];
-
-    switch (displayMode) {
-      // Display document contents
-      case DISPLAY_MODES.DOCUMENT: {
-        let text_Lines = text
-          .split('\n')
-          .map(line => line.trim());
-        let yval = 0;
-        this.__numPages = 0;
-        let ttx_curr_tag;
-
-        for (let i = 0; i < text_Lines.length; i++) {
-          let line = text_Lines[i]
-          if (parserEngine === "exparser") {
-            //
-            // EXparser
-            //
-            // we have layout info in the file, remove from text to re-add later
-            let line_parts = line.split('\t');
-            if (line_parts.length >= 7) {
-              let layout_info = line_parts.slice(-6);
-              let text_content = line_parts.slice(0, -6).join(' ');
-              cols2numbers[i] = layout_info.join('\t');
-              cols1text[i] = text_content;
-              let lineYval = layout_info[1];
-              if (yval === 0 || yval - lineYval > 300) {
-                this.__numPages++;
-                line = `<div class="page-marker" data-page="${this.__numPages}"></div>` + cols1text[i];
-              }
-              yval = lineYval;
-            }
-          } else if (parserEngine === "anystyle") {
-            //
-            // AnyStyle
-            //
-            let pipe_idx = line.indexOf("|");
-            let tag;
-            if (pipe_idx >= 0) {
-              // text is in "ttx" format, convert it to xml-style tags
-              tag = line.slice(0, pipe_idx).trim()
-              line = line.slice(pipe_idx + 1).trim()
-              let text = line
-              // automatically tag pages
-              if (text.match(/^[0-9]{1,3}$/)) {
-                if (!tag || tag === "meta") {
-                  tag = "pages"
-                }
-              }
-              switch (tag) {
-                case "":
-                  tag = ttx_curr_tag || "text"
-                  break
-                case "ref":
-                  tag = "reference"
-                  break
-              }
-              if (tag !== ttx_curr_tag) {
-                line = ""
-                if (ttx_curr_tag) {
-                  cols1text[i - 1] += `</${ttx_curr_tag}>`
-                }
-                if (tag === "pages") {
-                  this.__numPages++;
-                  line += `<div class="page-marker" data-page="${this.__numPages}"></div>`;
-                }
-                line += `<${tag}>${text}`
-                ttx_curr_tag = tag
-              }
-              if (i === text_Lines.length - 1) {
-                if (ttx_curr_tag) {
-                  line += `</${ttx_curr_tag}>`
-                }
-              }
-
-            } else {
-              // text already is in xml-ish format
-              if (line.includes("<pages>")) {
-                this.__numPages++;
-                line += `<div class="page-marker" data-page="${this.__numPages}"></div>`;
-              }
-            }
-            // save
-            cols1text[i] = line;
-          }
-        }
-        html = cols1text.join("<br>")
-        if (this.__numPages > 0) {
-          $("#label-page-number").html("1");
-          $(".visible-if-pages").removeClass("hidden").removeClass("excluded");
-        } else {
-          $("#label-page-number").html("");
-          $(".visible-if-pages").addClass("hidden");
-        }
-        // count references
-        // const num_refs = text.split("<ref>").length - 1;
-        // let label = ""
-        // if (textFileName) {
-        //   label = textFileName + ` (${num_refs} identified references)`;
-        // }
-        // $("#text-label").html(label);
-        break;
-      }
-      // Display references
-      case DISPLAY_MODES.REFERENCES: {
-        if (parserEngine === "exparser") {
-          //
-          // exparser
-          //
-          if (text.startsWith("<?xml")) {
-            let textLines = text.split("\n");
-            // remove root node
-            textLines.splice(0, 2);
-            textLines.splice(-1, 1);
-            // remove enclosing <ref> and <author> tags
-            textLines = textLines
-              .map(line => line
-                .replace(/<\/?author>/g, '')
-                .replace(/<\/?ref>/g, ''));
-            text = textLines.join("\n");
-          }
-        } else {
-          //
-          // anystyle
-          //
-          if (text.startsWith("<?xml")) {
-            let textLines = text.split("\n");
-            //remove root node
-            textLines.splice(0, 2);
-            textLines.splice(-1, 1);
-            text = textLines.join(" ");
-            // remove enclosing <sequence>tags
-            text = text
-              .replace(/<sequence>/g, "")
-              .replace(/<\/sequence>/g, "\n")
-          }
-        }
-        // count references
-        const num_refs = text.split("\n").length;
-        html = text.replace(/\n/g, "<br>");
-        let label = "";
-        if (textFileName) {
-          label = textFileName + ` (${num_refs} references)`;
-        }
-        $("#text-label").html(label);
-        break;
-      }
-    }
-    // translate tag names to data-tag attributes
-    let tag_names = [];
-    let tag_name;
-    for (let match of html.matchAll(/<([^>\/ ]+)>/g)) {
-      tag_name = match[1];
-      if (tag_name === "br") continue
-      if (!tag_names.includes(tag_name)) {
-        tag_names.push(tag_name);
-      }
-    }
-    console.log(`Document includes following tags: ${tag_names.join(', ')}`)
-    for (tag_name of tag_names) {
-      let regex = new RegExp(`<${tag_name}>(.*?)</${tag_name}>`, 'g');
-      let replacement = `<span data-tag="${tag_name}">$1</span>`;
-      html = html.replace(regex, replacement);
-    }
-    // show text
-    $("#text-content").html(html);
-    $("#text-content").scrollTop(0);
-    versions = [html];
+  /**
+   * @param {string} html
+   */
+  static setHtmlContent(html) {
+    let htmlContentNode = $("#text-content")
+    htmlContentNode.html(html);
+    htmlContentNode.scrollTop(0);
+    this.versions = [html];
     // select page in PDF if available
     $("#text-content > .page-marker").on("click", e => {
       if (this.__pdfJsApplication) {
@@ -1665,14 +1472,14 @@ class GUI {
       newParentNode.setAttribute("data-tag", tag_name);
       sel.getRangeAt(0).surroundContents(newParentNode);
       // remove all <span>s from selected text
-      $(newParentNode).html($(newParentNode).html().replace(REGEX.SPAN, ""));
+      $(newParentNode).html($(newParentNode).html().replace(Config.REGEX.SPAN, ""));
       // check if grandparent node has a tag and split node if so
       let grandParent = newParentNode.parentNode
       let grandParentTag = grandParent.dataset && grandParent.dataset.tag
       if (grandParentTag) {
         if (grandParentTag === tag_name) {
           // if same tag, simply remove the span
-          $(grandParent).html($(grandParent).html().replace(REGEX.SPAN, ""));
+          $(grandParent).html($(grandParent).html().replace(Config.REGEX.SPAN, ""));
         } else {
           // split grandparent via regexes
           let outerHTML = grandParent.outerHTML
@@ -1688,162 +1495,35 @@ class GUI {
     GUI.updateMarkedUpText();
   }
 
-  static addTagWithRegex(tagName, regexStr) {
-    let regex;
-    try {
-      regex = new RegExp(`(${regexStr})`, "g");
-    } catch (e) {
-      throw new Error("Invalid regular expression: " + e.message);
-    }
-    let text = this.getTextToExport();
-    text = text
-      .replace(regex, `<${tagName}>$1</${tagName}>`)
-      .replace(new RegExp(`<${tagName}><${tagName}>`, "g"), `<${tagName}>`)
-      .replace(new RegExp(`</${tagName}></${tagName}>`, "g"), `</${tagName}>`)
-    this.setTextContent(text);
-  }
-
   static updateMarkedUpText() {
-    const regex = /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/gm;
-    let markedUpText = $("#text-content").html()
-      .replace(REGEX.DIV, "")
-      .replace(REGEX.BR, "\n")
-      .replace(/\n\n/g, "\n")
-      .replace(/^\n/g, "")
-      .replace(regex, "<$1>$2</$1>")
-      .replace(REGEX.EMPTY_NODE, "");
-
-    switch (displayMode) {
-      case DISPLAY_MODES.DOCUMENT: {
-        $("#refs-navigation").toggleClass("hidden", !markedUpText.includes("<ref>"));
-        $(".enabled-if-refs").toggleClass("ui-state-disabled", !(markedUpText.match(REGEX.TAG)));
+    let html = $("#text-content").html();
+    let markedUpText = this.getAnnotation().loadFromHtml(html)
+    $("#markup-content").html(markedUpText);
+    switch (this.displayMode) {
+      case GUI.DISPLAY_MODES.DOCUMENT: {
+        $("#refs-navigation").toggleClass("hidden", !markedUpText.includes("<ref"));
+        $(".enabled-if-refs").toggleClass("ui-state-disabled", !(markedUpText.match(Config.REGEX.TAG)));
         break;
       }
-      case DISPLAY_MODES.REFERENCES: {
-        if (parserEngine === "exparser") {
-          //markedUpText = markedUpText.split("\n").map(line => this.addAuthorTag(line)).join("\n");
-        }
+      case GUI.DISPLAY_MODES.REFERENCES: {
         $(".enabled-if-refs").removeClass("ui-state-disabled");
-        $(".enabled-if-segmented").toggleClass("ui-state-disabled", !(markedUpText.match(REGEX.TAG)));
+        $(".enabled-if-segmented").toggleClass("ui-state-disabled", !(markedUpText.match(Config.REGEX.TAG)));
         break;
       }
     }
-    // check if translation removed all <span> tags and warn if not
-    if (markedUpText.match(REGEX.SPAN)) {
-      console.warn("Removing unhandled <span> tags in html text!");
-      markedUpText = markedUpText.replace(REGEX.SPAN, "");
-    }
-
-    // update <pre> element
-    let html = markedUpText.replace(/</g, "&lt;")
-    $("#markup-content").html(html);
     return markedUpText;
   }
 
-  static addAuthorTag(markedUpText) {
-    let startTag = "<author>";
-    let endTag = "</author>";
-    let firstStartTagMatch = null;
-    let secondStartTagMatch = null;
-    let lastEndTagMatch = null;
-    let offset = 0;
-    let matches = markedUpText.matchAll(/<\/?([^>]+)>/g);
-    let pos;
-    for (let match of matches) {
-      let [tag, tagName] = match;
-      if (["surname", "given-names"].includes(tagName)) {
-        if (!tag.startsWith("</")) {
-          // opening tag
-          if (firstStartTagMatch === null) {
-            // insert <author> before opening first surname or given-names
-            firstStartTagMatch = match;
-            pos = match.index + offset;
-            markedUpText = markedUpText.substr(0, pos) + startTag + markedUpText.substr(pos);
-            offset += startTag.length;
-            //console.log({info: "inserting <author> before first tag", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch})
-            continue;
-          }
-          if (secondStartTagMatch === null) {
-            if (tag !== firstStartTagMatch[0]) {
-              // if the second opening tag is not the same as the first, remember it and go on
-              secondStartTagMatch = match;
-              //console.log({info: "second opening tag not the same as the first", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch})
-              continue;
-            }
-            // tag repeats
-            //console.log("tag repeats")
-          }
-        } else {
-          // closing tag
-          lastEndTagMatch = match;
-          if (!secondStartTagMatch || tagName !== secondStartTagMatch[1]) {
-            //console.log({info: "Closing tag", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch});
-            continue;
-          }
-        }
-        if (lastEndTagMatch) {
-          // insert </author> after the last closing tag
-          pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
-          markedUpText = markedUpText.substr(0, pos) + endTag + markedUpText.substr(pos);
-          offset += endTag.length;
-        }
-        if (!tag.startsWith("</")) {
-          // insert new opening tag
-          //console.log({info:"Insert new opening tag", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch})
-          pos = match.index + offset;
-          markedUpText = markedUpText.substr(0, pos) + startTag + markedUpText.substr(pos);
-          offset += startTag.length;
-        }
-        // reset matches
-        firstStartTagMatch = null;
-        secondStartTagMatch = null;
-        lastEndTagMatch = null;
-      }
-    }
-    if (lastEndTagMatch) {
-      // insert missing closing tag
-      pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
-      markedUpText = markedUpText.substr(0, pos) + endTag + markedUpText.substr(pos);
-    }
-    return markedUpText;
+  /**
+   * Returns the currently loaded Annotation
+   * @returns {Annotation|null}
+   */
+  static getAnnotation() {
+    return this.annotation;
   }
 
-  static getTextToExport(withLayoutInfo = true) {
-    GUI.updateMarkedUpText();
-    let markedUpText = $("#markup-content").html();
-    if (displayMode === DISPLAY_MODES.DOCUMENT && withLayoutInfo) {
-      let t1 = markedUpText.split('\n')
-      let t2 = [];
-      let rowFirstColumn;
-      let allFirstColumns = "";
-      for (let i = 0; i < t1.length; i++) {
-        rowFirstColumn = t1[i];
-        allFirstColumns = allFirstColumns + rowFirstColumn;
-        if (i === t1.length - 1) {
-          // no \n for last line
-          if (typeof cols2numbers[i] != 'undefined') {
-            t2[i] = t1[i] + '\t' + cols2numbers[i];
-          } else {
-            t2[i] = t1[i] + '\n'
-          }
-        } else {
-          if (typeof cols2numbers[i] != 'undefined') {
-            t2[i] = t1[i] + '\t' + cols2numbers[i] + '\n';
-          } else {
-            t2[i] = t1[i] + '\n'
-          }
-        }
-      }
-      markedUpText = t2.join("");
-    }
-    return markedUpText
-      .replace(/&amp;/g, "&")
-      .replace(/&gt;/g, ">")
-      .replace(/&lt;/g, "<")
-      .replace(/&quot;/g, '"')
-      .replace(/&pos;/g, "'")
-      .replace(/&nbsp;/g, " ")
-      .trim();
+  static getTextToExport() {
+    return this.getAnnotation().export()
   }
 
   static toggleMarkedUpView(state) {
@@ -1862,19 +1542,20 @@ class GUI {
   }
 
   static setDisplayMode(nextDisplayMode) {
-    $(".enabled-if-document").toggleClass("ui-state-disabled", textFileExt === "xml")
-    if (nextDisplayMode === displayMode) {
+    if (nextDisplayMode === this.displayMode) {
       return;
     }
-    displayMode = nextDisplayMode;
-    switch (displayMode) {
-      case DISPLAY_MODES.DOCUMENT:
+    this.displayMode = nextDisplayMode;
+    switch (this.displayMode) {
+      case GUI.DISPLAY_MODES.DOCUMENT:
+        $(".enabled-if-document").removeClass("ui-state-disabled")
         $("#btn-segmentation").removeClass("active");
         $("#btn-identification").addClass("active");
         $("#text-content").addClass("document-view");
         $("#text-content").removeClass("references-view");
         break;
-      case DISPLAY_MODES.REFERENCES:
+      case GUI.DISPLAY_MODES.REFERENCES:
+        $(".enabled-if-document").addClass("ui-state-disabled")
         $("#btn-segmentation").addClass("active");
         $("#btn-identification").removeClass("active");
         $("#text-content").addClass("references-view");
@@ -1883,7 +1564,7 @@ class GUI {
       default:
         throw new Error("Invalid display mode " + nextDisplayMode);
     }
-    localStorage.setItem(LOCAL_STORAGE.DISPLAY_MODE, displayMode);
+    localStorage.setItem(Config.LOCAL_STORAGE.DISPLAY_MODE, this.displayMode);
   }
 
   static _showPopupOnSelect(e) {
@@ -1902,7 +1583,6 @@ class GUI {
     $(".enabled-when-not-inside-tag").toggleClass("ui-state-disabled", Boolean(tag));
     $(".enabled-when-inside-tag").toggleClass("ui-state-disabled", !Boolean(tag));
     $(".enabled-if-selection").toggleClass("ui-state-disabled", !Boolean(window.getSelection()));
-    $(".enabled-if-clipboard-content").toggleClass("ui-state-disabled", !Boolean(clipboard.length));
     if (!sel.toString().trim()) {
       contextMenu.hide();
       return;
@@ -2009,12 +1689,12 @@ class GUI {
   }
 
   static saveState() {
-    versions.push($("#text-content").html());
+    this.versions.push($("#text-content").html());
     $("#btn-undo").removeClass("ui-state-disabled")
   }
 
   static switchSurnameGivenNames() {
-    if (displayMode !== DISPLAY_MODES.REFERENCES) {
+    if (this.displayMode !== GUI.DISPLAY_MODES.REFERENCES) {
       return;
     }
     this.saveState();
@@ -2023,6 +1703,478 @@ class GUI {
       .replace(/data-tag="given-names"/g, 'data-tag="surname"')
       .replace(/data-tag2/g, 'data-tag')
     );
+  }
+}
+
+
+class Annotation {
+  static type;
+  static engine;
+  static fileExtension;
+  static TYPE = {
+    FINDER: "finder",
+    PARSER: "parser"
+  }
+
+  constructor(content, fileName) {
+    this.content = content.replace(/\r/g, "");
+    this.tags = []
+    this.fileName = fileName
+  }
+
+  getFileName() {
+    return this.fileName;
+  }
+
+  getFileExtension() {
+    return this.constructor.fileExtension;
+  }
+
+  toHtml() {
+    throw new Error("Implemented by subclass")
+  }
+
+
+  /**
+   * Returns the marked-up text. This is an internal representation, to
+   * be able to check the marked up text. To get the correct format
+   * suitable to be saved in a file and used by the parser engine, use #export()
+   * @returns {string}
+   */
+  toMarkup() {
+    return this.content
+  }
+
+  /**
+   * Exports the content for saving in a file in the correct format used
+   * by the parser engine
+   * @returns {string}
+   */
+  export() {
+    return this.toMarkup()
+  }
+
+  /**
+   * Translates the html code from the editor to the internal markup
+   * @param {string} html
+   * @return {string}
+   */
+  loadFromHtml(html) {
+    let markedUpText = html
+      .replace(Config.REGEX.DIV, "")
+      .replace(Config.REGEX.BR, "\n")
+      .replace(Config.REGEX.DATA_TAG_SPAN, "<$1>$2</$1>")
+    // check if translation removed all <span> tags and warn if not
+    if (markedUpText.match(Config.REGEX.SPAN)) {
+      console.warn("Removing unhandled <span> tags in html text!");
+      markedUpText = markedUpText.replace(Config.REGEX.SPAN, "");
+    }
+    this.content = Annotation._cleanup(markedUpText)
+    return this.content
+  }
+
+  /**
+   * Final cleanup of text
+   * @param {string} text
+   * @returns {string}
+   * @private
+   */
+  static _cleanup(text) {
+    return text
+      .replace(/&amp;/g, "&")
+      .replace(/&gt;/g, ">")
+      .replace(/&lt;/g, "<")
+      .replace(/&quot;/g, '"')
+      .replace(/&pos;/g, "'")
+      .replace(/&nbsp;/g, " ")
+      .trim();
+  }
+
+  /**
+   * Given a text with xml-style markup, return HTML that displays this markup visually
+   * also populates `this.tags`
+   * @param {string} text
+   * @returns {string}
+   */
+  _markupToHtml(text) {
+    let html;
+    // translate tag names to data-tag attributes
+    let tag_names = [];
+    let tag_name;
+    for (let match of text.matchAll(/<([^>\/ ]+)>/g)) {
+      tag_name = match[1];
+      if (!tag_names.includes(tag_name)) {
+        tag_names.push(tag_name);
+      }
+    }
+    this.tags = tag_names;
+    for (tag_name of tag_names) {
+      let regex = new RegExp(`<${tag_name}>(.*?)</${tag_name}>`, 'g');
+      let replacement = `<span data-tag="${tag_name}">$1</span>`;
+      text = text.replace(regex, replacement);
+    }
+    // convert line breaks to break nodes
+    html = text.replace(/\n/g, "<br>");
+    return html
+  }
+
+  _htmlToMarkup(html) {
+    return html
+      .replace(Config.REGEX.DIV, "")
+      .replace(Config.REGEX.BR, "\n")
+      .replace(Config.REGEX.DATA_TAG_SPAN, "<$1>$2</$1>")
+  }
+}
+
+class ExparserExtractionAnnotation extends Annotation {
+  static type = Annotation.TYPE.FINDER;
+  static engine = Config.ENGINES.EXPARSER;
+  static fileExtension = "csv";
+
+  constructor(content, fileName) {
+    while (content.match(/\n\n/)) {
+      content = content.replace(/\n\n/g, "\n");
+    }
+    super(content, fileName);
+    this.textContent = [];
+    this.layoutInfo = [];
+    this.numPages = 0;
+    let lines = this.content
+      .split('\n')
+      .map(line => line.trim());
+    let yval = 0;
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i]
+      // we have layout info in the file, remove from text to re-add later
+      let line_parts = line.split('\t');
+      if (line_parts.length >= 7) {
+        let layout_info = line_parts.slice(-6);
+        let text_content = line_parts.slice(0, -6).join(' ');
+        this.layoutInfo[i] = layout_info.join('\t');
+        this.textContent[i] = text_content;
+        let lineYval = layout_info[1];
+        if (yval === 0 || yval - lineYval > 300) {
+          this.numPages++;
+          line = `<div class="page-marker" data-page="${this.numPages}"></div>` + this.textContent[i];
+        }
+        yval = lineYval;
+      }
+      this.textContent[i] = line;
+    }
+    this.content = this.textContent.join("\n")
+  }
+
+  toHtml() {
+    return this._markupToHtml(content);
+  }
+
+  /**
+   * @inheritDoc
+   */
+  loadFromHtml(html) {
+    let markedUpText = super.loadFromHtml(html)
+    // remove empty lines and nodes
+    while (markedUpText.match(/\n\n/)) {
+      markedUpText = markedUpText.replace(/\n\n/g, "\n")
+    }
+    markedUpText = markedUpText.replace(Config.REGEX.EMPTY_NODE, "")
+    this.content = Annotation._cleanup(markedUpText)
+    return this.content
+  }
+
+  toMarkup() {
+    return super.toMarkup();
+  }
+
+  export() {
+    let markedUpText = this.content;
+    if (this.content.split("\n").length !== this.layoutInfo.length) {
+      alert("Number of lines in document has changed, cannot export with layout info");
+      return this.toMarkup()
+    }
+    let t1 = markedUpText.split('\n')
+    let t2 = [];
+    let rowFirstColumn;
+    let allFirstColumns = "";
+    for (let i = 0; i < t1.length; i++) {
+      rowFirstColumn = t1[i];
+      allFirstColumns = allFirstColumns + rowFirstColumn;
+      if (i === t1.length - 1) {
+        // no \n for last line
+        if (typeof this.layoutInfo[i] != 'undefined') {
+          t2[i] = t1[i] + '\t' + this.layoutInfo[i];
+        } else {
+          t2[i] = t1[i] + '\n'
+        }
+      } else {
+        if (typeof this.layoutInfo[i] != 'undefined') {
+          t2[i] = t1[i] + '\t' + this.layoutInfo[i] + '\n';
+        } else {
+          t2[i] = t1[i] + '\n'
+        }
+      }
+      markedUpText = t2.join("");
+    }
+    return markedUpText
+  }
+}
+
+class ExparserSegmentationAnnotation extends ExparserExtractionAnnotation {
+  static type = Annotation.TYPE.PARSER;
+  static fileExtension = "xml";
+
+  constructor(content, fileName) {
+    while (content.match(/\n\n/)) {
+      content = content.replace(/\n\n/g, "\n");
+    }
+    super(content, fileName);
+    this.numRefs = 0
+  }
+
+  toHtml() {
+    let text = this.content;
+    if (text.startsWith("<?xml")) {
+      let textLines = text.split("\n");
+      // remove root node
+      textLines.splice(0, 2);
+      textLines.splice(-1, 1);
+      // remove enclosing <ref> and <author> tags
+      textLines = textLines
+        .map(line => line
+          .replace(/<\/?author>/g, '')
+          .replace(/<\/?ref>/g, ''));
+      text = textLines.join("\n");
+    }
+    this.numRefs = text.split("\n").length
+    return this._markupToHtml(text);
+  }
+
+  export() {
+    let textToExport = this.addAuthorTag(this.content)
+      .split("\n")
+      .map(line => `<ref>${line}</ref`)
+      .join("\n");
+    return `<?xml version="1.0" encoding="utf-8"?>\n<seganno>\n${textToExport}\n</seganno>`
+  }
+
+  addAuthorTag(markedUpText) {
+    let startTag = "<author>";
+    let endTag = "</author>";
+    let firstStartTagMatch = null;
+    let secondStartTagMatch = null;
+    let lastEndTagMatch = null;
+    let offset = 0;
+    let matches = markedUpText.matchAll(/<\/?([^>]+)>/g);
+    let pos;
+    for (let match of matches) {
+      let [tag, tagName] = match;
+      if (["surname", "given-names"].includes(tagName)) {
+        if (!tag.startsWith("</")) {
+          // opening tag
+          if (firstStartTagMatch === null) {
+            // insert <author> before opening first surname or given-names
+            firstStartTagMatch = match;
+            pos = match.index + offset;
+            markedUpText = markedUpText.substr(0, pos) + startTag + markedUpText.substr(pos);
+            offset += startTag.length;
+            //console.log({info: "inserting <author> before first tag", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch})
+            continue;
+          }
+          if (secondStartTagMatch === null) {
+            if (tag !== firstStartTagMatch[0]) {
+              // if the second opening tag is not the same as the first, remember it and go on
+              secondStartTagMatch = match;
+              //console.log({info: "second opening tag not the same as the first", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch})
+              continue;
+            }
+            // tag repeats
+            //console.log("tag repeats")
+          }
+        } else {
+          // closing tag
+          lastEndTagMatch = match;
+          if (!secondStartTagMatch || tagName !== secondStartTagMatch[1]) {
+            //console.log({info: "Closing tag", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch});
+            continue;
+          }
+        }
+        if (lastEndTagMatch) {
+          // insert </author> after the last closing tag
+          pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
+          markedUpText = markedUpText.substr(0, pos) + endTag + markedUpText.substr(pos);
+          offset += endTag.length;
+        }
+        if (!tag.startsWith("</")) {
+          // insert new opening tag
+          //console.log({info:"Insert new opening tag", tag, firstStartTagMatch, secondStartTagMatch, lastEndTagMatch})
+          pos = match.index + offset;
+          markedUpText = markedUpText.substr(0, pos) + startTag + markedUpText.substr(pos);
+          offset += startTag.length;
+        }
+        // reset matches
+        firstStartTagMatch = null;
+        secondStartTagMatch = null;
+        lastEndTagMatch = null;
+      }
+    }
+    if (lastEndTagMatch) {
+      // insert missing closing tag
+      pos = lastEndTagMatch.index + offset + lastEndTagMatch[0].length;
+      markedUpText = markedUpText.substr(0, pos) + endTag + markedUpText.substr(pos);
+    }
+    return markedUpText;
+  }
+
+}
+
+class AnystyleFinderAnnotation extends Annotation {
+  static type = Annotation.TYPE.FINDER;
+  static engine = Config.ENGINES.ANYSTYLE;
+  static fileExtension = "ttx";
+
+  constructor(text, fileName) {
+    super(text, fileName);
+    this.numPages = 0
+  }
+
+  /**
+   * @returns {string}
+   */
+  toHtml() {
+    // text is in "ttx" format,
+    // 1) convert it to xml-style tags
+    let lines = this.content.split('\n');
+    let ttx_curr_tag;
+    let ttx_last_tag_before_blank;
+    for (let i = 0; i < lines.length; i++) {
+      let line = lines[i]
+      let pipe_idx = line.indexOf("|");
+      let tag;
+      if (pipe_idx < 0) {
+        pipe_idx = 14
+        line = " ".repeat(pipe_idx) + "| " + line
+      }
+      tag = line.slice(0, pipe_idx).trim()
+      line = line.slice(pipe_idx + 1).trim()
+      let text = line
+      if (line === "") {
+        tag = "blank"
+      }
+      switch (tag) {
+        case "blank":
+          if (ttx_curr_tag) {
+            lines[i - 1] += `</${ttx_curr_tag}>`
+          }
+          lines[i] = ""
+          ttx_last_tag_before_blank = ttx_curr_tag
+          continue
+        case "":
+          tag = ttx_curr_tag || ttx_last_tag_before_blank || "text"
+          break
+        case "ref":
+          tag = "reference"
+          break
+      }
+      ttx_last_tag_before_blank = tag
+      if (tag !== ttx_curr_tag) {
+        line = ""
+        if (ttx_curr_tag) {
+          lines[i - 1] += `</${ttx_curr_tag}>`
+        }
+        if (tag === "pages") {
+          this.numPages++;
+          line += `<div class="page-marker" data-page="${this.numPages}"></div>`;
+        }
+        line += `<${tag}>${text}`
+        ttx_curr_tag = tag
+      }
+      if (i === lines.length - 1) {
+        if (ttx_curr_tag) {
+          line += `</${ttx_curr_tag}>`
+        }
+      }
+      lines[i] = line
+    }
+    let text = lines.join("\n")
+    // 2) now transform xml markup to HTML
+    let html = super._markupToHtml(text);
+    console.log(html.slice(0,500))
+    return html
+  }
+
+  loadFromHtml(html) {
+    let markedUpText = html
+      .replace(Config.REGEX.DIV, "")
+      .replace(Config.REGEX.BR, "\n")
+      .replace(Config.REGEX.DATA_TAG_SPAN, "<$1>$2</$1>")
+    let currentTag;
+    let xmlLines = markedUpText.split("\n")
+    let ttxLines = [];
+    let lastTagBeforeBlank;
+    for (let xmlLine of xmlLines) {
+      // replace tags with prefix
+      let ttxLine = xmlLine.replace(
+        /^(.*)<([^/>]+)>(.*)$/,
+        (m, prefix, tag, suffix) => {
+          if (tag === "reference") {
+            tag = "ref"
+          }
+          if (tag === "blank") {
+            lastTagBeforeBlank = currentTag
+          }
+          if (currentTag && tag === currentTag) {
+            tag = ""
+          } else {
+            tag = tag || lastTagBeforeBlank || "text"
+            currentTag = tag
+            lastTagBeforeBlank = null
+          }
+          return tag.padEnd(14, " ") + "| " + prefix + suffix
+        }
+      );
+      // no tag found
+      if (ttxLine === xmlLine) {
+        ttxLine = " ".repeat(14) + "| " + xmlLine
+      }
+      ttxLine = ttxLine.replace(/<\/?[^>]+>/g, "");
+      ttxLines.push(ttxLine)
+    }
+    markedUpText = ttxLines.join("\n")
+    this.content = Annotation._cleanup(markedUpText)
+    return markedUpText
+  }
+
+  export() {
+    return super.export();
+  }
+
+
+}
+
+class AnystyleParserAnnotation extends AnystyleFinderAnnotation {
+  static type = Annotation.TYPE.PARSER;
+  static fileExtension = "xml";
+
+  constructor(content, fileName) {
+    let lines = content.split("\n");
+    //remove xml declaration and root node
+    lines.splice(0, 2);
+    lines.splice(-1, 1);
+    content = lines.join(" ");
+    // remove enclosing <sequence>tags
+    content = content
+      .replace(/<sequence>/g, "")
+      .replace(/<\/sequence>/g, "\n")
+    super(content, fileName);
+    this.numRefs = content.split("\n").length
+  }
+
+  export() {
+    let textToExport = this.content
+      .split("\n")
+      .map(line => `  <sequence>\n    ${line.replace(/></, ">\n    <")}\n  </sequence`)
+      .join("\n");
+    return `<?xml version="1.0" encoding="utf-8"?>\n<dataset>\n${textToExport}\n</dataset>`
   }
 }
 
