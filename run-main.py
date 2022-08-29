@@ -5,11 +5,11 @@ import subprocess
 import sys
 import traceback
 from lib.logger import *
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 import argparse
 from configs import *
 
-load_dotenv()
+#load_dotenv()
 
 if __name__ == "__main__":
 

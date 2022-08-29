@@ -498,46 +498,14 @@ class Actions {
     return layoutDoc
   }
 
-  static _export() {
-    let textToExport;
-    let filename;
-    let filenameNoExt = GUI.getAnnotation().getFileName().split('.').slice(0, -1).join(".");
-    switch (GUI.displayMode) {
-      case GUI.DISPLAY_MODES.DOCUMENT:
-        if (this.parserEngine === "exparser") {
-          textToExport = GUI.getTextToExport();
-          filename = filenameNoExt + ".csv";
-        } else {
-
-          textToExport = ttxLines.join("\n")
-          filename = filenameNoExt + ".ttx";
-        }
-        break;
-      case GUI.DISPLAY_MODES.REFERENCES:
-        let rootTag, sequenceTag;
-        if (this.parserEngine === "exparser") {
-          sequenceTag = "ref"
-          rootTag = "seganno"
-        } else {
-          // anystyle
-          sequenceTag = "sequence"
-          rootTag = "dataset"
-        }
-        textToExport = GUI.getTextToExport(false)
-          .split("\n")
-          .map(line => `<${sequenceTag}>${line}</${sequenceTag}`)
-          .join("\n");
-        textToExport = `<?xml version="1.0" encoding="utf-8"?>\n<${rootTag}>\n${textToExport}\n</${rootTag}>`
-        filename = filenameNoExt + ".xml";
-        break;
-    }
-    return {textToExport, filename};
-  }
 
   static export() {
-    if (!GUI.getAnnotation().getFileName()) return;
-    let {textToExport, filename} = this._export()
-    Utils.download(textToExport, filename);
+    const annotation = GUI.getAnnotation()
+    if (!annotation) {
+      alert ("No annotation loaded")
+      return
+    }
+    Utils.download(annotation.export(), annotation.getFileName());
   }
 
   static async exportToZotero() {
@@ -1141,6 +1109,7 @@ class GUI {
     // show popup on select
     const contextMenu = $("#context-menu");
     const textContent = $("#text-content");
+    textContent.on("keyup", GUI.updateMarkedUpText)
     textContent.on("pointerup", GUI._showPopupOnSelect);
     contextMenu.on("pointerup", () => setTimeout(() => {
       contextMenu.hide();
@@ -1269,7 +1238,12 @@ class GUI {
   }
 
   static update() {
-    switch (Actions.parserEngine) {
+    const annotation = GUI.getAnnotation()
+    if (!annotation) return
+    const type = annotation.getType()
+    const parserEngine = annotation.getEngine()
+    // Context menu entries
+    switch (parserEngine) {
       case Config.ENGINES.EXPARSER:
         $(`li > a.exparser`).removeClass("excluded")
         $(`li > a.anystyle`).addClass("excluded")
@@ -1277,34 +1251,62 @@ class GUI {
       case Config.ENGINES.ANYSTYLE:
         $(`li > a.exparser`).addClass("excluded")
         $(`li > a.anystyle`).removeClass("excluded")
+        break
     }
-    switch (GUI.displayMode) {
-      case GUI.DISPLAY_MODES.DOCUMENT:
-        switch (Actions.parserEngine) {
+    // visibility of buttons
+    // refactor this with .toggleClass and boolean conditions
+    switch (type) {
+      case Annotation.TYPE.FINDER:
+        switch (parserEngine) {
           case Config.ENGINES.EXPARSER:
-            $(".exparser,.visible-in-refs-mode").addClass("excluded")
             $(".exparser,.visible-in-document-mode").removeClass("excluded")
-            $(".anystyle,.visible-in-refs-mode").addClass("excluded")
-            break
-          case Config.ENGINES.ANYSTYLE:
-            $(".anystyle,.visible-in-refs-mode").addClass("excluded")
-            $(".anystyle,.visible-in-document-mode").removeClass("excluded")
             $(".exparser,.visible-in-refs-mode").addClass("excluded")
-        }
-        break
-      case GUI.DISPLAY_MODES.REFERENCES:
-        switch (Actions.parserEngine) {
-          case Config.ENGINES.EXPARSER:
-            $(".exparser,.visible-in-document-mode").addClass("excluded")
-            $(".exparser,.visible-in-refs-mode").removeClass("excluded")
+            $(".anystyle,.visible-in-refs-mode").addClass("excluded")
             $(".anystyle,.visible-in-document-mode").addClass("excluded")
             break
           case Config.ENGINES.ANYSTYLE:
-            $(".anystyle,.visible-in-document-mode").addClass("excluded")
-            $(".anystyle,.visible-in-refs-mode").removeClass("excluded")
+            $(".anystyle,.visible-in-document-mode").removeClass("excluded")
+            $(".anystyle,.visible-in-refs-mode").addClass("excluded")
+            $(".exparser,.visible-in-refs-mode").addClass("excluded")
             $(".exparser,.visible-in-document-mode").addClass("excluded")
+            break
         }
         break
+      case Annotation.TYPE.PARSER:
+        switch (parserEngine) {
+          case Config.ENGINES.EXPARSER:
+            $(".exparser,.visible-in-refs-mode").removeClass("excluded")
+            $(".exparser,.visible-in-document-mode").addClass("excluded")
+            $(".anystyle,.visible-in-refs-mode").addClass("excluded")
+            $(".anystyle,.visible-in-document-mode").addClass("excluded")
+            break
+          case Config.ENGINES.ANYSTYLE:
+            $(".anystyle,.visible-in-refs-mode").removeClass("excluded")
+            $(".anystyle,.visible-in-document-mode").addClass("excluded")
+            $(".exparser,.visible-in-refs-mode").addClass("excluded")
+            $(".exparser,.visible-in-document-mode").addClass("excluded")
+            break
+        }
+        break
+    }
+    // enable/disable buttons
+    switch (type) {
+      case Annotation.TYPE.FINDER:
+        $(".enabled-if-document").removeClass("ui-state-disabled")
+        $(".enabled-if-refs").addClass("ui-state-disabled")
+        //$("#btn-segmentation").removeClass("active");
+        $("#btn-identification").addClass("active");
+        $("#text-content").addClass("document-view");
+        $("#text-content").removeClass("references-view");
+        break;
+      case Annotation.TYPE.PARSER:
+        $(".enabled-if-document").addClass("ui-state-disabled")
+        $(".enabled-if-refs").removeClass("ui-state-disabled")
+        $("#btn-segmentation").addClass("active");
+        $("#btn-identification").removeClass("active");
+        $("#text-content").addClass("references-view");
+        $("#text-content").removeClass("document-view");
+        break;
     }
   }
 
@@ -1321,7 +1323,7 @@ class GUI {
       throw new Error("Argument must be annotation")
     }
     this.annotation = annotation;
-    Actions.setParserEngine(annotation.constructor.engine)
+    Actions.setParserEngine(annotation.getEngine())
     this.setTextFileName(annotation.getFileName())
     this.setDisplayMode(annotation.type === Annotation.TYPE.FINDER ? GUI.DISPLAY_MODES.DOCUMENT : GUI.DISPLAY_MODES.REFERENCES)
     if (annotation.numPages && annotation.numPages > 0) {
@@ -1497,21 +1499,20 @@ class GUI {
 
   static updateMarkedUpText() {
     let html = $("#text-content").html();
-    let markedUpText = this.getAnnotation().loadFromHtml(html)
-    $("#markup-content").html(markedUpText);
-    switch (this.displayMode) {
-      case GUI.DISPLAY_MODES.DOCUMENT: {
+    let markedUpText = GUI.getAnnotation().loadFromHtml(html)
+    $("#markup-content").html(markedUpText.replace(/</g,"&lt;"));
+    switch (GUI.getAnnotation()?.getType()) {
+      case Annotation.TYPE.FINDER: {
         $("#refs-navigation").toggleClass("hidden", !markedUpText.includes("<ref"));
         $(".enabled-if-refs").toggleClass("ui-state-disabled", !(markedUpText.match(Config.REGEX.TAG)));
         break;
       }
-      case GUI.DISPLAY_MODES.REFERENCES: {
+      case Annotation.TYPE.PARSER: {
         $(".enabled-if-refs").removeClass("ui-state-disabled");
         $(".enabled-if-segmented").toggleClass("ui-state-disabled", !(markedUpText.match(Config.REGEX.TAG)));
         break;
       }
     }
-    return markedUpText;
   }
 
   /**
@@ -1546,24 +1547,7 @@ class GUI {
       return;
     }
     this.displayMode = nextDisplayMode;
-    switch (this.displayMode) {
-      case GUI.DISPLAY_MODES.DOCUMENT:
-        $(".enabled-if-document").removeClass("ui-state-disabled")
-        $("#btn-segmentation").removeClass("active");
-        $("#btn-identification").addClass("active");
-        $("#text-content").addClass("document-view");
-        $("#text-content").removeClass("references-view");
-        break;
-      case GUI.DISPLAY_MODES.REFERENCES:
-        $(".enabled-if-document").addClass("ui-state-disabled")
-        $("#btn-segmentation").addClass("active");
-        $("#btn-identification").removeClass("active");
-        $("#text-content").addClass("references-view");
-        $("#text-content").removeClass("document-view");
-        break;
-      default:
-        throw new Error("Invalid display mode " + nextDisplayMode);
-    }
+    this.update()
     localStorage.setItem(Config.LOCAL_STORAGE.DISPLAY_MODE, this.displayMode);
   }
 
@@ -1722,8 +1706,16 @@ class Annotation {
     this.fileName = fileName
   }
 
+  getEngine() {
+    return this.constructor.engine;
+  }
+
   getFileName() {
     return this.fileName;
+  }
+
+  getType() {
+    return this.constructor.type;
   }
 
   getFileExtension() {
@@ -1797,7 +1789,6 @@ class Annotation {
    * @returns {string}
    */
   _markupToHtml(text) {
-    let html;
     // translate tag names to data-tag attributes
     let tag_names = [];
     let tag_name;
@@ -1809,13 +1800,12 @@ class Annotation {
     }
     this.tags = tag_names;
     for (tag_name of tag_names) {
-      let regex = new RegExp(`<${tag_name}>(.*?)</${tag_name}>`, 'g');
+      let regex = new RegExp(`<${tag_name}>(.*?)</${tag_name}>`, 'gs');
       let replacement = `<span data-tag="${tag_name}">$1</span>`;
       text = text.replace(regex, replacement);
     }
     // convert line breaks to break nodes
-    html = text.replace(/\n/g, "<br>");
-    return html
+    return text.replace(/\n/g, "<br>");
   }
 
   _htmlToMarkup(html) {
@@ -1949,11 +1939,16 @@ class ExparserSegmentationAnnotation extends ExparserExtractionAnnotation {
     return this._markupToHtml(text);
   }
 
+  toMarkup() {
+    return super.toMarkup();
+  }
+
   export() {
-    let textToExport = this.addAuthorTag(this.content)
-      .split("\n")
-      .map(line => `<ref>${line}</ref`)
-      .join("\n");
+    let textToExport = this.content.split("\n")
+      .map(line => this.addAuthorTag(line))
+      .map(line => `<ref>${line}</ref>`)
+      .join("\n")
+      .replace(/&/g,"&amp;")
     return `<?xml version="1.0" encoding="utf-8"?>\n<seganno>\n${textToExport}\n</seganno>`
   }
 
@@ -2098,7 +2093,6 @@ class AnystyleFinderAnnotation extends Annotation {
     let text = lines.join("\n")
     // 2) now transform xml markup to HTML
     let html = super._markupToHtml(text);
-    console.log(html.slice(0,500))
     return html
   }
 
@@ -2145,7 +2139,7 @@ class AnystyleFinderAnnotation extends Annotation {
   }
 
   export() {
-    return super.export();
+    return this.content;
   }
 
 

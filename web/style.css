@@ -180,7 +180,6 @@ nav {
     border-style: solid;
 }
 
-.references-view > [data-tag]:hover,
 #refs-button-grid > [data-tag]:hover {
     padding: 2px;
     box-shadow: 0 0 5px rgba(33,33,33,.8);
