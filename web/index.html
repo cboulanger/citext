@@ -4,15 +4,16 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.12.1/css/all.css" crossorigin="anonymous">
-    <link href="css/bootstrap.min.css" rel="stylesheet">
-    <link href="css/jquery-ui.min.css" rel="stylesheet">
-    <link href="css/css-loader.css" rel="stylesheet">
+    <script src="https://kit.fontawesome.com/9dfbbc7651.js" crossorigin="anonymous"></script>
+    <!--link rel="stylesheet" href="css/fontawesome_all.css"-->
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/jquery-ui.min.css">
+    <link rel="stylesheet" href="css/css-loader.css">
+    <link rel="stylesheet" href="css/toastr.min.css">
     <script src="js/jquery-3.2.1.min.js"></script>
     <script src="scripts.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/toastr.min.js"></script>
-    <link rel="stylesheet" href="css/toastr.min.css">
 </head>
 
 <body>
@@ -43,7 +44,7 @@
         <input type="file" id="btn-upload" style="display:none"
                onchange="Actions.load(); this.value=null; return false;"
                accept="text/plain, application/pdf, application/xml, text/csv, .ttx" multiple/>
-        <!-- model -->
+        <!-- model menu-->
         <div class="btn-group">
             <button id="btn-model"
                     class="btn btn-primary hidden dropdown-toggle"
@@ -55,23 +56,22 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-model" id="model-names">
-                <li><a class="dropdown-item excluded anystyle"
+                <!--<li><a class="dropdown-item excluded anystyle"
                        onclick="Actions.setParserEngine('exparser');" href="#">
                     Use EXparser</a></li>
                 <li><a class="dropdown-item excluded exparser"
                        onclick="Actions.setParserEngine('anystyle');" href="#">
-                    Use AnyStyle</a></li>
+                    Use AnyStyle</a></li>-->
                 <li><a href="#" onclick="Excite.trainCurrentModel()">Train currently selected model</a></li>
                 <li><a href="#" onclick="Excite.evalCurrentModel()">Evaluate currently selected model</a></li>
                 <li role="separator" class="divider"></li>
 
             </ul>
         </div>
-
-        <!-- document view -->
+        <!-- finder menu -->
         <div class="btn-group">
-            <button id="btn-identification" type="button" class="btn btn-primary enabled-if-document"
-                    onclick="Actions.setDisplayMode(DISPLAY_MODES.DOCUMENT)">
+            <button type="button" class="btn btn-primary enabled-if-document"
+                    onclick="Actions.switchToFinder()">
                 <i class="fas fa-search"></i><span class="button-label">Find/Extract</span>
             </button>
             <button data-toggle="dropdown" class="btn btn-primary dropdown-toggle enabled-if-document"
@@ -79,24 +79,21 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-view">
-                <li><a id="btn-run-ocr"
-                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.run_excite_command('ocr');" href="#">
                     Run OCR on PDF</a></li>
-                <li><a id="btn-run-layout"
-                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
-                       onclick="Actions.run_excite_command('layout');" href="#">
+                <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                       onclick="Actions.runCommand(Actions.COMMANDS.TEXT_EXTRACTION);" href="#">
                     Extract text from PDF</a></li>
-                <li><a id="btn-run-exparser"
-                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf exparser"
-                       onclick="Actions.run_excite_command('exparser');" href="#">
+                <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                       onclick="Actions.runCommand(Actions.COMMANDS.FIND_REFERENCES);" href="#">
                     Extract references from PDF</a></li>
             </ul>
         </div>
-        <!-- references view -->
+        <!-- parser menu -->
         <div class="btn-group">
-            <button id="btn-segmentation" type="button" class="btn btn-primary"
-                    onclick="Actions.setDisplayMode(GUI.DISPLAY_MODES.REFERENCES)"
+            <button type="button" class="btn btn-primary ui-state-disabled enabled-if-refs"
+                    onclick="Actions.switchToParser()"
                     aria-haspopup="true" aria-expanded="false">
                 <i class="fas fa-search-plus"></i><span class="button-label">Parse/Segment</span>
             </button>
@@ -108,18 +105,8 @@
                 <li><a id="btn-run-segmentation"
                        class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
                        href="#"
-                       onclick="Actions.run_excite_command('segmentation');">
-                    Auto-segmentation</a></li>
-                <li><a id="btn-switch-surname-given-names"
-                       class="dropdown-item ui-state-disabled enabled-if-refs"
-                       href="#"
-                       onclick="GUI.switchSurnameGivenNames();">
-                    Switch firstname &amp; lastname</a></li>
-                <li><a id="btn-view-citation-data"
-                       class="dropdown-item ui-state-disabled enabled-if-refs"
-                       href="#"
-                       onclick="Actions.previewCitationData();">
-                    Preview citation data</a></li>
+                       onclick="Actions.runCommand(Actions.COMMANDS.PARSE_REFERENCES);">
+                    Tag reference segments</a></li>
             </ul>
         </div>
         <!-- save -->
@@ -165,7 +152,7 @@
 
         <!-- undo -->
         <button id="btn-undo" class="btn btn-default ui-state-disabled" type="button"
-                onclick="Actions.undo();">
+                onclick="GUI.undo();">
             <i class="fas fa-undo"></i><span class="button-label">Undo</span>
         </button>
         <!-- help -->
@@ -254,9 +241,7 @@
 <div class="loader loader-default" id="spinner"></div>
 <!-- context menu -->
 <ul id="context-menu" class="dropdown-menu" role="menu">
-
-    <!-- document mode -->
-
+    <!-- finder mode -->
     <li><a id="btn-ref-part" class="visible-in-document-mode enabled-if-selection exparser"
            onclick="Actions.addTag('ref');" href="#">
         <i class="fas fa-sticky-note"></i>Markup selection as reference
@@ -269,16 +254,12 @@
            onclick="Actions.addTag('oth');" href="#">
         Ignore
     </a></li>
-
     <div class="refs-button-grid anystyle visible-in-document-mode enabled-if-selection">
         <li><a data-tag="reference" onclick="Actions.addTag('reference', true);" href="#">
             Reference
         </a></li>
         <li><a data-tag="meta" onclick="Actions.addTag('meta', true);" href="#">
             Meta
-        </a></li>
-        <li><a data-tag="pages" onclick="Actions.addTag('pages', true);" href="#">
-            Page Number
         </a></li>
         <li><a data-tag="text" onclick="Actions.addTag('text', true);" href="#">
             Text
@@ -293,12 +274,15 @@
             Abstract
         </a></li>
     </div>
-    <!-- references mode -->
+    <!-- parser mode -->
     <div class="refs-button-grid anystyle visible-in-refs-mode enabled-if-selection">
+        <li><a data-tag="citation-number" onclick="Actions.addTag('citation-number');" href="#">
+            Cit.Number
+        </a></li>
         <li><a data-tag="author" onclick="Actions.addTag('author');" href="#">
             Author(s)
         </a></li>
-        <li><a data-tag="year" onclick="Actions.addTag('year');" href="#">
+        <li><a data-tag="date" onclick="Actions.addTag('date');" href="#">
             Date
         </a></li>
         <li><a data-tag="title" onclick="Actions.addTag('title');" href="#">
@@ -399,19 +383,15 @@
     </div>
 
     <!-- visible in all modes -->
-    <li><a id="btn-insert-linebreak" class="visible-in-refs-mode enabled-if-selection"
-           tabindex="-1" onclick="Actions.insertBefore('\n');" href="#">
-        Linebreak
-    </a></li>
-    <li><a id="btn-remove-tag" class="ui-state-disabled enabled-if-selection" tabindex="-1"
+    <li><a class="ui-state-disabled enabled-if-selection" tabindex="-1"
            onclick="Actions.removeTag();" href="#">
         <i class="fas fa-trash"></i>Remove Tag
     </a></li>
-    <li><a id="btn-remove-all-tags" class="ui-state-disabled enabled-if-selection" tabindex="-1"
+    <li><a class="ui-state-disabled enabled-if-selection" tabindex="-1"
            onclick="Actions.removeAllTags();" href="#">
         Remove all tags inside selection
     </a></li>
-    <li><a id="btn-remove-all-tags-in-line" class="ui-state-disabled enabled-if-selection" tabindex="-1"
+    <li><a class="ui-state-disabled enabled-if-selection" tabindex="-1"
            onclick="Actions.removeAllTags(true);" href="#">
         Remove all tags in line(s)
     </a></li>

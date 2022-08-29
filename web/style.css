@@ -167,17 +167,17 @@ nav {
 /* tags eye-candy */
 
 [data-tag] {
-    border: 1px grey dotted;
     position: relative;
     border-radius: 3px;
     padding-right: 2px;
     padding-left: 2px;
     margin-right: 2px;
     margin-bottom: 2px;
+    box-shadow:0 0 0 1px white;
 }
 
-[data-tag]:hover {
-    border-style: solid;
+.references-view > [data-tag]:hover {
+    box-shadow: 0 0 5px rgba(33,33,33,.8);
 }
 
 #refs-button-grid > [data-tag]:hover {
@@ -185,7 +185,7 @@ nav {
     box-shadow: 0 0 5px rgba(33,33,33,.8);
 }
 
-[data-tag]:before {
+.references-view > [data-tag]:before {
     content: attr(data-tag);
     position: absolute;
     left: 0;
@@ -280,6 +280,10 @@ nav {
 }
 
 /* ref segmentation anystyle */
+
+[data-tag="citation-number"] {
+    background-color: #b99a0e;
+}
 
 [data-tag="author"] {
     background-color: #fabd11;

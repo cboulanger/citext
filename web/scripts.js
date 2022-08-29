@@ -1,23 +1,30 @@
-// noinspection JSJQueryEfficiency
+class State {
+  static model = {
+    name: "default"
+  }
+  static zotero = {
+    attachmentPath: null
+  }
+}
 
-let zoteroAttachmentFilepath;
-let modelName = "default"
 
 class Config {
   /* The url of the exparser backend */
-  static SERVER_URL = "/cgi-bin/";
-  /* The url of the server endpoint that proxies the zotero connection server */
-  static ZOTERO_PROXY_URL = Config.SERVER_URL + "zotero/proxy.py";
+  static SERVER_URL = "/cgi-bin/"
+  static URL = {
+    SERVER: "/cgi-bin/",
+    UPLOAD: "/cgi-bin/upload.rb",
+    ZOTERO_PROXY: "/cgi-bin/zotero/proxy.py",
+    LOAD_FROM_URL: "/cgi-bin/load-from-url.py"
+  }
   static ENGINES = {
     ANYSTYLE: "anystyle",
     EXPARSER: "exparser"
   }
   static LOCAL_STORAGE = {
     DOCUMENT: "excite_document",
-    REFERENCES: "excite_references",
     TEXT_FILE_NAME: "excite_text_file_name",
     PDF_IFRAME_SRC: "excite_pdf_iframe_source",
-    DISPLAY_MODE: "excite_display_mode",
     LAST_LOAD_URL: "excite_last_load_url",
     LAST_MODEL_NAME: "excite_last_model_name"
   }
@@ -29,7 +36,8 @@ class Config {
     PUNCTUATION: /\p{P}/gu,
     LAYOUT: /(\t[^\t]+){6}/g,
     EMPTY_NODE: /<[^>]+><\/[^>]+>/g,
-    DATA_TAG_SPAN: /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/gm
+    DATA_TAG_SPAN: /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/gm,
+    PAGE_NUMBER_IN_LINE: /^[0-9]{1,3}|[0-9]{1,3}/
   }
   static KNOWN_IDENTIFIERS = [
     {
@@ -46,14 +54,11 @@ class Config {
 }
 
 class Actions {
-  static parserEngine;
 
-  static setParserEngine(parser) {
-    if (parser === this.parserEngine) {
-      return
-    }
-    GUI.update()
-    this.parserEngine = parser
+  static COMMANDS = {
+    TEXT_EXTRACTION: "extract",
+    FIND_REFERENCES: "find",
+    PARSE_REFERENCES: "parse"
   }
 
   static load() {
@@ -86,7 +91,7 @@ class Actions {
     if (here.host === there.host) {
       res = await fetch(url);
     } else {
-      res = await fetch(`/cgi-bin/load-from-url.py?url=${url}`)
+      res = await fetch(`${Config.URL.LOAD_FROM_URL}?url=${url}`)
     }
     let blob = await res.blob();
     filename = filename || url.split("/").pop();
@@ -137,8 +142,8 @@ class Actions {
         // linux/mac
         s = filepath.split("/");
       }
-      zoteroAttachmentFilepath = s.slice(s.indexOf("storage") + 1).join("/");
-      await this.loadFromUrl("file://zotero-storage/" + zoteroAttachmentFilepath, filename)
+      State.zotero.attachmentPath = s.slice(s.indexOf("storage") + 1).join("/");
+      await this.loadFromUrl("file://zotero-storage/" + State.zotero.attachmentPath, filename)
     } catch (e) {
       alert(e.message);
     } finally {
@@ -166,11 +171,7 @@ class Actions {
     switch (fileType) {
       case "pdf":
       case "application/pdf":
-        GUI.pdfFileName = fileName;
-        GUI.pdfFile = file;
-        let objectURL = URL.createObjectURL(file);
-        GUI.loadPdfFile(objectURL);
-        GUI.setPdfFileName(fileName)
+        GUI.loadPdfFile(file);
         return;
       case "xml":
       case "application/xml":
@@ -219,6 +220,61 @@ class Actions {
     fileReader.readAsText(file, "UTF-8");
   }
 
+  static async runCommand(command) {
+    switch (command) {
+      case Actions.COMMANDS.TEXT_EXTRACTION: {
+        const msg = `Do you want to extract text from the PDF?`
+        if (!confirm(msg)) return
+        const pdfFile = GUI.pdfFile
+        const url = Config.URL.UPLOAD
+        await Utils.upload(pdfFile, url)
+        const content = await Actions.runCgiScript("extract.rb", {filename: pdfFile.name})
+        const filename = pdfFile.name.replace(".pdf", ".ttx")
+        const annoFile = new File([content], filename, {
+          lastModified: 1534584790000,
+          type: "text/plain; encoding=utf-8"
+        });
+        Actions.loadFile(annoFile)
+        break
+      }
+
+      case Actions.COMMANDS.FIND_REFERENCES: {
+        const msg = `Do you want to extract text from the PDF and identify the references?`
+        if (!confirm(msg)) return
+        const pdfFile = GUI.pdfFile
+        const url = Config.URL.UPLOAD
+        await Utils.upload(pdfFile, url)
+        const content = await Actions.runCgiScript("find.rb", {filename: pdfFile.name, model: State.model.name})
+        const filename = pdfFile.name.replace(".pdf", ".ttx")
+        const annoFile = new File([content], filename, {
+          lastModified: 1534584790000,
+          type: "text/plain; encoding=utf-8"
+        });
+        Actions.loadFile(annoFile)
+        break
+      }
+
+      case Actions.COMMANDS.PARSE_REFERENCES: {
+        const annotation = GUI.getAnnotation()
+        if (annotation.getType() !== Annotation.TYPE.PARSER) {
+          alert("Can only parse references, not documents")
+          return
+        }
+        const msg = `Do you want to automatically tag the references?`
+        if (!confirm(msg)) return
+        const params = {
+          refs: annotation.getContent().replace(Config.REGEX.TAG, ""),
+          model: State.model.name
+        }
+        GUI.saveState()
+        const content = await Actions.runCgiScript("parse.rb", params, "post")
+        annotation.load(content)
+        GUI.setHtmlContent(annotation.toHtml())
+        break
+      }
+    }
+  }
+
   static addTag(tag_name, wholeLine = false) {
     GUI.addTag(tag_name, wholeLine);
   }
@@ -235,6 +291,7 @@ class Actions {
     if (!el) return;
     $(el).contents().unwrap();
     GUI.updateMarkedUpText();
+
   }
 
   static removeAllTags(wholeLine = false) {
@@ -261,7 +318,7 @@ class Actions {
       }
       let replacementText = container.innerHTML
         .replace(Config.REGEX.BR, "\n")
-        .replace(Config.REGEX.TAG, "");
+        .replace(Config.REGEX.TAG, "")
       GUI.replaceSelection(replacementText);
     }
     GUI.updateMarkedUpText();
@@ -282,16 +339,13 @@ class Actions {
     return result;
   }
 
-  static previewCitationData() {
-    let refs = GUI
-      .getTextToExport()
-      .split("\n")
-      .map(line => Zotero.convertRefsToJson(line));
-    let html = `<pre>${JSON.stringify(refs, null, 2)}</pre>`;
-    $("#citation-data-preview-body").html(html);
-    $("#modal-citation-data-preview").show();
-  }
 
+  /**
+   * @deprecated
+   * @param name
+   * @param params
+   * @returns {Promise<Response>}
+   */
   static async run_cgi_script(name, params) {
     let querystring = Object.keys(params).map(key => key + '=' + params[key]).join('&');
     const url = `${Config.SERVER_URL}/${name}?${querystring}`
@@ -303,6 +357,47 @@ class Actions {
     }
   }
 
+  /**
+   * Runs a cgi script on the server
+   * @param name
+   * @param params
+   * @param method
+   * @returns {Promise<any>}
+   */
+  static async runCgiScript(name, params={}, method="get") {
+    let response;
+    try {
+      if (method.toLowerCase()==="post") {
+        // POST
+        const url = `${Config.SERVER_URL}/${name}`
+        response = await fetch(url, {
+          method: "post",
+          body: new URLSearchParams(params),
+          headers: {
+            "Accept": "application/javascript"
+          }
+        })
+      } else {
+        // GET
+        const url = `${Config.SERVER_URL}/${name}?${new URLSearchParams(params)}`
+        response = await fetch(url, {
+          headers: {
+            "Accept": "application/javascript"
+          }
+        })
+      }
+      return await response.json()
+    } catch (e) {
+      console.error(e)
+      alert(e.message)
+    }
+  }
+
+  /**
+   * @deprecated
+   * @param command
+   * @returns {Promise<void>}
+   */
   static async run_excite_command(command) {
     let confirmMsg;
     switch (command) {
@@ -340,7 +435,6 @@ class Actions {
       filename = GUI.getAnnotation().getFileName().split('.').slice(0, -1).join(".") + ".csv";
     } else if (GUI.pdfFile) {
       file = GUI.pdfFile;
-      filename = GUI.pdfFileName;
     }
     let filenameNoExt = filename.split('.').slice(0, -1).join(".");
     if (file) {
@@ -377,7 +471,7 @@ class Actions {
     // layout
     if (command === "layout" || command === "exparser" || command === "ocr") {
       GUI.showSpinner("Analyzing Layout...");
-      url = `${Config.SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}&model_name=${modelName}`
+      url = `${Config.SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}&model_name=${State.model.name}`
       try {
         result = this.checkResult(await (await fetch(url)).json());
       } catch (e) {
@@ -400,7 +494,7 @@ class Actions {
     // reference identification
     if (command === "exparser") {
       GUI.showSpinner("Identifying references, this will take a while...");
-      url = `${Config.SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}&model_name=${modelName}`
+      url = `${Config.SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}&model_name=${State.model.name}`
       try {
         result = this.checkResult(await (await fetch(url)).json());
       } catch (e) {
@@ -415,7 +509,7 @@ class Actions {
     // segmentation
     if (command === "segmentation") {
       GUI.showSpinner("Segmenting references...");
-      url = `${Config.SERVER_URL}/excite.py?command=segmentation&file=${filenameNoExt}&model_name=${modelName}`;
+      url = `${Config.SERVER_URL}/excite.py?command=segmentation&file=${filenameNoExt}&model_name=${State.model.name}`;
       try {
         result = await (await fetch(url)).json();
         this.checkResult(result)
@@ -502,7 +596,7 @@ class Actions {
   static export() {
     const annotation = GUI.getAnnotation()
     if (!annotation) {
-      alert ("No annotation loaded")
+      alert("No annotation loaded")
       return
     }
     Utils.download(annotation.export(), annotation.getFileName());
@@ -624,89 +718,55 @@ class Actions {
   }
 
   static async save() {
-    let filename = GUI.getAnnotation().getFileName();
-    if (!filename) return;
-    let data;
-    let type;
-    let filenameNoExt = filename.split('.').slice(0, -1).join(".");
-    switch (GUI.displayMode) {
-      case GUI.DISPLAY_MODES.DOCUMENT:
-        data = GUI.getTextToExport();
-        localStorage.setItem(Config.LOCAL_STORAGE.DOCUMENT, data);
-        localStorage.setItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME, filename);
-        if (this.parserEngine === "exparser") {
-          type = "layout"
-          break
-        }
-        type = "anystyle_finder";
-        data = this._export().textToExport;
-        break;
-      case GUI.DISPLAY_MODES.REFERENCES:
-        data = GUI.getTextToExport(false);
-        localStorage.setItem(Config.LOCAL_STORAGE.REFERENCES, data);
-        filename = filenameNoExt + ".xml";
-        if (this.parserEngine === "exparser") {
-          type = "ref_xml"
-          break
-        }
-        type = "anystyle_parser"
-        data = this._export().textToExport;
-        break;
-    }
-    if (!confirm(`Save training data to model '${modelName}?'`)) return
+    const annotation = GUI.getAnnotation()
+    if (!annotation) return;
+    const filename = annotation.getFileName();
+    const type = annotation.getType()
+    const engine = annotation.getEngine()
+    const data = GUI.getTextToExport();
+    if (!confirm(`Save training data to model '${State.model.name}?'`)) return
     GUI.showSpinner(`Saving training data.`);
-    let body = JSON.stringify({filename, type, data, modelName}) + "\n\n";
-    let result = await (await fetch(`${Config.SERVER_URL}/save.py`, {
+    let body = JSON.stringify({filename, type, engine, data, modelName: State.model.name}) + "\n\n";
+    let response = await fetch(`${Config.SERVER_URL}/save.py`, {
       method: 'post', body
-    })).json();
+    })
     GUI.hideSpinner();
+    let result = await response.json()
     if (result.error) alert(result.error);
   }
 
-  static undo() {
-    if (this.versions.length) {
-      $("#text-content").html(this.versions.pop());
-      GUI.updateMarkedUpText();
+
+  static switchToFinder() {
+    const annotation = GUI.getAnnotation();
+    if (!annotation || annotation.getType() === Annotation.TYPE.FINDER) {
+      return
     }
-    if (!this.versions.length) {
-      $("#btn-undo").addClass("ui-state-disabled")
+    if (this.__finderAnnotation) {
+      if (GUI.versions.length) {
+        const msg = "This will discard the current citation segmentation markup and return to the document. Proceed?"
+        if (!confirm(msg)) {
+          return
+        }
+      }
     }
+    GUI.loadAnnotation(this.__finderAnnotation)
   }
 
-  static setDisplayMode(nextDisplayMode) {
-    if (this.displayMode === nextDisplayMode) {
-      return;
-    }
-    let text
-    switch (this.displayMode) {
-      case GUI.DISPLAY_MODES.DOCUMENT:
-        let document = GUI.getTextToExport();
-        localStorage.setItem(Config.LOCAL_STORAGE.DOCUMENT, document);
-        text = this.extractReferences(document);
-        localStorage.setItem(Config.LOCAL_STORAGE.REFERENCES, text);
-        break;
-      case GUI.DISPLAY_MODES.REFERENCES:
-        if (this.versions.length > 0) {
-          let confirmMsg = `This will switch the display to ${nextDisplayMode} view and discard any changes. Do you want to proceed?`;
-          if (!confirm(confirmMsg)) {
-            $("#btn-identification").removeClass("active");
-            return;
-          }
-        }
-        text = localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT) || "";
-        break;
-    }
-    GUI.setDisplayMode(nextDisplayMode);
-    GUI.setHtmlContent(text);
-    this.versions = [];
-    $("#btn-undo").addClass("ui-state-disabled");
 
+  static switchToParser() {
+    const annotation = GUI.getAnnotation();
+    if (!annotation || annotation.getType() === Annotation.TYPE.PARSER) {
+      return
+    }
+    // save the state of the finder annotation
+    this.__finderAnnotation = annotation
+    GUI.loadAnnotation(annotation.toParserAnnotation())
   }
 
   static changeModel(name) {
-    $("#btn-model-" + modelName).removeClass("btn-dropdown-radio-selected");
-    modelName = name;
-    $("#btn-model-" + modelName).addClass("btn-dropdown-radio-selected");
+    $("#btn-model-" + State.model.name).removeClass("btn-dropdown-radio-selected");
+    State.model.name = name;
+    $("#btn-model-" + State.model.name).addClass("btn-dropdown-radio-selected");
     localStorage.setItem(Config.LOCAL_STORAGE.LAST_MODEL_NAME, name);
   }
 }
@@ -749,7 +809,7 @@ class Zotero {
     const id = setTimeout(timeoutFunc, this.timeout);
     let result;
     try {
-      let response = await fetch(Config.ZOTERO_PROXY_URL + "?" + endpoint, {
+      let response = await fetch(Config.URL.ZOTERO_PROXY + "?" + endpoint, {
         method: postData ? "POST" : "GET",
         cache: 'no-cache',
         signal: this.controller.signal,
@@ -954,6 +1014,30 @@ class Zotero {
 
 class Utils {
 
+  static async upload(file, url) {
+    if (!(file instanceof File)) {
+      throw new TypeError("No File object")
+    }
+    let formData = new FormData();
+    formData.append("file", file, file.name);
+    GUI.showSpinner("Uploading...");
+    let result, json
+    try {
+      result = await fetch(url, {
+        method: 'post',
+        body: formData,
+        headers: {"Accept": "application/json"}
+      })
+      json = await result.json()
+    } catch (e) {
+      return alert(e.message);
+      console.log(result)
+    } finally {
+      GUI.hideSpinner();
+    }
+    return json
+  }
+
   static download(data, filename) {
     const file = new Blob([data], {type: 'text/xml;charset=utf-8;'});
     const a = document.createElement("a");
@@ -971,11 +1055,11 @@ class Utils {
 
 class Excite {
   static async trainCurrentModel() {
-    await Actions.run_cgi_script("train.py", {id: Config.channel_id, model_name: modelName})
+    await Actions.run_cgi_script("train.py", {id: Config.channel_id, model_name: State.model.name})
   }
 
   static async evalCurrentModel() {
-    await Actions.run_cgi_script("eval.py", {id: Config.channel_id, model_name: modelName})
+    await Actions.run_cgi_script("eval.py", {id: Config.channel_id, model_name: State.model.name})
   }
 }
 
@@ -990,7 +1074,6 @@ class GUI {
     REFERENCES: "references"
   }
   static pdfFile;
-  static pdfFileName;
 
   static init() {
     // internal vars
@@ -1001,6 +1084,7 @@ class GUI {
     this.__pdfJsApplication = null;
 
     $(() => {
+      this.resetVersions()
       this._setupEventListeners();
       GUI.toggleMarkedUpView(false);
       let hash = (new URL(document.URL)).hash;
@@ -1201,48 +1285,29 @@ class GUI {
   }
 
   static _hasTextInLocalStorage() {
-    return Boolean(localStorage.getItem(Config.LOCAL_STORAGE.DISPLAY_MODE)) &&
-      (Boolean(localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT)) ||
-        Boolean(localStorage.getItem(Config.LOCAL_STORAGE.REFERENCES)));
+    return Boolean(localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT));
   }
 
   static _loadTextFromLocalStorage() {
-    let savedDisplayMode = localStorage.getItem(Config.LOCAL_STORAGE.DISPLAY_MODE);
-    let savedTextFileName = localStorage.getItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME);
-      let text;
-    if (savedDisplayMode) {
-      switch (savedDisplayMode) {
-        case GUI.DISPLAY_MODES.DOCUMENT:
-          text = localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT);
-          break;
-        case GUI.DISPLAY_MODES.REFERENCES:
-          text = localStorage.getItem(Config.LOCAL_STORAGE.REFERENCES);
-          break;
-        default:
-          savedDisplayMode = GUI.DISPLAY_MODES.DOCUMENT;
-          text = "";
-          break;
-      }
-      GUI.setDisplayMode(savedDisplayMode);
-      if (text) {
-        let type = savedTextFileName.endsWith(".xml") ? "text/xml" : "text/plain"
-        let file = new File([text], savedTextFileName, {
-          lastModified: 1534584790000,
-          type: `${type};charset=utf8`
-        });
-        Actions.loadFile(file)
-        return true;
-      }
+    let filename = localStorage.getItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME);
+    let content = localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT);
+    if (filename && content) {
+      let type = filename.endsWith(".xml") ? "text/xml" : "text/plain"
+      let file = new File([content], filename, {
+        lastModified: 1534584790000,
+        type: `${type};charset=utf8`
+      });
+      Actions.loadFile(file)
+      return true;
     }
-    return false;
   }
 
-  static update() {
+  static updateButtons() {
     const annotation = GUI.getAnnotation()
     if (!annotation) return
     const type = annotation.getType()
     const parserEngine = annotation.getEngine()
-    // Context menu entries
+    // menu entries
     switch (parserEngine) {
       case Config.ENGINES.EXPARSER:
         $(`li > a.exparser`).removeClass("excluded")
@@ -1253,38 +1318,38 @@ class GUI {
         $(`li > a.anystyle`).removeClass("excluded")
         break
     }
-    // visibility of buttons
+    // visibility of context menu buttons
     // refactor this with .toggleClass and boolean conditions
     switch (type) {
       case Annotation.TYPE.FINDER:
         switch (parserEngine) {
           case Config.ENGINES.EXPARSER:
-            $(".exparser,.visible-in-document-mode").removeClass("excluded")
-            $(".exparser,.visible-in-refs-mode").addClass("excluded")
-            $(".anystyle,.visible-in-refs-mode").addClass("excluded")
-            $(".anystyle,.visible-in-document-mode").addClass("excluded")
+            $(".exparser.visible-in-document-mode").removeClass("excluded")
+            $(".exparser.visible-in-refs-mode").addClass("excluded")
+            $(".anystyle.visible-in-refs-mode").addClass("excluded")
+            $(".anystyle.visible-in-document-mode").addClass("excluded")
             break
           case Config.ENGINES.ANYSTYLE:
-            $(".anystyle,.visible-in-document-mode").removeClass("excluded")
-            $(".anystyle,.visible-in-refs-mode").addClass("excluded")
-            $(".exparser,.visible-in-refs-mode").addClass("excluded")
-            $(".exparser,.visible-in-document-mode").addClass("excluded")
+            $(".anystyle.visible-in-document-mode").removeClass("excluded")
+            $(".anystyle.visible-in-refs-mode").addClass("excluded")
+            $(".exparser.visible-in-refs-mode").addClass("excluded")
+            $(".exparser.visible-in-document-mode").addClass("excluded")
             break
         }
         break
       case Annotation.TYPE.PARSER:
         switch (parserEngine) {
           case Config.ENGINES.EXPARSER:
-            $(".exparser,.visible-in-refs-mode").removeClass("excluded")
-            $(".exparser,.visible-in-document-mode").addClass("excluded")
-            $(".anystyle,.visible-in-refs-mode").addClass("excluded")
-            $(".anystyle,.visible-in-document-mode").addClass("excluded")
+            $(".exparser.visible-in-refs-mode").removeClass("excluded")
+            $(".exparser.visible-in-document-mode").addClass("excluded")
+            $(".anystyle.visible-in-refs-mode").addClass("excluded")
+            $(".anystyle.visible-in-document-mode").addClass("excluded")
             break
           case Config.ENGINES.ANYSTYLE:
-            $(".anystyle,.visible-in-refs-mode").removeClass("excluded")
-            $(".anystyle,.visible-in-document-mode").addClass("excluded")
-            $(".exparser,.visible-in-refs-mode").addClass("excluded")
-            $(".exparser,.visible-in-document-mode").addClass("excluded")
+            $(".anystyle.visible-in-refs-mode").removeClass("excluded")
+            $(".anystyle.visible-in-document-mode").addClass("excluded")
+            $(".exparser.visible-in-refs-mode").addClass("excluded")
+            $(".exparser.visible-in-document-mode").addClass("excluded")
             break
         }
         break
@@ -1295,18 +1360,35 @@ class GUI {
         $(".enabled-if-document").removeClass("ui-state-disabled")
         $(".enabled-if-refs").addClass("ui-state-disabled")
         //$("#btn-segmentation").removeClass("active");
-        $("#btn-identification").addClass("active");
+        //$("#btn-identification").addClass("active");
+        //$("#btn-identification").removeClass("ui-state-disabled")
         $("#text-content").addClass("document-view");
         $("#text-content").removeClass("references-view");
         break;
       case Annotation.TYPE.PARSER:
-        $(".enabled-if-document").addClass("ui-state-disabled")
+        //$(".enabled-if-document").addClass("ui-state-disabled")
         $(".enabled-if-refs").removeClass("ui-state-disabled")
-        $("#btn-segmentation").addClass("active");
-        $("#btn-identification").removeClass("active");
+        //$("#btn-segmentation").addClass("active");
+        //$("#btn-identification").removeClass("active");
         $("#text-content").addClass("references-view");
         $("#text-content").removeClass("document-view");
         break;
+    }
+  }
+
+  static resetVersions() {
+    this.versions = []
+    $("#btn-undo").addClass("ui-state-disabled")
+  }
+
+
+  static undo() {
+    if (this.versions.length) {
+      $("#text-content").html(this.versions.pop());
+      GUI.updateMarkedUpText();
+    }
+    if (!this.versions.length) {
+      this.resetVersions()
     }
   }
 
@@ -1322,10 +1404,17 @@ class GUI {
     if (!(annotation instanceof Annotation)) {
       throw new Error("Argument must be annotation")
     }
+    switch (annotation.getType()) {
+      case Annotation.TYPE.FINDER:
+        this.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT)
+        break;
+      case Annotation.TYPE.PARSER:
+        this.setDisplayMode(GUI.DISPLAY_MODES.REFERENCES)
+        $(".enabled-if-document").toggleClass("ui-state-disabled", this.getAnnotation()?.getType() !== Annotation.TYPE.FINDER)
+        break
+    }
     this.annotation = annotation;
-    Actions.setParserEngine(annotation.getEngine())
     this.setTextFileName(annotation.getFileName())
-    this.setDisplayMode(annotation.type === Annotation.TYPE.FINDER ? GUI.DISPLAY_MODES.DOCUMENT : GUI.DISPLAY_MODES.REFERENCES)
     if (annotation.numPages && annotation.numPages > 0) {
       $("#label-page-number").html("1");
       $(".visible-if-pages").removeClass("hidden").removeClass("excluded");
@@ -1333,34 +1422,19 @@ class GUI {
       $("#label-page-number").html("");
       $(".visible-if-pages").addClass("hidden");
     }
+    this.resetVersions()
     this.setHtmlContent(annotation.toHtml())
-    this.saveToLocalStorage()
   }
 
   static saveToLocalStorage() {
-    let text;
-    switch (GUI.displayMode) {
-      case GUI.DISPLAY_MODES.DOCUMENT:
-        text = GUI.getTextToExport();
-        localStorage.setItem(Config.LOCAL_STORAGE.DOCUMENT, text);
-        break;
-      case GUI.DISPLAY_MODES.REFERENCES:
-        text = GUI.getTextToExport();
-        localStorage.setItem(Config.LOCAL_STORAGE.REFERENCES, text);
-        break;
-    }
+    const annotation = this.getAnnotation()
+    if (!annotation) return
+    localStorage.setItem(Config.LOCAL_STORAGE.DOCUMENT, annotation.export());
     localStorage.setItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME, GUI.getAnnotation().getFileName());
-    localStorage.setItem(Config.LOCAL_STORAGE.DISPLAY_MODE, GUI.displayMode);
   }
 
   static setTextFileName(filename) {
-    $(".enabled-if-document").addClass("ui-state-disabled");
     $("#text-label").html(filename);
-  }
-
-  static setPdfFileName(filename) {
-    GUI.pdfFileName = filename
-    $("#pdf-label").html(filename);
   }
 
   static removeTextFile() {
@@ -1375,31 +1449,32 @@ class GUI {
     this.versions = [];
     localStorage.removeItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME);
     localStorage.removeItem(Config.LOCAL_STORAGE.DOCUMENT);
-    localStorage.removeItem(Config.LOCAL_STORAGE.REFERENCES);
     localStorage.removeItem(Config.LOCAL_STORAGE.LAST_LOAD_URL);
     document.location.href = document.URL.replace(/#.*$/, "#");
     GUI.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT);
     this.toggleMarkedUpView(false);
   }
 
-  static loadPdfFile(objectURL) {
+  static loadPdfFile(file) {
+    GUI.pdfFile = file;
+    let objectURL = URL.createObjectURL(file);
     const pdfiframe = $("#pdfiframe");
     pdfiframe.on("load", GUI._onPdfIframeLoaded);
     pdfiframe.prop("src", "web/viewer.html?file=" + objectURL);
     GUI.showPdfView(true);
+    $("#pdf-label").html(file.name);
     this.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT);
-    $(".enabled-if-document").removeClass("ui-state-disabled");
-    $(".enabled-if-pdf").removeClass("ui-state-disabled");
+    $(".enabled-if-pdf,.enabled-if-document").removeClass("ui-state-disabled");
     $(".visible-if-pdf").addClass("hidden");
   }
 
   static removePdfFile() {
     $("pdf-label").html("");
     document.getElementById("pdfiframe").src = 'about:blank';
-    zoteroAttachmentFilepath = null;
-    GUI.pdfFileName = "";
+    State.zotero.attachmentPath = null;
     $(".enabled-if-pdf").addClass("ui-state-disabled");
     $(".visible-if-pdf").addClass("hidden");
+    $("#pdf-label").html("");
     localStorage.removeItem(Config.LOCAL_STORAGE.LAST_LOAD_URL);
     document.location.href = document.URL.replace(/#.*$/, "#");
     GUI.showPdfView(false);
@@ -1437,14 +1512,14 @@ class GUI {
     let htmlContentNode = $("#text-content")
     htmlContentNode.html(html);
     htmlContentNode.scrollTop(0);
-    this.versions = [html];
     // select page in PDF if available
     $("#text-content > .page-marker").on("click", e => {
       if (this.__pdfJsApplication) {
         this.goToPdfPage(parseInt((e.target.dataset.page)))
       }
     });
-    this.updateMarkedUpText();
+    this.updateButtons();
+    this.updateMarkedUpText()
     this.__currentRefNode = null;
     // enable buttons
     $(".view-text-buttons").show();
@@ -1499,20 +1574,21 @@ class GUI {
 
   static updateMarkedUpText() {
     let html = $("#text-content").html();
-    let markedUpText = GUI.getAnnotation().loadFromHtml(html)
-    $("#markup-content").html(markedUpText.replace(/</g,"&lt;"));
+    let markedUpText = GUI.getAnnotation().loadFromHtml(html).replace(Config.REGEX.EMPTY_NODE, "")
+    $("#markup-content").html(markedUpText.replace(/</g, "&lt;"));
     switch (GUI.getAnnotation()?.getType()) {
       case Annotation.TYPE.FINDER: {
         $("#refs-navigation").toggleClass("hidden", !markedUpText.includes("<ref"));
-        $(".enabled-if-refs").toggleClass("ui-state-disabled", !(markedUpText.match(Config.REGEX.TAG)));
+        $(".enabled-if-refs").toggleClass("ui-state-disabled", !(html.match(Config.REGEX.SPAN)));
         break;
       }
       case Annotation.TYPE.PARSER: {
         $(".enabled-if-refs").removeClass("ui-state-disabled");
-        $(".enabled-if-segmented").toggleClass("ui-state-disabled", !(markedUpText.match(Config.REGEX.TAG)));
+        $(".enabled-if-segmented").toggleClass("ui-state-disabled", !(html.match(Config.REGEX.SPAN)));
         break;
       }
     }
+    GUI.saveToLocalStorage()
   }
 
   /**
@@ -1547,8 +1623,7 @@ class GUI {
       return;
     }
     this.displayMode = nextDisplayMode;
-    this.update()
-    localStorage.setItem(Config.LOCAL_STORAGE.DISPLAY_MODE, this.displayMode);
+    this.updateButtons()
   }
 
   static _showPopupOnSelect(e) {
@@ -1675,6 +1750,7 @@ class GUI {
   static saveState() {
     this.versions.push($("#text-content").html());
     $("#btn-undo").removeClass("ui-state-disabled")
+    this.saveToLocalStorage()
   }
 
   static switchSurnameGivenNames() {
@@ -1706,6 +1782,10 @@ class Annotation {
     this.fileName = fileName
   }
 
+  load(text) {
+    throw new Error("Implemented by subclass")
+  }
+
   getEngine() {
     return this.constructor.engine;
   }
@@ -1722,10 +1802,19 @@ class Annotation {
     return this.constructor.fileExtension;
   }
 
-  toHtml() {
-    throw new Error("Implemented by subclass")
+  getContent() {
+    return this.content
   }
 
+  update
+
+  setContent(content) {
+    this.content = content;
+  }
+
+  toHtml() {
+    return this._markupToHtml(this.getContent());
+  }
 
   /**
    * Returns the marked-up text. This is an internal representation, to
@@ -1744,6 +1833,18 @@ class Annotation {
    */
   export() {
     return this.toMarkup()
+  }
+
+  extractReferences() {
+    throw new Error("Implemented by subclass")
+  }
+
+  toParserAnnotation() {
+    throw new Error("Implemented by subclass")
+  }
+
+  toFinderAnnotation() {
+    throw new Error("Implemented by subclass")
   }
 
   /**
@@ -1907,6 +2008,18 @@ class ExparserExtractionAnnotation extends Annotation {
     }
     return markedUpText
   }
+
+  extractReferences() {
+    return this.getContent()
+  }
+
+  toParserAnnotation() {
+    return new AnystyleParserAnnotation(this.extractReferences(), this.getFileName().replace(/.ttx/, ".xml"))
+  }
+
+  toFinderAnnotation() {
+    return this;
+  }
 }
 
 class ExparserSegmentationAnnotation extends ExparserExtractionAnnotation {
@@ -1917,14 +2030,8 @@ class ExparserSegmentationAnnotation extends ExparserExtractionAnnotation {
     while (content.match(/\n\n/)) {
       content = content.replace(/\n\n/g, "\n");
     }
-    super(content, fileName);
-    this.numRefs = 0
-  }
-
-  toHtml() {
-    let text = this.content;
-    if (text.startsWith("<?xml")) {
-      let textLines = text.split("\n");
+    if (content.startsWith("<?xml")) {
+      let textLines = content.split("\n");
       // remove root node
       textLines.splice(0, 2);
       textLines.splice(-1, 1);
@@ -1933,11 +2040,13 @@ class ExparserSegmentationAnnotation extends ExparserExtractionAnnotation {
         .map(line => line
           .replace(/<\/?author>/g, '')
           .replace(/<\/?ref>/g, ''));
-      text = textLines.join("\n");
+      content = textLines.join("\n");
     }
-    this.numRefs = text.split("\n").length
-    return this._markupToHtml(text);
+    super(content, fileName);
+    this.numRefs = content.split("\n").length
+
   }
+
 
   toMarkup() {
     return super.toMarkup();
@@ -1948,7 +2057,7 @@ class ExparserSegmentationAnnotation extends ExparserExtractionAnnotation {
       .map(line => this.addAuthorTag(line))
       .map(line => `<ref>${line}</ref>`)
       .join("\n")
-      .replace(/&/g,"&amp;")
+      .replace(/&/g, "&amp;")
     return `<?xml version="1.0" encoding="utf-8"?>\n<seganno>\n${textToExport}\n</seganno>`
   }
 
@@ -2040,7 +2149,7 @@ class AnystyleFinderAnnotation extends Annotation {
     // 1) convert it to xml-style tags
     let lines = this.content.split('\n');
     let ttx_curr_tag;
-    let ttx_last_tag_before_blank;
+    let ttx_after_blank = false
     for (let i = 0; i < lines.length; i++) {
       let line = lines[i]
       let pipe_idx = line.indexOf("|");
@@ -2060,28 +2169,30 @@ class AnystyleFinderAnnotation extends Annotation {
           if (ttx_curr_tag) {
             lines[i - 1] += `</${ttx_curr_tag}>`
           }
-          lines[i] = ""
-          ttx_last_tag_before_blank = ttx_curr_tag
+          lines[i] = "<blank></blank>"
+          ttx_after_blank = true
           continue
         case "":
-          tag = ttx_curr_tag || ttx_last_tag_before_blank || "text"
+          tag = ttx_curr_tag || "text"
           break
         case "ref":
           tag = "reference"
           break
       }
-      ttx_last_tag_before_blank = tag
-      if (tag !== ttx_curr_tag) {
+      if (tag !== ttx_curr_tag || ttx_after_blank) {
         line = ""
-        if (ttx_curr_tag) {
+        if (ttx_curr_tag && !ttx_after_blank) {
           lines[i - 1] += `</${ttx_curr_tag}>`
         }
-        if (tag === "pages") {
-          this.numPages++;
-          line += `<div class="page-marker" data-page="${this.numPages}"></div>`;
+        if (tag === "meta") {
+          if (line.match(Config.REGEX.PAGE_NUMBER_IN_LINE)) {
+            this.numPages++;
+            line += `<div class="page-marker" data-page="${this.numPages}"></div>`;
+          }
         }
         line += `<${tag}>${text}`
         ttx_curr_tag = tag
+        ttx_after_blank = false
       }
       if (i === lines.length - 1) {
         if (ttx_curr_tag) {
@@ -2092,8 +2203,7 @@ class AnystyleFinderAnnotation extends Annotation {
     }
     let text = lines.join("\n")
     // 2) now transform xml markup to HTML
-    let html = super._markupToHtml(text);
-    return html
+    return super._markupToHtml(text);
   }
 
   loadFromHtml(html) {
@@ -2142,31 +2252,72 @@ class AnystyleFinderAnnotation extends Annotation {
     return this.content;
   }
 
+  extractReferences() {
+    let in_ref = false
+    let is_ref = line => {
+      let m = line.match(/^(\S+)\s+\| ?/)
+      if (m) {
+        switch (m[1].trim()) {
+          case "ref":
+            in_ref = true
+            return true
+          case "":
+            return in_ref;
+          default:
+            in_ref = false
+            return false
+        }
+      }
+    }
+    return this.getContent()
+      .split("\n")
+      .filter(is_ref)
+      .map(line => line.replace(/^.+\| ?/, ""))
+      .join("\n")
+  }
 
+  toParserAnnotation() {
+    return new AnystyleParserAnnotation(this.extractReferences(), this.getFileName().replace(/.ttx/, ".xml"))
+  }
+
+  toFinderAnnotation() {
+    return this;
+  }
 }
 
-class AnystyleParserAnnotation extends AnystyleFinderAnnotation {
+class AnystyleParserAnnotation extends Annotation {
   static type = Annotation.TYPE.PARSER;
+  static engine = Config.ENGINES.ANYSTYLE;
   static fileExtension = "xml";
 
   constructor(content, fileName) {
-    let lines = content.split("\n");
-    //remove xml declaration and root node
-    lines.splice(0, 2);
-    lines.splice(-1, 1);
-    content = lines.join(" ");
-    // remove enclosing <sequence>tags
-    content = content
-      .replace(/<sequence>/g, "")
-      .replace(/<\/sequence>/g, "\n")
     super(content, fileName);
+    this.load(content)
+  }
+
+  load(content) {
+    if (content.startsWith("<?xml")) {
+      let lines = content.split("\n");
+      //remove xml declaration and root node
+      lines.splice(0, 2);
+      lines.splice(-1, 1);
+      content = lines
+        .map(line => line.trim())
+        .join("");
+      // remove enclosing <sequence>tags
+      content = content
+        .replace(/ *<sequence> */g, "")
+        .replace(/ *<\/sequence> */g, "\n")
+    }
+    this.content = content
     this.numRefs = content.split("\n").length
   }
 
   export() {
     let textToExport = this.content
       .split("\n")
-      .map(line => `  <sequence>\n    ${line.replace(/></, ">\n    <")}\n  </sequence`)
+      .map(line => `<sequence>${line}</sequence>`)
+      .map(line => line.replace(/(<\/[^>]+>)([^<]*)(<[^>/]+>)/g, "$2$1$3"))
       .join("\n");
     return `<?xml version="1.0" encoding="utf-8"?>\n<dataset>\n${textToExport}\n</dataset>`
   }
