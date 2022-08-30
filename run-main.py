@@ -17,12 +17,6 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Run exparser tools.', prog="")
     subcommands = parser.add_subparsers()
 
-    # layout
-    p = subcommands.add_parser("layout", help="Extract layout information from PDF files")
-    p.add_argument("--input-dir", "-i", help="The directory containing the PDFs")
-    p.add_argument("--output-dir", "-o", help="The directory into which to save the layout files")
-    p.set_defaults(command="layout", func_name="call_run_layout_extractor")
-
     # model
     model_parser = subcommands.add_parser("model", help="Tools to work with models")
     model_subcommands = model_parser.add_subparsers()
@@ -57,22 +51,6 @@ if __name__ == "__main__":
     p.add_argument("--non-interactive", "-I", action="store_true", help="Do not ask for confirmation")
     p.set_defaults(command="model_merge")
 
-    # layout
-
-    # exparser = extraction
-    p = subcommands.add_parser("exparser", help="Run extraction & segmentation")
-    p.add_argument("model_name", type=str, help="The name of the model to use", default="default")
-    p.add_argument("--input-base-dir", "-d", type=str, help="The parent directory of the workflow folders",
-                   default=None)
-    p.set_defaults(command="extraction")
-
-    # segmentation
-    p = subcommands.add_parser("segmentation", help="Run segmentation")
-    p.add_argument("model_name", type=str, help="The name of the model to use", default="default")
-    p.add_argument("--input-base-dir", "-d", type=str, help="The parent directory of the workflow folders",
-                   default=None)
-    p.set_defaults(command="segmentation")
-
     # match
     match_parser = subcommands.add_parser("match", help="Commands to match the extracted references against databases")
     match_subcommands = match_parser.add_subparsers()
@@ -82,68 +60,6 @@ if __name__ == "__main__":
     p.add_argument("--input-base-dir", "-d", type=str, help="The parent directory of the workflow folders",
                    default=None)
     p.set_defaults(command="match_crossref")
-
-    # train
-    train_parser = subcommands.add_parser("train", help="Commands to train the models")
-    train_subcommands = train_parser.add_subparsers()
-
-    # train extraction
-    p = train_subcommands.add_parser("extraction", help="Train the extraction model")
-    p.add_argument("model_name", type=str, help="The name of the model to use", default="default")
-    p.add_argument("--version", "-v", type=str, help="The exparser engine version to use for training", default=None)
-    p.set_defaults(command="training", func_name="call_extraction_training")
-
-    # train segmentation
-    p = train_subcommands.add_parser("segmentation", help="Train the segmentation model")
-    p.add_argument("model_name", type=str, help="The name of the model to use", default="default")
-    p.add_argument("--version", "-v", type=str, help="The exparser engine version to use for training", default=None)
-    p.set_defaults(command="training", func_name="call_segmentation_training")
-
-    # train completeness
-    p = train_subcommands.add_parser("completeness", help="Train the completeness of the models")
-    p.add_argument("model_name", type=str, help="The name of the model to use", default="default")
-    p.add_argument("--version", "-v", type=str, help="The exparser engine version to use for training", default=None)
-    p.set_defaults(command="training", func_name="call_completeness_training")
-
-    # eval
-    p = subcommands.add_parser("eval", help="Evaluate a pretrained model")
-    p.add_argument("model_name", type=str, help="The name of the model to evaluate")
-    p.add_argument("--extraction", "-x", action="store_true", default=False, help="Evaluate extraction")
-    p.add_argument("--segmentation", "-s", action="store_true", default=False, help="Evaluate segmentation")
-    p.add_argument("--exparser-result-dir", "-e", metavar="path", type=str,
-                   help="Path to the folder containing the output to evaluate", required=True)
-    p.add_argument("--gold-dir", "-g", metavar="path", type=str,
-                   help="Path to the folder containing the 'gold standard' files against which to evaluate the result.",
-                   required=True)
-    p.add_argument("--add-logfile", "-l", action="store_true", default=False,
-                   help="Generate verbose debug logfile (.log)")
-    p.add_argument("--output-dir", "-d", metavar="path", type=str,
-                   help="Path to the directory in which the evaluation output files should be stored. Defaults to the model's dataset directory.")
-    p.add_argument("--output-filename-prefix", "-f", metavar="prefix", type=str,
-                   help="Prefix for the output files, to which the mode ('segmentation' or 'extraction') will be appended. Defaults to a timestamp.")
-    p.set_defaults(command="eval")
-
-    # eval_full_workflow
-    p = subcommands.add_parser("eval_full_workflow", help="Splits, trains and evaluates model")
-    p.add_argument("model_name", type=str, help="The name of the model to evaluate")
-    p.add_argument("--prefix", "-p", type=str, help="The prefix to use for the split model which is evaluated",
-                   default="test_")
-    p.add_argument("--skip_splitting", "-P", help="Skip the splitting step", action="store_true")
-    p.add_argument("--skip_extraction", "-X", help="Skip extraction training and evaluation", action="store_true")
-    p.add_argument("--skip_segmentation", "-S", help="Skip segmentation training and evaluation", action="store_true")
-    p.add_argument("--add-logfile", "-l", help="Output additional log information in the model folder",
-                   action="store_true")
-    p.set_defaults(command="eval_full_workflow", func_name="run_full_eval_workflow")
-
-    # report
-    p = subcommands.add_parser("report", help="Generate a report of accuracy information for one or more models.")
-    p.add_argument("model_names", metavar="name", nargs="+",
-                   help="One or more names of models to include in the accuracy report. If a name ends with *, all matching model names will be included.")
-    p.add_argument("--output-file", "-o",
-                   help="Optional path to a file in which the results are stored as CSV data. If not given, they are printed to the console.")
-    p.add_argument("--prefix", "-p", default="",
-                   help="An optional prefix to the accuracy files produced by evaluation")
-    p.set_defaults(command="report")
 
     # package
     pkg_parser = subcommands.add_parser("package",
@@ -188,24 +104,6 @@ if __name__ == "__main__":
     p.add_argument("--port", "-p", help="The port on which to listen", default=8000)
     p.set_defaults(command="server", func_name="server_start")
 
-    # engine
-    engine_parser = subcommands.add_parser("engine", help="Commands to manage the recognition engine")
-    engine_subcommands = engine_parser.add_subparsers()
-
-    # engine install
-    p = engine_subcommands.add_parser("install", help="Install a particular version of the engine")
-    p.add_argument("version", type=str, help="Install a particular version of the recognition engine")
-    p.set_defaults(command="engine", func_name="engine_install")
-
-    # engine list
-    p = engine_subcommands.add_parser("list", help="List all installed engines")
-    p.set_defaults(command="engine", func_name="exec_list")
-
-    # engine use
-    p = engine_subcommands.add_parser("use", help="Use a particular version of the exparser engine")
-    p.add_argument("version", type=str,
-                   help="Use a particular version of the recognition engine, which must be installed first")
-    p.set_defaults(command="engine", func_name="exec_use")
 
     # dataset
     dataset_parser = subcommands.add_parser("dataset", help="Commands to work with different datasets")
@@ -222,15 +120,6 @@ if __name__ == "__main__":
     p = dataset_subcommands.add_parser("fix", help="Fixes problems in EXcite datasets")
     p.add_argument("model_name", type=str, help="The name of the model which has been trained with the given dataset")
     p.set_defaults(command="dataset", func_name="dataset_fix")
-
-    # set the exparser engine path
-    if os.path.exists(config_exparser_version_file()):
-        with open(config_exparser_version_file()) as f:
-            version = f.read()
-        if version != get_version():
-            from commands.engine import check_version
-            check_version(version)
-            sys.path.insert(0, config_exparser_dir(version))
 
     # parse arguments
     try:

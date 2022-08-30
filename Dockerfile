@@ -13,11 +13,10 @@ WORKDIR /app
 ADD *.py /app/
 ADD *.jar /app/
 ADD *.txt /app/
-RUN apt-get -y install openjdk-8-jdk maven poppler-utils && \
+RUN apt-get -y install poppler-utils && \
     apt-get -y install python3.6 python3-pip && \
     DEBIAN_FRONTEND=noninteractive apt-get -y install ruby ruby-dev gem # installs ruby 2.5.1
 ADD requirements.txt .
-# python 3.6 because jenkspy is used
 RUN  python3.6 -m pip install --upgrade pip && \
      python3.6 -m pip install -r requirements.txt && \
      gem install anystyle
