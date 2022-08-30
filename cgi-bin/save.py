@@ -16,10 +16,10 @@ try:
         raise RuntimeError("No data")
 
     payload = sys.stdin.readline()
-
     payload = json.loads(payload)
     data_type = payload["type"]
-    data = payload["data"]
+    engine = payload["engine"]
+    data = payload["data"].encode("utf8")
     file_name = payload["filename"]
     model_name = payload["modelName"]
 
@@ -29,21 +29,7 @@ try:
     if model_name == "":
         raise RuntimeError("No model name given")
 
-    dir_name = os.path.join(os.getcwd(), config_dataset_dir(), model_name)
-
-    if data_type == "layout":
-        dir_name = os.path.join(dir_name, "LRT")
-    elif data_type == "ref_xml":
-        dir_name = os.path.join(dir_name, "SEG")
-    elif data_type == "anystyle_finder":
-        dir_name = os.path.join(dir_name, "anystyle","finder")
-    elif data_type == "anystyle_parser":
-        dir_name = os.path.join(dir_name, "anystyle","parser")
-    else:
-        raise RuntimeError("Invalid type")
-
-    data = data.encode("utf8")
-
+    dir_name = os.path.join(os.getcwd(), config_dataset_dir(), model_name, engine, data_type)
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
 

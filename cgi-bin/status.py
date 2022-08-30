@@ -7,9 +7,10 @@ print("Content-type: application/json")
 print()
 
 # existing models
-model_names = []
-for dirname in os.listdir(config_dataset_dir()):
-    path = os.path.join(config_dataset_dir(), dirname)
+model_names = ['default']
+model_dir = config_model_dir()
+for dirname in os.listdir(model_dir):
+    path = os.path.join(model_dir, dirname)
     if os.path.isdir(path) and not dirname.startswith("test_"):
         model_names.append(dirname)
 result = {'model_names': model_names}

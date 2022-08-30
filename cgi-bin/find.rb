@@ -10,7 +10,9 @@ model_name = cgi.params["model"].first
 file_path = File.join("tmp", file_name).untaint
 
 # find refs in document
-AnyStyle.finder.load_model File.join("Models", model_name, "finder.mod").untaint
+if model_name != "default"
+    AnyStyle.finder.load_model File.join("Models", model_name, "finder.mod").untaint
+end
 ttx = AnyStyle.finder.find(file_path, format: :wapiti)[0].to_s(tagged:true).gsub(/\u00AD ?/, "")
 
 # return to client

@@ -13,6 +13,7 @@ if model_name != "default"
     AnyStyle.parser.load_model File.join("Models", model_name, "parser.mod").untaint
 end
 seqs = AnyStyle.parser.label refs
-labelled_refs = seqs.to_xml(indent:2)
+csl = JSON.pretty_generate AnyStyle.parser.format_csl(seqs)
+
 # return to client
-cgi.out("application/json") { labelled_refs.to_json }
+cgi.out("application/json") { csl }
