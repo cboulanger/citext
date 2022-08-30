@@ -11,9 +11,18 @@
     <link rel="stylesheet" href="css/css-loader.css">
     <link rel="stylesheet" href="css/toastr.min.css">
     <script src="js/jquery-3.2.1.min.js"></script>
-    <script src="scripts.js"></script>
     <script src="js/bootstrap.min.js"></script>
     <script src="js/toastr.min.js"></script>
+    <script src="class/State.js"></script>
+    <script src="class/Config.js"></script>
+    <script src="class/Annotation.js"></script>
+    <script src="class/AnyStyle.js"></script>
+    <script src="class/Exparser.js"></script>
+    <script src="class/Zotero.js"></script>
+    <script src="class/Utils.js"></script>
+    <script src="class/GUI.js"></script>
+    <script src="class/Actions.js"></script>
+    <script>GUI.init();</script>
 </head>
 
 <body>
@@ -62,8 +71,8 @@
                 <li><a class="dropdown-item excluded exparser"
                        onclick="Actions.setParserEngine('anystyle');" href="#">
                     Use AnyStyle</a></li>-->
-                <li><a href="#" onclick="Excite.trainCurrentModel()">Train currently selected model</a></li>
-                <li><a href="#" onclick="Excite.evalCurrentModel()">Evaluate currently selected model</a></li>
+                <li><a href="#" id="btn-train"
+                       onclick="Actions.runCommand(Actions.COMMANDS.TRAIN_MODEL)">Train currently selected model</a></li>
                 <li role="separator" class="divider"></li>
 
             </ul>
@@ -79,9 +88,9 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-view">
-                <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
+                <!--<li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.run_excite_command('ocr');" href="#">
-                    Run OCR on PDF</a></li>
+                    Run OCR on PDF</a></li>-->
                 <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
                        onclick="Actions.runCommand(Actions.COMMANDS.TEXT_EXTRACTION);" href="#">
                     Extract text from PDF</a></li>
@@ -102,11 +111,14 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
-                <li><a id="btn-run-segmentation"
-                       class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
+                <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.runCommand(Actions.COMMANDS.PARSE_REFERENCES);">
                     Tag reference segments</a></li>
+               <!-- <li><a class="dropdown-item ui-state-disabled enabled-if-refs"
+                       href="#"
+                       onclick="Actions.runCommand(Actions.COMMANDS.AUTO_TAG);">
+                    Auto-tag citation numbers and signal words</a></li>-->
             </ul>
         </div>
         <!-- save -->
@@ -142,11 +154,14 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
-                <li><a id="btn-export-to-zotero"
-                       class="dropdown-item hidden visible-if-zotero-connection enabled-if-segmented"
+                <li><a class="dropdown-item ui-state-disabled enabled-if-segmented"
+                       href="#"
+                       onclick="Actions.runCommand(Actions.COMMANDS.EXPORT_REFERENCES);">
+                    Export references als CSL</a></li>
+                <li><a class="dropdown-item hidden visible-if-zotero-connection enabled-if-segmented"
                        href="#"
                        onclick="Actions.exportToZotero();">
-                    Export references to Zotero item</a></li>
+                    Export to selected Zotero item</a></li>
             </ul>
         </div>
 
@@ -278,6 +293,9 @@
     <div class="refs-button-grid anystyle visible-in-refs-mode enabled-if-selection">
         <li><a data-tag="citation-number" onclick="Actions.addTag('citation-number');" href="#">
             Cit.Number
+        </a></li>
+        <li><a data-tag="signal" onclick="Actions.addTag('signal');" href="#">
+            Signal
         </a></li>
         <li><a data-tag="author" onclick="Actions.addTag('author');" href="#">
             Author(s)

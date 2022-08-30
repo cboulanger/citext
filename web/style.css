@@ -285,6 +285,10 @@ nav {
     background-color: #b99a0e;
 }
 
+[data-tag="signal"] {
+    background-color: #b98a8a;
+}
+
 [data-tag="author"] {
     background-color: #fabd11;
 }
