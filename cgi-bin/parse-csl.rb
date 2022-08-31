@@ -24,7 +24,7 @@ csl.map! do |item|
         end
     end
     if item[:editor] or item["publisher-place"] or item[:publisher] or item[:edition]
-        if item["container-title"]
+        if item["container-title"] or item[:author]
             item[:type] = "chapter"
         else
             item[:type] = "book"
