@@ -2,6 +2,7 @@ class ExparserExtractionAnnotation extends Annotation {
   static type = Annotation.TYPE.FINDER;
   static engine = Config.ENGINES.EXPARSER;
   static fileExtension = "csv";
+  static mimeType = "text/plain"
 
   constructor(content, fileName) {
     while (content.match(/\n\n/)) {
@@ -50,7 +51,7 @@ class ExparserExtractionAnnotation extends Annotation {
       markedUpText = markedUpText.replace(/\n\n/g, "\n")
     }
     markedUpText = markedUpText.replace(Config.REGEX.EMPTY_NODE, "")
-    this.content = Annotation._cleanup(markedUpText)
+    this.content = Annotation.removeXmlEntities(markedUpText)
     return this.content
   }
 
@@ -106,6 +107,7 @@ class ExparserExtractionAnnotation extends Annotation {
 class ExparserSegmentationAnnotation extends ExparserExtractionAnnotation {
   static type = Annotation.TYPE.PARSER;
   static fileExtension = "xml";
+  static mimeType = "text/xml"
 
   constructor(content, fileName) {
     while (content.match(/\n\n/)) {
@@ -141,6 +143,91 @@ class ExparserSegmentationAnnotation extends ExparserExtractionAnnotation {
       .replace(/&/g, "&amp;")
     return `<?xml version="1.0" encoding="utf-8"?>\n<seganno>\n${textToExport}\n</seganno>`
   }
+
+  /**
+   * Returns a CSL representation of the annotation
+   * @returns {[]}
+   */
+  static toCslJson() {
+
+    function extract(tagName, text) {
+      let regexp = new RegExp(`<${tagName}>(.*?)</${tagName}>`, "g");
+      let m;
+      let result = [];
+      while (m = regexp.exec(text)) {
+        result.push(m[1])
+      }
+      return result.length ? result : undefined;
+    }
+
+    function translate(ref) {
+      let tags = [
+        "author", "title", "source",
+        "editor", "year", "volume", "issue",
+        "publisher", "fpage", "lpage", "url", "identifier"
+      ];
+      const r = {};
+      for (let tag of tags) {
+        r[tag] = extract(tag, ref);
+      }
+      let creators = [];
+      if (r.author) {
+        for (let author of r.author) {
+          const firstName = extract("given-names", author)?.[0];
+          const lastName = extract("surname", author)?.[0];
+          if (firstName && lastName) {
+            creators.push({
+              "creatorType": "author",
+              firstName,
+              lastName
+            });
+          } else {
+            creators.push({
+              "creatorType": "author",
+              "name": lastName || firstName
+            });
+          }
+        }
+      }
+      if (r.editor) {
+        for (let editor of r.editor) {
+          creators.push({
+            "creatorType": "editor",
+            "name": editor
+          });
+        }
+      }
+      let item = {
+        creators,
+        "title": r.title?.[0],
+        "date": r.year?.[0],
+        "volume": r.volume?.[0],
+        "issue": r.issue?.[0],
+        "publisher": r.publisher?.[0],
+        "pages": r.fpage?.[0] ? (r.fpage?.[0] + (r.lpage?.[0] ? "-" + r.lpage?.[0] : "")) : undefined,
+        "URL": r.url?.[0],
+        "DOI": r.identifier?.[0]?.startsWith("10.") ? r.identifier?.[0] : undefined,
+        "ISBN": r.identifier?.[0]?.startsWith("978") ? r.identifier?.[0] : undefined,
+      };
+      let source = r.source?.[0];
+      if (!source) {
+        item.itemType = "book";
+        delete item.pages;
+        delete item.issue;
+      } else if (item.publisher || !item.volume) {
+        item.itemType = "bookSection";
+        item.bookTitle = source;
+        delete item.issue;
+      } else {
+        item.itemType = "journalArticle";
+        item.publicationTitle = source;
+        delete item.publisher;
+      }
+      return item;
+    }
+    return this.getContent().split("\n").map(ref => translate(ref));
+  }
+
 
   addAuthorTag(markedUpText) {
     let startTag = "<author>";

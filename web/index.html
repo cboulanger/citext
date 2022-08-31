@@ -114,11 +114,7 @@
                 <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.runCommand(Actions.COMMANDS.PARSE_REFERENCES);">
-                    Tag reference segments</a></li>
-               <!-- <li><a class="dropdown-item ui-state-disabled enabled-if-refs"
-                       href="#"
-                       onclick="Actions.runCommand(Actions.COMMANDS.AUTO_TAG);">
-                    Auto-tag citation numbers and signal words</a></li>-->
+                    Auto-tag reference components</a></li>
             </ul>
         </div>
         <!-- save -->
@@ -154,14 +150,14 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
-                <li><a class="dropdown-item ui-state-disabled enabled-if-segmented"
+                <li><a class="dropdown-item ui-state-disabled enabled-if-refs"
                        href="#"
-                       onclick="Actions.runCommand(Actions.COMMANDS.EXPORT_REFERENCES);">
-                    Export references als CSL</a></li>
+                       onclick="Actions.exportCsl();">
+                    Export current markup as CSL</a></li>
                 <li><a class="dropdown-item hidden visible-if-zotero-connection enabled-if-segmented"
                        href="#"
                        onclick="Actions.exportToZotero();">
-                    Export to selected Zotero item</a></li>
+                    Export to Zotero item</a></li>
             </ul>
         </div>
 

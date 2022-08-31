@@ -6,6 +6,7 @@ class Annotation {
     FINDER: "finder",
     PARSER: "parser"
   }
+  static mimeType;
 
   constructor(content, fileName) {
     this.content = content.replace(/\r/g, "");
@@ -31,6 +32,10 @@ class Annotation {
 
   getFileExtension() {
     return this.constructor.fileExtension;
+  }
+
+  getMimeType() {
+    return this.constructor.mimeType;
   }
 
   getContent() {
@@ -93,7 +98,7 @@ class Annotation {
       console.warn("Removing unhandled <span> tags in html text!");
       markedUpText = markedUpText.replace(Config.REGEX.SPAN, "");
     }
-    this.content = Annotation._cleanup(markedUpText)
+    this.content = markedUpText
     return this.content
   }
 
@@ -103,7 +108,7 @@ class Annotation {
    * @returns {string}
    * @private
    */
-  static _cleanup(text) {
+  static removeXmlEntities(text) {
     return text
       .replace(/&amp;/g, "&")
       .replace(/&gt;/g, ">")

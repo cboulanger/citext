@@ -168,6 +168,7 @@ class Actions {
     fileReader.readAsText(file, "UTF-8");
   }
 
+
   static async runCommand(command) {
     switch (command) {
 
@@ -253,15 +254,6 @@ class Actions {
         GUI.hideSpinner()
         break
       }
-
-      case Actions.COMMANDS.EXPORT_REFERENCES: {
-        GUI.showSpinner()
-        const csl = await Actions.runCgiScript("extract-refs-as-csl.rb", {model: State.model.name})
-        const file = new File([csl], )
-        GUI.hideSpinner()
-        break
-      }
-
     }
   }
 
@@ -329,24 +321,6 @@ class Actions {
     return result;
   }
 
-
-  /**
-   * @deprecated
-   * @param name
-   * @param params
-   * @returns {Promise<Response>}
-   */
-  static async run_cgi_script(name, params) {
-    let querystring = Object.keys(params).map(key => key + '=' + params[key]).join('&');
-    const url = `${Config.SERVER_URL}/${name}?${querystring}`
-    try {
-      return await fetch(url)
-    } catch (e) {
-      console.error(e)
-      alert(e.message)
-    }
-  }
-
   /**
    * Runs a cgi script on the server
    * @param name
@@ -388,137 +362,6 @@ class Actions {
     }
   }
 
-  /**
-   * @deprecated
-   * @param command
-   * @returns {Promise<void>}
-   */
-  static async run_excite_command(command) {
-    let confirmMsg;
-    switch (command) {
-      case "ocr":
-        confirmMsg = "Are you sure you want to run OCR, and then layout analysis?";
-        break;
-      case "layout":
-        confirmMsg = "Do you want to run layout analysis?";
-        break;
-      case "exparser":
-        confirmMsg = "Do you want to run layout analysis and reference extraction?";
-        break;
-      case "segmentation":
-        if (GUI.displayMode !== GUI.DISPLAY_MODES.REFERENCES) {
-          alert("Segmentation can only be run in references view");
-          return;
-        }
-        confirmMsg = "Do you want to run reference text segmentation?";
-        break;
-      default:
-        alert("Invalid command: " + command);
-        return;
-    }
-    confirmMsg += " This will overwrite the current document.";
-    if (!confirm(confirmMsg)) {
-      return;
-    }
-
-    // file upload
-    let file;
-    let filename;
-    if (command === "segmentation") {
-      let refs = GUI.getTextToExport().replace(Config.REGEX.TAG, "");
-      file = new Blob([refs], {type: "text/plain;charset=utf8"});
-      filename = GUI.getAnnotation().getFileName().split('.').slice(0, -1).join(".") + ".csv";
-    } else if (GUI.pdfFile) {
-      file = GUI.pdfFile;
-    }
-    let filenameNoExt = filename.split('.').slice(0, -1).join(".");
-    if (file) {
-      let formData = new FormData();
-      formData.append("file", file, filename);
-      GUI.showSpinner("Uploading...");
-      try {
-        this.checkResult(await (await fetch(`${Config.SERVER_URL}/upload.py`, {
-          method: 'post', body: formData
-        })).json());
-      } catch (e) {
-        return alert(e.message);
-      } finally {
-        GUI.hideSpinner();
-      }
-    }
-    let result;
-    let url;
-    let textContent;
-
-    // OCR
-    if (command === "ocr") {
-      GUI.showSpinner("Running OCR, please be patient...");
-      url = `${Config.SERVER_URL}/excite.py?command=ocr&file=${filenameNoExt}`
-      try {
-        this.checkResult(await (await fetch(url)).json());
-      } catch (e) {
-        return alert(e.message);
-      } finally {
-        GUI.hideSpinner();
-      }
-    }
-
-    // layout
-    if (command === "layout" || command === "exparser" || command === "ocr") {
-      GUI.showSpinner("Analyzing Layout...");
-      url = `${Config.SERVER_URL}/excite.py?command=layout&file=${filenameNoExt}&model_name=${State.model.name}`
-      try {
-        result = this.checkResult(await (await fetch(url)).json());
-      } catch (e) {
-        return alert(e.message);
-      } finally {
-        GUI.hideSpinner();
-      }
-      if (result.success === "") {
-        if (confirm("No text could be found in document. Run OCR?")) {
-          await this.run_excite_command("ocr");
-        }
-        return;
-      }
-      GUI.setTextFileName(filenameNoExt + ".csv");
-      textContent = result.success;
-      GUI.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT);
-      $("#btn-run-exparser").removeClass("ui-state-disabled")
-    }
-
-    // reference identification
-    if (command === "exparser") {
-      GUI.showSpinner("Identifying references, this will take a while...");
-      url = `${Config.SERVER_URL}/excite.py?command=exparser&file=${filenameNoExt}&model_name=${State.model.name}`
-      try {
-        result = this.checkResult(await (await fetch(url)).json());
-      } catch (e) {
-        return alert(e.message);
-      } finally {
-        GUI.hideSpinner();
-      }
-      let refs = result.success;
-      textContent = this.combineLayoutAndRefs(textContent, refs);
-      GUI.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT);
-    }
-    // segmentation
-    if (command === "segmentation") {
-      GUI.showSpinner("Segmenting references...");
-      url = `${Config.SERVER_URL}/excite.py?command=segmentation&file=${filenameNoExt}&model_name=${State.model.name}`;
-      try {
-        result = await (await fetch(url)).json();
-        this.checkResult(result)
-      } catch (e) {
-        return alert(e.message);
-      } finally {
-        GUI.hideSpinner();
-      }
-      textContent = result.success;
-      GUI.setDisplayMode(GUI.DISPLAY_MODES.REFERENCES);
-    }
-    GUI.setHtmlContent(textContent);
-  }
-
   static extractReferences(markedUpText) {
     let textLines = markedUpText.split("\n");
     // remove cermine layout info if exists
@@ -545,7 +388,8 @@ class Actions {
       alert("No annotation loaded")
       return
     }
-    Utils.download(annotation.export(), annotation.getFileName());
+    const type = annotation.getMimeType() + ';charset=utf-8;'
+    Utils.download(annotation.export(), annotation.getFileName(), type);
   }
 
   static async exportToZotero() {
@@ -554,62 +398,92 @@ class Actions {
       alert("You must be in segmentation mode to export references");
       return;
     }
-    let refs = annotation.export();
-    if (!refs.match(Config.REGEX.TAG)) {
+    let dataset_xml = annotation.export();
+    if (!dataset_xml.match(Config.REGEX.TAG)) {
       alert("No references to export");
       return;
     }
-    let id = annotation.getFileName().split(".").slice(0, -1).join(".");
-    let identifier;
-    for (let knownIdentifier of Config.KNOWN_IDENTIFIERS) {
-      if (id.startsWith(knownIdentifier.startsWith)) {
-        identifier = knownIdentifier;
+    let csl_data = await Actions.runCgiScript("parse-csl.rb", {
+      model: State.model.name,
+      seq: dataset_xml
+    }, "post")
+    GUI.hideSpinner()
+    // check results
+    let unknown_types = csl_data.filter(item => !item.type)
+    if (unknown_types.length > 0) {
+      let question = `Extracted reference data contains ${unknown_types.length} unrecognized item types. 
+      Do you want to skip them during import (OK) or correct the markup (cancel)?`.replace(/\n */g, " ")
+      if (!confirm(question)) {
+        return;
+      }
+    }
+    csl_data = csl_data.filter(item => item.type)
+    let item_name = annotation.getFileName().split(".").slice(0, -1).join(".");
+    // query for identifying target item
+    let query = {}
+    let identfier_name;
+    for (let identifier of Config.KNOWN_IDENTIFIERS) {
+      let matched = item_name.match(identifier.match)
+      if (matched) {
+        identfier_name = identifier.name;
+        for (let [field, value] of Object.entries(matched.groups)) {
+          if (field === "DOI" && value.match(/10\.[0-9]+_/)) {
+            // work around DOIs in filenames where the illegal "/" has been replaced by underscore
+            value = value.replace("_", "/"); // only replaces first occurrence
+          }
+          query[field] = ["contains", value]
+        }
         break;
       }
     }
-    // work around DOIs in filenames where the illegal "/" has been replaced by underscore
-    if (identifier && identifier.zoteroField === "DOI" && !id.includes("/") && id.includes("_")) {
-      id = id.replace("_", "/"); // only replaces first occurrence
-    }
-    refs = refs.split("\n");
     let msg;
     // abort requests on escape key  press
     const abortFunc = e => e.key === "Escape" && Zotero.controller.abort();
     $(document).on('keydown', abortFunc);
     try {
       GUI.showSpinner("Connecting to Zotero...");
+      // selection
       let zSelection = await Zotero.getSelection();
       let libraryID = zSelection.libraryID;
+      if (!libraryID) {
+        throw new Error("Please select an item in Zotero to determine the library used.");
+      }
       let targetItem = zSelection.selectedItems.length ? zSelection.selectedItems[0] : null;
-      if (identifier) {
-        if (!libraryID) {
-          throw new Error("Please select a library in Zotero");
+      // query based on file name
+      if (Object.keys(query).length) {
+        GUI.showSpinner(`Searching Zotero for ${item_name}`);
+        console.log(query)
+        let items;
+        if (identfier_name === "key") {
+          items = await Zotero.items(libraryID, [item_name])
+        } else {
+          items = await Zotero.search(libraryID, query);
         }
-        let query = {};
-        let field = identifier.zoteroField;
-        query[field] = ["is", id];
-        GUI.showSpinner(`Searching Zotero for ${field} ${id}`);
-        let items = await Zotero.search(libraryID, query);
         if (items.length === 0) {
-          throw new Error(`Identifier ${identifier.zoteroField} ${id} cannot be found in the library.`);
+          throw new Error(`'${item_name}' cannot be found in the library.`);
         } else if (items.length > 1) {
-          throw new Error(`Identifier ${identifier.zoteroField} ${id} exists twice - please merge items manually first.`);
+          throw new Error(`'${item_name}' exists twice - please merge items manually first.`);
         }
         targetItem = items[0];
       } else if (!targetItem) {
         throw new Error("No identifier or selected item can be determined.");
       }
+      if (targetItem.parentItem) {
+        targetItem = (await Zotero.items(libraryID, [targetItem.parentItem]))[0]
+      }
       GUI.showSpinner(`Retrieving citations...`);
+      console.log(targetItem)
       const citations = await Zotero.listCitations(libraryID, targetItem.key);
-      console.log({citations});
-      msg = `Do you want to export ${refs.length} references to "${targetItem.title}"?`;
+      msg = `Do you want to export ${csl_data.length} references to "${targetItem.title}"?`;
       if (!confirm(msg)) return;
-      let total = refs.length;
+      let total = csl_data.length;
       // loop through all the cited references
-      for (let [count, ref] of refs.entries()) {
-        let msg = ` item ${count + 1} of ${total} cited references. Press the Escape key to abort.`;
+      for (let [count, cslItem] of csl_data.entries()) {
+        let msg = `item ${count + 1} of ${total} cited references. Press the Escape key to abort.`;
         GUI.showSpinner("Identifying " + msg);
-        let item = Zotero.convertRefsToJson(ref);
+        console.log(cslItem)
+        const item = Zotero.itemFromCSLJSON(cslItem)
+        console.log(item)
         let {creators, title, date} = item;
         let creator = creators?.[0]?.lastName || "";
         // search
@@ -635,23 +509,24 @@ class Actions {
             let newItemHasMoreProperties =
               Object.values(newItem).filter(Boolean).length > Object.values(item).filter(Boolean).length;
             if (newItemHasMoreProperties) {
-              console.log({info: "Updating item", item});
-              GUI.showSpinner("Updating" + msg);
+              GUI.showSpinner("Updating " + msg);
+              console.log(item);
               await Zotero.updateItems(libraryID, [newItem]);
             }
             itemKey = foundItem.key;
           }
         }
+        // create new item
         if (!itemKey) {
-          GUI.showSpinner("Creating" + msg);
-          console.log({info: "Creating item", item});
+          GUI.showSpinner("Creating " + msg);
+          console.log(item);
           ([itemKey] = await Zotero.createItems(libraryID, [item]));
         }
         if (citations.find(citation => citation.zotero === itemKey)) {
           console.log("Citation already linked.");
           continue;
         }
-        GUI.showSpinner("Linking" + msg);
+        GUI.showSpinner("Linking " + msg);
         let result = await Zotero.addCitations(libraryID, targetItem.key, [itemKey]);
         console.log(result);
       }
@@ -716,6 +591,22 @@ class Actions {
     $("#btn-model-" + State.model.name).addClass("btn-dropdown-radio-selected");
     localStorage.setItem(Config.LOCAL_STORAGE.LAST_MODEL_NAME, name);
     $("#btn-train").toggleClass("ui-state-disabled", name === "default")
+  }
+
+  static async exportCsl() {
+    const annotation = GUI.getAnnotation()
+    if (annotation.getType() !== Annotation.TYPE.PARSER) {
+      alert("Can only parse references, not documents")
+      return
+    }
+    GUI.showSpinner("Retrieving citation data")
+    const csl = await Actions.runCgiScript("parse-csl.rb", {
+      model: State.model.name,
+      seq: annotation.export()
+    }, "post")
+    GUI.hideSpinner()
+    let filename = annotation.getFileName().split(".").slice(0, -1).join(".") + ".csl.json";
+    Utils.download(JSON.stringify(csl, null, 2), filename, "text/plain;encoding=utf-8")
   }
 }
 

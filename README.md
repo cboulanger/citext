@@ -1,4 +1,4 @@
-# EXcite-Docker: Tool for the annotation of training material for ML-based reference extraction and segmentation
+# Web frontend for reference extraction
 
 This is a docker image that provides a web application to produce training
 material for ML-based reference extraction & segmentation engines. Currently
@@ -8,8 +8,6 @@ supported are
 - [EXParser](http://exparser.readthedocs.io) (Only editing of existing
   annotations; EXparser reference extraction was supported in
   [v1.0.0](https://github.com/cboulanger/excite-docker/tree/v1.0.0))
-
-Both serve to extract citation data from PDF Documents. 
 
 The image provides a Web UI for producing training material which is needed to
 improve citation recognition for particular corpora of scholarly literature
@@ -31,16 +29,17 @@ A demo of the web frontend (without backend functionality) is available
 2. Open frontend at http://127.0.0.1:8000/web/index.html
 3. Click on "Help" for instructions (also lets you download the Zotero add-ons)
 
-## Zotero support 
+## Zotero integration 
 
-> Zotero integration is currently disabled because the plugin providing the
-required API is not compatible with Zotero 6. A native API is planned by the
-Zotero Devs.
+You can connect the app to a local [Zotero](https://zotero.org) client to upload extracted
+references. This feature requires the installation of the following add-ons: 
 
-If a [Zotero](https://zotero.org) with the appropriate add-ins  is running, the
-webapp will enable additional commands that let you retrieve the PDF
-attachment(s) of the currently selected item/collection, extract references from
-them and store them with the citing item.
+- [Cita](https://github.com/diegodlh/zotero-cita/) 
+- [API-Endpoint](https://github.com/Dominic-DallOsto/zotero-api-endpoint)
+
+The webapp will then enable additional commands that let you retrieve the
+PDF attachment(s) of the currently selected item/collection, extract references
+from them and store them with the citing item.
 
 If the Zotero storage folder is not located in `~/Zotero/storage`, you need to
 rename `.env.dist` to `.env` and in this file, set the `ZOTERO_STORAGE_PATH`

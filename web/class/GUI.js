@@ -85,7 +85,7 @@ class GUI {
         } else if (text.trim()) {
           const onCloseClick = type === "info" ? () => {
             if (confirm("Cancel the current server process?")) {
-              Actions.run_cgi_script("abort.py", {id: channel_id})
+              Actions.runCgiScript("abort.py", {id: channel_id})
             }
           } : undefined;
           toast = toastr[type](text, title, {
@@ -326,6 +326,7 @@ class GUI {
   }
 
   static showSpinner(text) {
+    console.log(text)
     $("#spinner").attr("data-text", text).addClass("is-active");
   }
 

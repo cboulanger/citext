@@ -2,6 +2,7 @@ class AnystyleFinderAnnotation extends Annotation {
   static type = Annotation.TYPE.FINDER;
   static engine = Config.ENGINES.ANYSTYLE;
   static fileExtension = "ttx";
+  static mimeType = "text/plain"
 
   constructor(text, fileName) {
     super(text, fileName);
@@ -114,7 +115,7 @@ class AnystyleFinderAnnotation extends Annotation {
       ttxLines.pop()
     }
     markedUpText = ttxLines.join("\n").trim()
-    this.content = Annotation._cleanup(markedUpText)
+    this.content = Annotation.removeXmlEntities(markedUpText)
     return markedUpText
   }
 
@@ -125,9 +126,15 @@ class AnystyleFinderAnnotation extends Annotation {
   extractReferences() {
     let in_ref = false
     let is_ref = line => {
-      let m = line.match(/^(\S+)\s+\| ?/)
+      let m = line.match(/^(\S*)\s+\| ?/)
       if (m) {
         switch (m[1].trim()) {
+          case "blank":
+            if (in_ref) {
+              in_ref = false;
+              return true
+            }
+            return false
           case "ref":
             in_ref = true
             return true
@@ -139,11 +146,14 @@ class AnystyleFinderAnnotation extends Annotation {
         }
       }
     }
-    return this.getContent()
+    let refs = this.getContent()
       .split("\n")
       .filter(is_ref)
       .map(line => line.replace(/^.+\| ?/, ""))
-      .join("\n")
+      .map(line => line.trim() ? line : "<sep></sep>")
+      .join(" ")
+      .replace(/<sep><\/sep>/g,"\n")
+    return refs
   }
 
   toParserAnnotation() {
@@ -159,6 +169,7 @@ class AnystyleParserAnnotation extends Annotation {
   static type = Annotation.TYPE.PARSER;
   static engine = Config.ENGINES.ANYSTYLE;
   static fileExtension = "xml";
+  static mimeType = "text/xml"
 
   constructor(content, fileName) {
     super(content, fileName);

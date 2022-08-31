@@ -32,14 +32,20 @@ class Config {
   }
   static KNOWN_IDENTIFIERS = [
     {
-      startsWith: "10.",
-      cslJson: "doi",
-      zoteroField: "DOI"
+      name: "doi",
+      match: /^(?<DOI>10.\d{4,9}\/[-._;()/:A-Z0-9]+)$/i,
     },
     {
-      startsWith: "978",
-      cslJson: "isbn",
-      zoteroField: "ISBN"
+      name: "isbn",
+      match: /^(?<ISBN>978[0-9-]+)/,
+    },
+    {
+      name: "author-date-title",
+      match: /^(?<author>[\S]+)[-_( ]+(?<date>[0-9.]+)[-_) ]+(?<title>.+)$/,
+    },
+    {
+      name: "key",
+      match: /^(?<key>[A-Z0-9]{8})$/,
     }
   ]
   static SIGNAL_WORDS = [
