@@ -1,15 +1,6 @@
 class Actions {
 
-  static COMMANDS = {
-    TEXT_EXTRACTION: "extract",
-    FIND_REFERENCES: "find",
-    PARSE_REFERENCES: "parse",
-    AUTO_TAG: "auto-tag",
-    TRAIN_MODEL: "train",
-    EXPORT_REFERENCES: "export-refs"
-  }
-
-  static load() {
+  static async load() {
     const uploadBtn = document.getElementById("btn-upload");
     switch (uploadBtn.files.length) {
       case 0:
@@ -22,8 +13,15 @@ class Actions {
         alert('Please select less than 3 files.');
         return false;
     }
-    for (let file of uploadBtn.files) {
-      this.loadFile(file);
+    GUI.showSpinner()
+    try {
+      for (let file of uploadBtn.files) {
+        await this.loadFile(file);
+      }
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      GUI.hideSpinner()
     }
   }
 
@@ -44,7 +42,14 @@ class Actions {
     let blob = await res.blob();
     filename = filename || url.split("/").pop();
     let file = new File([blob], filename, {lastModified: 1534584790000});
-    this.loadFile(file);
+    GUI.showSpinner()
+    try {
+      await this.loadFile(file);
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      GUI.hideSpinner()
+    }
   }
 
   static async loadFromZotero() {
@@ -99,162 +104,176 @@ class Actions {
     }
   }
 
-  static loadFile(file) {
-    let fileName = file.name;
-    // FIXME ad-hoc filename fix to remave ".pdfa" infix, needs to be configurable
-    fileName = fileName.replace(/\.pdfa\./, ".")
-    let fileType = file.type;
-    let fileExt;
-    if (fileName) {
-      fileType = fileExt = fileName.split('.').pop();
-    } else if (fileType) {
-      // remove encoding etc.
-      fileType = fileType.split(";").shift().trim();
-    } else {
-      alert("Cannot determine file type for " + fileName);
-      return;
-    }
-    console.log(`Loading ${fileName} of type ${fileType}`)
-    let annotation;
-    switch (fileType) {
-      case "pdf":
-      case "application/pdf":
-        GUI.loadPdfFile(file);
+  static async loadFile(file) {
+    return new Promise(async (resolve, reject) => {
+      let fileName = file.name;
+      // FIXME ad-hoc filename fix to remave ".pdfa" infix, needs to be configurable
+      fileName = fileName.replace(/\.pdfa\./, ".")
+      let fileType = file.type;
+      let fileExt;
+      if (fileName) {
+        fileType = fileExt = fileName.split('.').pop();
+      } else if (fileType) {
+        // remove encoding etc.
+        fileType = fileType.split(";").shift().trim();
+      } else {
+        reject(new Error("Cannot determine file type for " + fileName));
         return;
-      case "xml":
-      case "application/xml":
-      case "txt":
-      case "text/plain":
-      case "csv":
-      case "text/csv":
-      case "ttx":
-        break;
-      default:
-        alert("Invalid file extension: " + fileExt);
-        return;
-    }
-    // load file and determine type of Annotation
-    const fileReader = new FileReader();
-    fileReader.onload = (e) => {
-      let text = String(e.target.result);
+      }
+      console.log(`Loading ${fileName} of type ${fileType}`)
+      let annotation;
       switch (fileType) {
+        case "pdf":
+        case "application/pdf":
+          await GUI.loadPdfFile(file);
+          resolve()
+          return;
         case "xml":
-        case "text/xml":
         case "application/xml":
-          if (text.includes("<dataset>")) {
-            annotation = new AnystyleParserAnnotation(text, fileName)
-          } else if (text.includes("<surname>")) {
-            annotation = new ExparserSegmentationAnnotation(text, fileName)
-          } else {
-            alert("Unknown XML format")
-            return
-          }
-          break;
+        case "txt":
+        case "text/plain":
         case "csv":
         case "text/csv":
-          annotation = new ExparserExtractionAnnotation(text, fileName)
-          break
-        case "text/plain":
-        case "txt":
         case "ttx":
-          annotation = new AnystyleFinderAnnotation(text, fileName)
           break;
         default:
-          alert("Unknown file type: " + fileType);
+          reject(new Error("Invalid file extension: " + fileExt));
           return;
       }
-      GUI.loadAnnotation(annotation);
-    }
-    fileReader.readAsText(file, "UTF-8");
+      // load file and determine type of Annotation
+      const fileReader = new FileReader();
+      fileReader.onload = (e) => {
+        let text = String(e.target.result);
+        switch (fileType) {
+          case "xml":
+          case "text/xml":
+          case "application/xml":
+            if (text.includes("<dataset>")) {
+              annotation = new AnystyleParserAnnotation(text, fileName)
+            } else if (text.includes("<surname>")) {
+              annotation = new ExparserSegmentationAnnotation(text, fileName)
+            } else {
+              reject(new Error("Unknown XML format"))
+              return
+            }
+            break;
+          case "csv":
+          case "text/csv":
+            annotation = new ExparserExtractionAnnotation(text, fileName)
+            break
+          case "text/plain":
+          case "txt":
+          case "ttx":
+            annotation = new AnystyleFinderAnnotation(text, fileName)
+            break;
+          default:
+            reject(new Error("Unknown file type: " + fileType));
+            return;
+        }
+        GUI.loadAnnotation(annotation);
+        resolve(annotation)
+      }
+      fileReader.readAsText(file, "UTF-8");
+    })
   }
 
-
-  static async runCommand(command) {
-    switch (command) {
-
-      case Actions.COMMANDS.TEXT_EXTRACTION: {
-        const msg = `Do you want to extract text from the PDF?`
-        if (!confirm(msg)) return
-        const pdfFile = GUI.pdfFile
-        const url = Config.URL.UPLOAD
-        await Utils.upload(pdfFile, url)
-        const content = await Actions.runCgiScript("extract.rb", {filename: pdfFile.name})
-        const filename = pdfFile.name.replace(".pdf", ".ttx")
-        const annoFile = new File([content], filename, {
-          lastModified: 1534584790000,
-          type: "text/plain; encoding=utf-8"
-        });
-        Actions.loadFile(annoFile)
-        break
-      }
-
-
-      case Actions.COMMANDS.FIND_REFERENCES: {
-        const msg = `Do you want to extract text from the PDF and identify the references?`
-        if (!confirm(msg)) return
-        const pdfFile = GUI.pdfFile
-        const url = Config.URL.UPLOAD
-        GUI.showSpinner()
-        await Utils.upload(pdfFile, url)
-        const content = await Actions.runCgiScript("find.rb", {filename: pdfFile.name, model: State.model.name})
-        GUI.hideSpinner()
-        const filename = pdfFile.name.replace(".pdf", ".ttx")
-        const annoFile = new File([content], filename, {
-          lastModified: 1534584790000,
-          type: "text/plain; encoding=utf-8"
-        });
-        Actions.loadFile(annoFile)
-        break
-      }
-
-      case Actions.COMMANDS.PARSE_REFERENCES: {
-        const annotation = GUI.getAnnotation()
-        if (annotation.getType() !== Annotation.TYPE.PARSER) {
-          alert("Can only parse references, not documents")
-          return
-        }
-        const msg = `Do you want to automatically tag the references?`
-        if (!confirm(msg)) return
-        const params = {
-          refs: annotation.getContent().replace(Config.REGEX.TAG, ""),
-          model: State.model.name
-        }
-        GUI.saveState()
-        GUI.showSpinner()
-        const content = await Actions.runCgiScript("parse.rb", params, "post")
-        GUI.hideSpinner()
-        annotation.load(content)
-        GUI.setHtmlContent(annotation.toHtml())
-        break
-      }
-
-      case Actions.COMMANDS.AUTO_TAG: {
-        // not working
-        // const annotation = GUI.getAnnotation()
-        // if (annotation.getType() !== Annotation.TYPE.PARSER) {
-        //   alert("Only available for list of references")
-        //   return
-        // }
-        // GUI.saveState()
-        // let autoTaggedText = annotation.getContent().split("\n")
-        //   // citation numbers
-        //   .map(line => line.replace(
-        //     /^(<(?!cit)[^/>]+>)([0-9]{1,3}\s+)(\S[^>]+<\/[^>]+>)/,
-        //     "<citation-number>$2</citation-number>$1$3"))
-        //   // signal words
-        //   .map(line => Config.SIGNAL_WORDS.forEach(re => line.replace(re, "<signal>$0</signal>")))
-        //   .join("\n")
-        // annotation.load(autoTaggedText)
-        break
-      }
-
-      case Actions.COMMANDS.TRAIN_MODEL: {
-        GUI.showSpinner()
-        await Actions.runCgiScript("train.rb", {model: State.model.name})
-        GUI.hideSpinner()
-        break
-      }
+  static async extractTextFromPdf() {
+    const msg = `Do you want to extract text from the PDF?`
+    if (!confirm(msg)) return
+    const pdfFile = GUI.pdfFile
+    const url = Config.URL.UPLOAD
+    await Utils.upload(pdfFile, url)
+    GUI.showSpinner("Extracting reference lines...")
+    const content = await Actions.runCgiScript("extract.rb", {filename: pdfFile.name})
+    GUI.hideSpinner()
+    const filename = pdfFile.name.replace(".pdf", ".ttx")
+    const annoFile = new File([content], filename, {
+      lastModified: 1534584790000,
+      type: "text/plain; encoding=utf-8"
+    });
+    try {
+      await Actions.loadFile(annoFile)
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      GUI.hideSpinner()
     }
+  }
+
+  static async findAndExtractReferencesInPdf() {
+    const msg = `Do you want to extract text from the PDF and identify the references?`
+    if (!confirm(msg)) return
+    const pdfFile = GUI.pdfFile
+    const url = Config.URL.UPLOAD
+    GUI.showSpinner()
+    try {
+      await Utils.upload(pdfFile, url)
+      const content = await Actions.runCgiScript("find.rb", {filename: pdfFile.name, model: State.model.name})
+      const filename = pdfFile.name.replace(".pdf", ".ttx")
+      const annoFile = new File([content], filename, {
+        lastModified: 1534584790000,
+        type: "text/plain; encoding=utf-8"
+      });
+      await Actions.loadFile(annoFile)
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      GUI.hideSpinner()
+    }
+  }
+
+  static async parseReferences() {
+    const annotation = GUI.getAnnotation()
+    if (annotation.getType() !== Annotation.TYPE.PARSER) {
+      alert("Can only parse references, not documents")
+      return
+    }
+    const msg = `Do you want to automatically tag the references?`
+    if (!confirm(msg)) return
+    const refs = annotation.getContent()
+      .replace(Config.REGEX.TAG_OPEN, "")
+      .replace(Config.REGEX.TAG_CLOSE, " ")
+      .trim()
+    const params = {
+      refs,
+      model: State.model.name
+    }
+    GUI.saveState()
+    GUI.showSpinner()
+    const content = await Actions.runCgiScript("parse.rb", params, "post")
+    GUI.hideSpinner()
+    annotation.load(content)
+    GUI.setHtmlContent(annotation.toHtml())
+  }
+
+  static async autoTagReferences() {
+    // not working
+    // const annotation = GUI.getAnnotation()
+    // if (annotation.getType() !== Annotation.TYPE.PARSER) {
+    //   alert("Only available for list of references")
+    //   return
+    // }
+    // GUI.saveState()
+    // let autoTaggedText = annotation.getContent().split("\n")
+    //   // citation numbers
+    //   .map(line => line.replace(
+    //     /^(<(?!cit)[^/>]+>)([0-9]{1,3}\s+)(\S[^>]+<\/[^>]+>)/,
+    //     "<citation-number>$2</citation-number>$1$3"))
+    //   // signal words
+    //   .map(line => Config.SIGNAL_WORDS.forEach(re => line.replace(re, "<signal>$0</signal>")))
+    //   .join("\n")
+    // annotation.load(autoTaggedText)
+  }
+
+  static async separateReferencesInFootnotes() {
+    const annotation = GUI.getAnnotation()
+    let content = annotation.getContent()
+  }
+
+  static async trainModel() {
+    GUI.showSpinner("Training models, please wait...")
+    await Actions.runCgiScript("train.rb", {model: State.model.name})
+    GUI.hideSpinner()
   }
 
   static addTag(tag_name, wholeLine = false) {
@@ -419,6 +438,10 @@ class Actions {
     }
     csl_data = csl_data.filter(item => item.type)
     let item_name = annotation.getFileName().split(".").slice(0, -1).join(".");
+    if (item_name.match(/10\.[0-9]+_/)) {
+      // work around DOIs in filenames where the illegal "/" has been replaced by underscore
+      item_name = item_name.replace("_", "/"); // only replaces first occurrence
+    }
     // query for identifying target item
     let query = {}
     let identfier_name;
@@ -427,11 +450,7 @@ class Actions {
       if (matched) {
         identfier_name = identifier.name;
         for (let [field, value] of Object.entries(matched.groups)) {
-          if (field === "DOI" && value.match(/10\.[0-9]+_/)) {
-            // work around DOIs in filenames where the illegal "/" has been replaced by underscore
-            value = value.replace("_", "/"); // only replaces first occurrence
-          }
-          query[field] = ["contains", value]
+          query[field] = [field === "date" ? "is" : "contains", value]
         }
         break;
       }
@@ -472,7 +491,6 @@ class Actions {
         targetItem = (await Zotero.items(libraryID, [targetItem.parentItem]))[0]
       }
       GUI.showSpinner(`Retrieving citations...`);
-      console.log(targetItem)
       const citations = await Zotero.listCitations(libraryID, targetItem.key);
       msg = `Do you want to export ${csl_data.length} references to "${targetItem.title}"?`;
       if (!confirm(msg)) return;
@@ -519,7 +537,6 @@ class Actions {
         // create new item
         if (!itemKey) {
           GUI.showSpinner("Creating " + msg);
-          console.log(item);
           ([itemKey] = await Zotero.createItems(libraryID, [item]));
         }
         if (citations.find(citation => citation.zotero === itemKey)) {
@@ -559,30 +576,42 @@ class Actions {
 
 
   static switchToFinder() {
-    const annotation = GUI.getAnnotation();
-    if (!annotation || annotation.getType() === Annotation.TYPE.FINDER) {
+    let annotation = GUI.getAnnotation();
+    if (!annotation) {
+      // create empty annotation for manual entry
+      annotation = new AnystyleFinderAnnotation("")
+    } else if (annotation.getType() === Annotation.TYPE.FINDER) {
+      // already in finder editor
       return
-    }
-    if (this.__finderAnnotation) {
+    } else if (this.__finderAnnotation) {
       if (GUI.versions.length) {
-        const msg = "This will discard the current citation segmentation markup and return to the document. Proceed?"
+        const msg = "This will discard all your changes. Proceed?"
         if (!confirm(msg)) {
           return
         }
       }
+      annotation = this.__finderAnnotation
+    } else {
+      return
     }
-    GUI.loadAnnotation(this.__finderAnnotation)
+    GUI.loadAnnotation(annotation)
   }
 
 
   static switchToParser() {
-    const annotation = GUI.getAnnotation();
-    if (!annotation || annotation.getType() === Annotation.TYPE.PARSER) {
+    let annotation = GUI.getAnnotation();
+    if (!annotation) {
+      // create empty annotation for manual entry
+      annotation = new AnystyleParserAnnotation("")
+    } else if (annotation.getType() === Annotation.TYPE.PARSER) {
+      // already in parser editor
       return
+    } else {
+      // save the state of the finder annotation and convert it to parser annotation
+      this.__finderAnnotation = annotation
+      annotation = annotation.toParserAnnotation()
     }
-    // save the state of the finder annotation
-    this.__finderAnnotation = annotation
-    GUI.loadAnnotation(annotation.toParserAnnotation())
+    GUI.loadAnnotation(annotation)
   }
 
   static changeModel(name) {
@@ -608,5 +637,7 @@ class Actions {
     let filename = annotation.getFileName().split(".").slice(0, -1).join(".") + ".csl.json";
     Utils.download(JSON.stringify(csl, null, 2), filename, "text/plain;encoding=utf-8")
   }
+
+
 }
 

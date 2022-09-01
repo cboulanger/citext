@@ -1,11 +1,11 @@
-class AnystyleFinderAnnotation extends Annotation {
+class AnystyleFinderAnnotation extends FinderAnnotation {
   static type = Annotation.TYPE.FINDER;
   static engine = Config.ENGINES.ANYSTYLE;
   static fileExtension = "ttx";
   static mimeType = "text/plain"
 
-  constructor(text, fileName) {
-    super(text, fileName);
+  constructor(content, fileName) {
+    super(content, fileName);
     this.numPages = 0
   }
 
@@ -146,13 +146,49 @@ class AnystyleFinderAnnotation extends Annotation {
         }
       }
     }
+    const separator = "<sep></sep>"
+    const handleFootnotes = line => {
+      // semicolon should never be part of the citation itself, unlike comma or period and so should be
+      // a reliable separation marker, however only in footnotes documents!
+      line = line.replace(/; */g, separator)
+
+      // signal word hint at the beginning of a new reference
+      let m;
+      for (let signal_start of Config.SIGNAL_WORDS.START_CITATION) {
+        do {
+          m = line.match(signal_start)
+          if (m) {
+            line = line.replace(signal_start, separator)
+          }
+        } while (m)
+      }
+      // footnote numbers
+      if (line.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START)) {
+        // remove any separators after the citation number
+        let i = line.indexOf(separator)
+        if (i >= 0 && i < 10) {
+          line = line.replace(separator, "")
+        }
+        line = separator + line
+      }
+      return line
+    }
+
     let refs = this.getContent()
       .split("\n")
       .filter(is_ref)
       .map(line => line.replace(/^.+\| ?/, ""))
-      .map(line => line.trim() ? line : "<sep></sep>")
+      .map(line => line.trim() ? line : separator)
+      //this should be made dependent on heuristics or manual setting of "footnotes
+      .map(handleFootnotes)
       .join(" ")
-      .replace(/<sep><\/sep>/g,"\n")
+      .replace(new RegExp(separator, "g"), "\n")
+
+    // auto-tag citation numbers
+    while (refs.match(/\n *\n/)) {
+      refs = refs.replace(/\n *\n/, "\n")
+    }
+
     return refs
   }
 
@@ -165,7 +201,7 @@ class AnystyleFinderAnnotation extends Annotation {
   }
 }
 
-class AnystyleParserAnnotation extends Annotation {
+class AnystyleParserAnnotation extends ParserAnnotation {
   static type = Annotation.TYPE.PARSER;
   static engine = Config.ENGINES.ANYSTYLE;
   static fileExtension = "xml";
@@ -190,7 +226,7 @@ class AnystyleParserAnnotation extends Annotation {
         .replace(/ *<sequence> */g, "")
         .replace(/ *<\/sequence> */g, "\n")
     }
-    this.content = content
+    this.content = content.trim()
     this.numRefs = content.split("\n").length
   }
 
@@ -199,7 +235,7 @@ class AnystyleParserAnnotation extends Annotation {
       .split("\n")
       .map(line => `<sequence>${line}</sequence>`)
       .map(line => line.replace(/(<\/[^>]+>)([^<]*)(<[^>/]+>)/g, "$2$1$3"))
-      .join("\n");
+      .join("\n").trim();
     return `<?xml version="1.0" encoding="utf-8"?>\n<dataset>\n${textToExport}\n</dataset>`
   }
 }

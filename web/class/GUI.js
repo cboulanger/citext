@@ -1,11 +1,6 @@
 class GUI {
   static annotation;
-  static displayMode;
-  static versions;
-  static DISPLAY_MODES = {
-    DOCUMENT: "document",
-    REFERENCES: "references"
-  }
+  static versions = [];
   static pdfFile;
 
   static init() {
@@ -24,11 +19,13 @@ class GUI {
       let lastLoadUrl = localStorage.getItem(Config.LOCAL_STORAGE.LAST_LOAD_URL) || false;
       let downloadUrl = hash.startsWith("#load=") && hash.substr(6).trim();
       let textInLocalStorage = this._hasTextInLocalStorage();
-      if (textInLocalStorage && !(downloadUrl !== lastLoadUrl)) {
+      let textLoaded = false
+      if (textInLocalStorage /*&& !(downloadUrl !== lastLoadUrl)*/) {
         console.log("Loading document from local storage.");
         this._loadTextFromLocalStorage();
-        return;
-      } else if (lastLoadUrl && (!downloadUrl || downloadUrl === lastLoadUrl)) {
+        textLoaded = true
+      }
+      if (lastLoadUrl && (!downloadUrl || downloadUrl === lastLoadUrl)) {
         console.log("Loading document from stored URL: " + lastLoadUrl)
         Actions.loadFromUrl(lastLoadUrl).catch(console.error);
         return;
@@ -36,8 +33,12 @@ class GUI {
         console.log("Loading document from URL hash: " + downloadUrl)
         Actions.loadFromUrl(downloadUrl).catch(console.error);
         return;
+      } else {
+        Actions.switchToFinder()
       }
-      $("#modal-help").show();
+      if (!textLoaded) {
+        $("#modal-help").show();
+      }
     });
 
     // save text before leaving the page
@@ -126,7 +127,24 @@ class GUI {
     // show popup on select
     const contextMenu = $("#context-menu");
     const textContent = $("#text-content");
-    textContent.on("keyup", GUI.updateMarkedUpText)
+    textContent.keypress(function (event) {
+      GUI.saveState()
+      var keycode = (event.keyCode ? event.keyCode : event.which);
+      if (keycode == '13') {
+        textContent.one("keyup", () => {
+          let re1 = /<div>(<span[^>]*>.*<\/span>)<\/div>/g
+          while (textContent.html().match(re1)) {
+            textContent.html(textContent.html().replace(re1, "$1"))
+          }
+          // let re2 = /(<span[^>]*>)<\/span><br>/g
+          // while (textContent.html().match(re2)) {
+          //   textContent.html(textContent.html().replace(re2, "$1<br></span>"))
+          // }
+          GUI.updateMarkedUpText()
+        })
+      }
+    });
+    textContent.on("keyup", GUI.updateMarkedUpText.bind(GUI))
     textContent.on("pointerup", GUI._showPopupOnSelect);
     contextMenu.on("pointerup", () => setTimeout(() => {
       contextMenu.hide();
@@ -221,7 +239,7 @@ class GUI {
     return Boolean(localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT));
   }
 
-  static _loadTextFromLocalStorage() {
+  static async _loadTextFromLocalStorage() {
     let filename = localStorage.getItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME);
     let content = localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT);
     if (filename && content) {
@@ -230,7 +248,11 @@ class GUI {
         lastModified: 1534584790000,
         type: `${type};charset=utf8`
       });
-      Actions.loadFile(file)
+      try {
+        await Actions.loadFile(file)
+      } catch (e) {
+        alert(e.message)
+      }
       return true;
     }
   }
@@ -254,7 +276,7 @@ class GUI {
     // visibility of context menu buttons
     // refactor this with .toggleClass and boolean conditions
     switch (type) {
-      case Annotation.TYPE.FINDER:
+      case Annotation.TYPE.FINDER: {
         switch (parserEngine) {
           case Config.ENGINES.EXPARSER:
             $(".exparser.visible-in-document-mode").removeClass("excluded")
@@ -270,7 +292,8 @@ class GUI {
             break
         }
         break
-      case Annotation.TYPE.PARSER:
+      }
+      case Annotation.TYPE.PARSER: {
         switch (parserEngine) {
           case Config.ENGINES.EXPARSER:
             $(".exparser.visible-in-refs-mode").removeClass("excluded")
@@ -286,6 +309,7 @@ class GUI {
             break
         }
         break
+      }
     }
     // enable/disable buttons
     switch (type) {
@@ -310,18 +334,18 @@ class GUI {
   }
 
   static resetVersions() {
-    this.versions = []
+    GUI.versions = []
     $("#btn-undo").addClass("ui-state-disabled")
   }
 
 
   static undo() {
-    if (this.versions.length) {
-      $("#text-content").html(this.versions.pop());
+    if (GUI.versions.length) {
+      $("#text-content").html(GUI.versions.pop());
       GUI.updateMarkedUpText();
     }
-    if (!this.versions.length) {
-      this.resetVersions()
+    if (!GUI.versions.length) {
+      GUI.resetVersions()
     }
   }
 
@@ -338,16 +362,10 @@ class GUI {
     if (!(annotation instanceof Annotation)) {
       throw new Error("Argument must be annotation")
     }
-    switch (annotation.getType()) {
-      case Annotation.TYPE.FINDER:
-        this.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT)
-        break;
-      case Annotation.TYPE.PARSER:
-        this.setDisplayMode(GUI.DISPLAY_MODES.REFERENCES)
-        $(".enabled-if-document").toggleClass("ui-state-disabled", this.getAnnotation()?.getType() !== Annotation.TYPE.FINDER)
-        break
-    }
     this.annotation = annotation;
+    this.setHtmlContent(annotation.toHtml())
+    this.resetVersions()
+    this.updateButtons()
     this.setTextFileName(annotation.getFileName())
     if (annotation.numPages && annotation.numPages > 0) {
       $("#label-page-number").html("1");
@@ -356,8 +374,6 @@ class GUI {
       $("#label-page-number").html("");
       $(".visible-if-pages").addClass("hidden");
     }
-    this.resetVersions()
-    this.setHtmlContent(annotation.toHtml())
   }
 
   static saveToLocalStorage() {
@@ -385,21 +401,27 @@ class GUI {
     localStorage.removeItem(Config.LOCAL_STORAGE.DOCUMENT);
     localStorage.removeItem(Config.LOCAL_STORAGE.LAST_LOAD_URL);
     document.location.href = document.URL.replace(/#.*$/, "#");
-    GUI.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT);
     this.toggleMarkedUpView(false);
   }
 
-  static loadPdfFile(file) {
-    GUI.pdfFile = file;
-    let objectURL = URL.createObjectURL(file);
-    const pdfiframe = $("#pdfiframe");
-    pdfiframe.on("load", GUI._onPdfIframeLoaded);
-    pdfiframe.prop("src", "web/viewer.html?file=" + objectURL);
-    GUI.showPdfView(true);
-    $("#pdf-label").html(file.name);
-    this.setDisplayMode(GUI.DISPLAY_MODES.DOCUMENT);
-    $(".enabled-if-pdf,.enabled-if-document").removeClass("ui-state-disabled");
-    $(".visible-if-pdf").addClass("hidden");
+  static async loadPdfFile(file) {
+    return new Promise(async (resolve, reject) => {
+      GUI.pdfFile = file;
+      let objectURL = URL.createObjectURL(file);
+      const pdfiframe = $("#pdfiframe");
+      pdfiframe.one("load", () => {
+        setTimeout(() => {
+          GUI.__pdfJsApplication = window.frames[0].PDFViewerApplication;
+          GUI.__pdfJsApplication.eventBus.on('pagechanging', GUI._onPdfPageChanging);
+        }, 500)
+        GUI.showPdfView(true);
+        $("#pdf-label").html(file.name);
+        $(".enabled-if-pdf,.enabled-if-document").removeClass("ui-state-disabled");
+        $(".visible-if-pdf").addClass("hidden");
+        resolve()
+      });
+      pdfiframe.prop("src", "web/viewer.html?file=" + objectURL);
+    })
   }
 
   static removePdfFile() {
@@ -552,14 +574,6 @@ class GUI {
     document.getElementById("main-container").style.gridTemplateColumns = state ? "50% 50%" : "100% 0"
   }
 
-  static setDisplayMode(nextDisplayMode) {
-    if (nextDisplayMode === this.displayMode) {
-      return;
-    }
-    this.displayMode = nextDisplayMode;
-    this.updateButtons()
-  }
-
   static _showPopupOnSelect(e) {
     const contextMenu = $("#context-menu");
     const contentLabel = $("#text-content");
@@ -616,12 +630,6 @@ class GUI {
       });
   }
 
-  static _onPdfIframeLoaded() {
-    setTimeout(() => {
-      GUI.__pdfJsApplication = window.frames[0].PDFViewerApplication;
-      GUI.__pdfJsApplication.eventBus.on('pagechanging', GUI._onPdfPageChanging);
-    }, 500)
-  }
 
   static _onPdfPageChanging(e) {
     if (e.pageNumber) {
@@ -682,21 +690,9 @@ class GUI {
   }
 
   static saveState() {
-    this.versions.push($("#text-content").html());
+    GUI.versions.push($("#text-content").html());
     $("#btn-undo").removeClass("ui-state-disabled")
     this.saveToLocalStorage()
-  }
-
-  static switchSurnameGivenNames() {
-    if (this.displayMode !== GUI.DISPLAY_MODES.REFERENCES) {
-      return;
-    }
-    this.saveState();
-    $("#text-content").html($("#text-content").html()
-      .replace(/data-tag="surname"/g, 'data-tag2="given-names"')
-      .replace(/data-tag="given-names"/g, 'data-tag="surname"')
-      .replace(/data-tag2/g, 'data-tag')
-    );
   }
 }
 

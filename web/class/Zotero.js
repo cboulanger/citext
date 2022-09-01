@@ -139,6 +139,12 @@ class Zotero {
         || cslItem['event-place'] || cslItem.volume
         || cslItem['number-of-volumes'] || cslItem.ISBN)) {
       zoteroType = 'videoRecording';
+    } else if (cslItem["container-title"]){
+      if (cslItem["publisher-place"] || cslItem["publisher"] || cslItem.edition) {
+        zoteroType = "bookSection"
+      } else {
+        zoteroType = "journalArticle"
+      }
     } else if (Zotero.Schema.CSL_TYPE_MAPPINGS_REVERSE[cslItem.type]) {
       zoteroType = Zotero.Schema.CSL_TYPE_MAPPINGS_REVERSE[cslItem.type][0];
     } else {
@@ -146,6 +152,14 @@ class Zotero {
       zoteroType = "document"
     }
     item.itemType = zoteroType;
+
+    // fixes
+    if (!(zoteroType === "bookSection" || zoteroType.endsWith("Article"))) {
+      delete cslItem.page
+    }
+
+
+
 
     // map text fields
     for (let [cslField, zoteroFields] of Object.entries(Zotero.Schema.CSL_TEXT_MAPPINGS)) {

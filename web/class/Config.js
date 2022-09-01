@@ -21,6 +21,8 @@ class Config {
   }
   static REGEX = {
     TAG: /<\/?[^>]+>/g,
+    TAG_OPEN: /<[^>/]+>/g,
+    TAG_CLOSE: /<\/[^>]+>/g,
     SPAN: /<\/?span[^>]*>/ig,
     DIV: /<\/?div[^>]*>/ig,
     BR: /<br[^>]*>/ig,
@@ -28,7 +30,8 @@ class Config {
     LAYOUT: /(\t[^\t]+){6}/g,
     EMPTY_NODE: /<[^>]+><\/[^>]+>/g,
     DATA_TAG_SPAN: /<span data-tag="([^"]+)"[^<]*>([^<]*)<\/span>/gm,
-    PAGE_NUMBER_IN_LINE: /^[0-9]{1,3}|[0-9]{1,3}/
+    PAGE_NUMBER_IN_LINE: /^[0-9]{1,3}|[0-9]{1,3}/,
+    FOOTNOTE_NUMBER_AT_LINE_START: /^([\d]{1,3}\s+)(\p{L}.{30,})$/iu
   }
   static KNOWN_IDENTIFIERS = [
     {
@@ -48,10 +51,21 @@ class Config {
       match: /^(?<key>[A-Z0-9]{8})$/,
     }
   ]
-  static SIGNAL_WORDS = [
-    /(see |cf\.? |e\.g\. |accord )(also )?/i,
-    /(siehe |vgl. )?(dazu |hierzu )?(etwa |näher )?(auch)?/i,
-    /(anders )(etwa )/i,
-  ]
+  static SIGNAL_WORDS = {
+    START_CITATION: [
+      /(see |cf\.? |e\.g\. |accord )(also )?/ig,
+      /(siehe |vgl\. |näher |etwa | beispielsweise )(dazu |hierzu )?(etwa |näher )?(auch )?/gi,
+      /(dazu |hierzu )(etwa |näher )?(auch)?/gi,
+      /(anders etwa |ähnlich auch )/gi,
+      /(sowie )(bei )?/gi,
+      /(zitiert:|zitiert als:?)/gi
+    ],
+    END_CITATION: [
+      /([\d]+\s*)(-\s*)?([\d]+\s*)?(f\.?|ff\.?| (et |and )?passim)\s*([;.]\s*)/
+    ],
+    PREVIOUS_FOOTNOTE: [/ (fn|n|)\./i, /(fußnote|note)/i],
+    PREVIOUS_PUBLICATION: [/(ebd|a\.a\.o|ibid|op\. cit)\./i],
+    PREVIOUS_AUTHOR: [/(ders|dies)/i, /^[_-]{3}/]
+  }
 }
 

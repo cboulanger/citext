@@ -15,9 +15,9 @@ end
 xml = REXML::Document.new seq.gsub(/\n */,"")
 seqs = Wapiti::Dataset.parse(xml)
 csl =  AnyStyle.parser.format_csl(seqs)
+
 # fix missing/incorrect types
 csl.map! do |item|
-    STDERR.puts item.to_json
     if item[:type] == nil
         if item[:issued] and ! item["container-title"]
             item[:type] = "book"
@@ -32,11 +32,11 @@ csl.map! do |item|
     end
     item
 end
+
 # filter invalid items
-csl.select! { |item| item.size() > 3 }
+csl.select! { |item| item.size() > 1 }
 
+# clean up and return
 csl_json = JSON.pretty_generate csl
-csl_json = csl_json.gsub(/&amp;/,"&")
-
-# return to client
+csl_json = csl_json.gsub(/&amp;/,"&").gsub(/&amp;/,"&")
 cgi.out("application/json") { csl_json }

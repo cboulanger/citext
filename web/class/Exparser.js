@@ -1,4 +1,4 @@
-class ExparserExtractionAnnotation extends Annotation {
+class ExparserExtractionAnnotation extends FinderAnnotation {
   static type = Annotation.TYPE.FINDER;
   static engine = Config.ENGINES.EXPARSER;
   static fileExtension = "csv";
@@ -104,7 +104,7 @@ class ExparserExtractionAnnotation extends Annotation {
   }
 }
 
-class ExparserSegmentationAnnotation extends ExparserExtractionAnnotation {
+class ExparserSegmentationAnnotation extends ParserAnnotation {
   static type = Annotation.TYPE.PARSER;
   static fileExtension = "xml";
   static mimeType = "text/xml"

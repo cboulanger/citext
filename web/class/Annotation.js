@@ -11,7 +11,8 @@ class Annotation {
   constructor(content, fileName) {
     this.content = content.replace(/\r/g, "");
     this.tags = []
-    this.fileName = fileName
+    const dateString = (new Date()).toISOString().replace(/[T]/g, "_").replace(/[-:Z.]/g, "")
+    this.fileName = fileName || "annotation-" + dateString + "." + this.getFileExtension()
   }
 
   load(text) {
@@ -42,10 +43,8 @@ class Annotation {
     return this.content
   }
 
-  update
-
   setContent(content) {
-    this.content = content;
+    this.content = content.trim();
   }
 
   toHtml() {
@@ -71,18 +70,6 @@ class Annotation {
     return this.toMarkup()
   }
 
-  extractReferences() {
-    throw new Error("Implemented by subclass")
-  }
-
-  toParserAnnotation() {
-    throw new Error("Implemented by subclass")
-  }
-
-  toFinderAnnotation() {
-    throw new Error("Implemented by subclass")
-  }
-
   /**
    * Translates the html code from the editor to the internal markup
    * @param {string} html
@@ -98,7 +85,7 @@ class Annotation {
       console.warn("Removing unhandled <span> tags in html text!");
       markedUpText = markedUpText.replace(Config.REGEX.SPAN, "");
     }
-    this.content = markedUpText
+    this.content = markedUpText.trim()
     return this.content
   }
 
@@ -142,7 +129,7 @@ class Annotation {
       text = text.replace(regex, replacement);
     }
     // convert line breaks to break nodes
-    return text.replace(/\n/g, "<br>");
+    return text.replace(/\n/g, "<br>").trim();
   }
 
   _htmlToMarkup(html) {
@@ -150,5 +137,23 @@ class Annotation {
       .replace(Config.REGEX.DIV, "")
       .replace(Config.REGEX.BR, "\n")
       .replace(Config.REGEX.DATA_TAG_SPAN, "<$1>$2</$1>")
+      .trim()
+  }
+}
+
+class FinderAnnotation extends Annotation {
+
+  extractReferences() {
+    throw new Error("Implemented by subclass")
+  }
+
+  toParserAnnotation() {
+    throw new Error("Implemented by subclass")
+  }
+}
+
+class ParserAnnotation extends Annotation {
+  toFinderAnnotation() {
+    throw new Error("Implemented by subclass")
   }
 }

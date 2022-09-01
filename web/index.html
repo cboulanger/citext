@@ -72,14 +72,14 @@
                        onclick="Actions.setParserEngine('anystyle');" href="#">
                     Use AnyStyle</a></li>-->
                 <li><a href="#" id="btn-train"
-                       onclick="Actions.runCommand(Actions.COMMANDS.TRAIN_MODEL)">Train currently selected model</a></li>
+                       onclick="Actions.trainModel()">Train currently selected model</a></li>
                 <li role="separator" class="divider"></li>
 
             </ul>
         </div>
         <!-- finder menu -->
         <div class="btn-group">
-            <button type="button" class="btn btn-primary enabled-if-document"
+            <button type="button" id="btn-finder" class="btn btn-primary"
                     onclick="Actions.switchToFinder()">
                 <i class="fas fa-search"></i><span class="button-label">Find/Extract</span>
             </button>
@@ -92,16 +92,16 @@
                        onclick="Actions.run_excite_command('ocr');" href="#">
                     Run OCR on PDF</a></li>-->
                 <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
-                       onclick="Actions.runCommand(Actions.COMMANDS.TEXT_EXTRACTION);" href="#">
+                       onclick="Actions.extractTextFromPdf();" href="#">
                     Extract text from PDF</a></li>
                 <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-pdf"
-                       onclick="Actions.runCommand(Actions.COMMANDS.FIND_REFERENCES);" href="#">
+                       onclick="Actions.findAndExtractReferencesInPdf();" href="#">
                     Extract references from PDF</a></li>
             </ul>
         </div>
         <!-- parser menu -->
         <div class="btn-group">
-            <button type="button" class="btn btn-primary ui-state-disabled enabled-if-refs"
+            <button type="button" class="btn btn-primary"
                     onclick="Actions.switchToParser()"
                     aria-haspopup="true" aria-expanded="false">
                 <i class="fas fa-search-plus"></i><span class="button-label">Parse/Segment</span>
@@ -113,7 +113,7 @@
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
                 <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
                        href="#"
-                       onclick="Actions.runCommand(Actions.COMMANDS.PARSE_REFERENCES);">
+                       onclick="Actions.parseReferences();">
                     Auto-tag reference components</a></li>
             </ul>
         </div>
@@ -185,10 +185,12 @@
 </nav>
 
 <div id="main-container" class="grid-container">
-    <!-- text to mark up -->
+    <!-- text editor area -->
     <div class="view-text">
-        <div class="view-text-display" id="text-content" contenteditable="true">
+        <!-- text editor -->
+        <div id="text-content" class="view-text-display" contenteditable="true">
         </div>
+        <!-- text editor menu bar -->
         <div class="view-text-label">
             <label id="text-label"></label>
         </div>
@@ -334,6 +336,15 @@
         </a></li>
         <li><a data-tag="url" onclick="Actions.addTag('url');" href="#">
             URL
+        </a></li>
+        <li><a data-tag="note" onclick="Actions.addTag('note');" href="#">
+            Note
+        </a></li>
+        <li><a data-tag="backref" onclick="Actions.addTag('backref');" href="#">
+            BackRef
+        </a></li>
+        <li><a data-tag="ignore" onclick="Actions.addTag('ignore');" href="#">
+            Ignore
         </a></li>
     </div>
 
