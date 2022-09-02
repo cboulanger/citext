@@ -270,10 +270,12 @@ class Actions {
     let content = annotation.getContent()
   }
 
-  static async trainModel() {
-    GUI.showSpinner("Training models, please wait...")
-    await Actions.runCgiScript("train.rb", {model: State.model.name})
-    GUI.hideSpinner()
+  static async trainModel(target="both") {
+    await Actions.runCgiScript("train.rb", {
+      model: State.model.name,
+      target,
+      channel_id: State.channel_id
+    })
   }
 
   static addTag(tag_name, wholeLine = false) {
@@ -614,12 +616,13 @@ class Actions {
     GUI.loadAnnotation(annotation)
   }
 
-  static changeModel(name) {
+  static setModel(name) {
     $("#btn-model-" + State.model.name).removeClass("btn-dropdown-radio-selected");
     State.model.name = name;
     $("#btn-model-" + State.model.name).addClass("btn-dropdown-radio-selected");
     localStorage.setItem(Config.LOCAL_STORAGE.LAST_MODEL_NAME, name);
-    $("#btn-train").toggleClass("ui-state-disabled", name === "default")
+    $(".model-training").toggleClass("ui-state-disabled", name === "default")
+    $("#btn-save").toggleClass("ui-state-disabled", name === "default")
   }
 
   static async exportCsl() {

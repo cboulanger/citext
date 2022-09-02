@@ -56,7 +56,7 @@ class GUI {
         .toggleClass("hidden", !result.includes("Zotero Connector Server is Available")));
 
     // SSE
-    const channel_id = Config.channel_id = Math.random().toString().slice(2)
+    const channel_id = State.channel_id = Math.random().toString().slice(2)
     const source = new EventSource(Config.SERVER_URL + "sse.py?" + channel_id);
     let toasts = {};
     source.addEventListener("open", () => {
@@ -84,17 +84,17 @@ class GUI {
             toastr.clear(toast)
           }
         } else if (text.trim()) {
-          const onCloseClick = type === "info" ? () => {
-            if (confirm("Cancel the current server process?")) {
-              Actions.runCgiScript("abort.py", {id: channel_id})
-            }
-          } : undefined;
+          // const onCloseClick = type === "info" ? () => {
+          //   if (confirm("Cancel the current server process?")) {
+          //     Actions.runCgiScript("abort.py", {id: channel_id})
+          //   }
+          // } : undefined;
           toast = toastr[type](text, title, {
             positionClass: "toast-bottom-full-width",
             timeOut: 0,
             extendedTimeOut: 0,
             closeButton: true,
-            onCloseClick
+            onCloseClick: undefined
           })
           toasts[toastId] = toast
         }
@@ -117,10 +117,10 @@ class GUI {
       status.model_names
         .reverse()
         .forEach(name => $("#model-names").append($(`<li>` +
-          `<a class="dropdown-item" href="#" id="btn-model-${name}" onclick="Actions.changeModel('${name}')">${name}</a>` +
+          `<a class="dropdown-item" href="#" id="btn-model-${name}" onclick="Actions.setModel('${name}')">${name}</a>` +
           `</li>`)));
     }
-    Actions.changeModel(model_name);
+    Actions.setModel(model_name);
   }
 
   static _setupEventListeners() {

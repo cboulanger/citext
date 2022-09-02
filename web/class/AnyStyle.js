@@ -150,25 +150,25 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
     const handleFootnotes = line => {
       // semicolon should never be part of the citation itself, unlike comma or period and so should be
       // a reliable separation marker, however only in footnotes documents!
-      line = line.replace(/; */g, separator)
+      //line = line.replace(/; */g, separator)
 
       // signal word hint at the beginning of a new reference
-      let m;
-      for (let signal_start of Config.SIGNAL_WORDS.START_CITATION) {
-        do {
-          m = line.match(signal_start)
-          if (m) {
-            line = line.replace(signal_start, separator)
-          }
-        } while (m)
-      }
+      // let m;
+      // for (let signal_start of Config.SIGNAL_WORDS.START_CITATION) {
+      //   do {
+      //     m = line.match(signal_start)
+      //     if (m) {
+      //       line = line.replace(signal_start, separator)
+      //     }
+      //   } while (m)
+      // }
       // footnote numbers
       if (line.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START)) {
         // remove any separators after the citation number
-        let i = line.indexOf(separator)
-        if (i >= 0 && i < 10) {
-          line = line.replace(separator, "")
-        }
+        // let i = line.indexOf(separator)
+        // if (i >= 0 && i < 10) {
+        //   line = line.replace(separator, "")
+        // }
         line = separator + line
       }
       return line
@@ -179,12 +179,10 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
       .filter(is_ref)
       .map(line => line.replace(/^.+\| ?/, ""))
       .map(line => line.trim() ? line : separator)
-      //this should be made dependent on heuristics or manual setting of "footnotes
       .map(handleFootnotes)
       .join(" ")
       .replace(new RegExp(separator, "g"), "\n")
 
-    // auto-tag citation numbers
     while (refs.match(/\n *\n/)) {
       refs = refs.replace(/\n *\n/, "\n")
     }

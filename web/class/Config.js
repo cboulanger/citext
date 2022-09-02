@@ -1,5 +1,4 @@
 class Config {
-  static channel_id;
   /* The url of the exparser backend */
   static SERVER_URL = "/cgi-bin/"
   static URL = {

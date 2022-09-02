@@ -65,14 +65,12 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-model" id="model-names">
-                <!--<li><a class="dropdown-item excluded anystyle"
-                       onclick="Actions.setParserEngine('exparser');" href="#">
-                    Use EXparser</a></li>
-                <li><a class="dropdown-item excluded exparser"
-                       onclick="Actions.setParserEngine('anystyle');" href="#">
-                    Use AnyStyle</a></li>-->
-                <li><a href="#" id="btn-train"
-                       onclick="Actions.trainModel()">Train currently selected model</a></li>
+                <li><a href="#" class="model-training"
+                       onclick="Actions.trainModel()">Train currently selected finder/parser model</a></li>
+                <li><a href="#" class="model-training"
+                       onclick="Actions.trainModel('finder')">Train finder model</a></li>
+                <li><a href="#" class="model-training"
+                       onclick="Actions.trainModel('parser')">Train parser model</a></li>
                 <li role="separator" class="divider"></li>
 
             </ul>

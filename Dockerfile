@@ -1,4 +1,4 @@
-FROM ubuntu:bionic
+FROM ubuntu:jammy
 
 # Set the locale
 RUN apt-get update && DEBIAN_FRONTEND=noninteractive apt-get install -y locales
@@ -14,10 +14,10 @@ ADD *.py /app/
 ADD *.jar /app/
 ADD *.txt /app/
 RUN apt-get -y install poppler-utils && \
-    apt-get -y install python3.6 python3-pip && \
-    DEBIAN_FRONTEND=noninteractive apt-get -y install ruby ruby-dev gem # installs ruby 2.5.1
+    apt-get -y install python3 python3-pip && \
+    DEBIAN_FRONTEND=noninteractive apt-get -y install ruby ruby-dev gem
 ADD requirements.txt .
-RUN  python3.6 -m pip install --upgrade pip && \
-     python3.6 -m pip install -r requirements.txt && \
-     gem install anystyle
-ENTRYPOINT ["python3.6", "/app/run-main.py"]
+RUN  pip install --upgrade pip && \
+     pip install -r requirements.txt && \
+     gem install anystyle nokogiri serrano
+ENTRYPOINT ["python3", "/app/run-main.py"]
