@@ -78,8 +78,11 @@ class Annotation {
   loadFromHtml(html) {
     let markedUpText = html
       .replace(Config.REGEX.DIV, "")
+      .replace(/<span[^>]*>(<br>)?<\/span>/,"")
       .replace(Config.REGEX.BR, "\n")
       .replace(Config.REGEX.DATA_TAG_SPAN, "<$1>$2</$1>")
+
+
     // check if translation removed all <span> tags and warn if not
     if (markedUpText.match(Config.REGEX.SPAN)) {
       console.warn("Removing unhandled <span> tags in html text!");

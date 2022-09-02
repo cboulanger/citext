@@ -233,6 +233,7 @@ class Actions {
     const refs = annotation.getContent()
       .replace(Config.REGEX.TAG_OPEN, "")
       .replace(Config.REGEX.TAG_CLOSE, " ")
+      .replace(/&amp;/g, "&")
       .trim()
     const params = {
       refs,
@@ -243,7 +244,7 @@ class Actions {
     const content = await Actions.runCgiScript("parse.rb", params, "post")
     GUI.hideSpinner()
     annotation.load(content)
-    GUI.setHtmlContent(annotation.toHtml())
+    GUI.update()
   }
 
   static async autoTagReferences() {
@@ -270,61 +271,12 @@ class Actions {
     let content = annotation.getContent()
   }
 
-  static async trainModel(target="both") {
+  static async trainModel(target = "both") {
     await Actions.runCgiScript("train.rb", {
       model: State.model.name,
       target,
       channel_id: State.channel_id
     })
-  }
-
-  static addTag(tag_name, wholeLine = false) {
-    GUI.addTag(tag_name, wholeLine);
-  }
-
-  static removeTag() {
-    GUI.saveState();
-    let sel = window.getSelection();
-    if (!sel) return;
-    let el = sel.focusNode;
-    while (el) {
-      if (el.dataset && el.dataset.tag) break;
-      el = el.parentElement;
-    }
-    if (!el) return;
-    $(el).contents().unwrap();
-    GUI.updateMarkedUpText();
-
-  }
-
-  static removeAllTags(wholeLine = false) {
-    GUI.saveState()
-    let sel = window.getSelection();
-    if (!sel) return;
-    if (wholeLine) {
-      let startNode = sel.anchorNode;
-      while (startNode.previousSibling && startNode.previousSibling.nodeName !== "BR") {
-        startNode = startNode.previousSibling;
-      }
-      let endNode = sel.focusNode;
-      while (endNode.nextSibling && endNode.nextSibling.nodeName !== "BR") {
-        endNode = endNode.nextSibling;
-      }
-      if (startNode && endNode) {
-        sel.setBaseAndExtent(startNode, 0, endNode, 1);
-      }
-    }
-    if (sel.rangeCount) {
-      let container = document.createElement("div");
-      for (let i = 0, len = sel.rangeCount; i < len; ++i) {
-        container.appendChild(sel.getRangeAt(i).cloneContents());
-      }
-      let replacementText = container.innerHTML
-        .replace(Config.REGEX.BR, "\n")
-        .replace(Config.REGEX.TAG, "")
-      GUI.replaceSelection(replacementText);
-    }
-    GUI.updateMarkedUpText();
   }
 
   static checkResult(result) {
@@ -641,6 +593,71 @@ class Actions {
     Utils.download(JSON.stringify(csl, null, 2), filename, "text/plain;encoding=utf-8")
   }
 
+  static handleFootnotes() {
+    let annotation = GUI.getAnnotation()
+    if (!annotation) return
+    GUI.saveState()
+    let refs = annotation.getContent().split("\n")
+    let fnCounter = 0
+    const separator = "<sep></sep>"
+    const handleFootnotes = line => {
+      // footnote numbers
+      let m = line.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START)
+      if (m) {
+        let fnNumber = Number(m[1].trim())
+        let fnLine = m[2].trim()
+        // heuristic to avoid false positives: number shouldn't jump by more than 30
+        if (fnNumber > fnCounter && (fnNumber - fnCounter) <= 30 && fnLine.length > 70) {
+          fnCounter = fnNumber
+          line = separator + line
+        }
+      }
+      // remove signal words that preceed a citation
+      for (let re of Config.SIGNAL_WORDS.START_CITATION) {
+        let m = line.match(re)
+        if (m) {
+          line = line.replace(re, separator)
+        }
+      }
+      // semicolons are a relatively reliable marker of a new reference
+      if (line.match(/;/)) {
+        line = line.replace(/(?<!&[a-z]+); ?/g, ";" + separator)
+      }
+      // now do end of citation markers
+      for (let re of Config.SIGNAL_WORDS.END_CITATION) {
+        let m = line.match(re)
+        if (m) {
+          line = line.replace(re, "$&" + separator)
+        }
+      }
+      return line
+    }
+    refs = refs
+      .map(line => line.trim() ? line : separator)
+      .map(handleFootnotes)
+      .join(" ")
+      .replace(new RegExp(separator, "g"), "\n")
+    // don't leave citation number on own line
+    refs = refs.replace(/(\n[\d]{1,3}\s+)\n/gm, "$1")
+    // remove empty lines
+    while (refs.match(/\n *\n/)) {
+      refs = refs.replace(/\n *\n/, "\n")
+    }
+    annotation.setContent(refs)
+    GUI.update()
+  }
+
+  static removeIgnoreTags() {
+    GUI.saveState()
+    let content = GUI.getAnnotation().getContent()
+    content = content.replace(/<ignore>[^<]*<\/ignore>/g, "")
+    // remove empty lines
+    while (content.match(/\n *\n/)) {
+      content = content.replace(/\n *\n/, "\n")
+    }
+    GUI.getAnnotation().setContent(content)
+    GUI.update()
+  }
 
 }
 

@@ -109,6 +109,14 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
+                <li><a class="dropdown-item ui-state-disabled enabled-if-refs"
+                       href="#"
+                       onclick="Actions.handleFootnotes();">
+                    Preprocess footnote references</a></li>
+                <li><a class="dropdown-item ui-state-disabled enabled-if-refs"
+                       href="#"
+                       onclick="Actions.removeIgnoreTags();">
+                    Remove ignored labels</a></li>
                 <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.parseReferences();">
@@ -254,170 +262,175 @@
 <ul id="context-menu" class="dropdown-menu" role="menu">
     <!-- finder mode -->
     <li><a id="btn-ref-part" class="visible-in-document-mode enabled-if-selection exparser"
-           onclick="Actions.addTag('ref');" href="#">
+           onclick="GUI.addTag('ref');" href="#">
         <i class="fas fa-sticky-note"></i>Markup selection as reference
     </a></li>
     <li><a id="btn-ref-line" class="visible-in-document-mode enabled-if-selection exparser"
-           onclick="Actions.addTag('ref', true);" href="#">
+           onclick="GUI.addTag('ref', true);" href="#">
         Markup whole line(s) as reference
     </a></li>
     <li><a id="btn-oth" class="visible-in-document-mode enabled-if-selection exparser"
-           onclick="Actions.addTag('oth');" href="#">
+           onclick="GUI.addTag('oth');" href="#">
         Ignore
     </a></li>
     <div class="refs-button-grid anystyle visible-in-document-mode enabled-if-selection">
-        <li><a data-tag="reference" onclick="Actions.addTag('reference', true);" href="#">
+        <li><a data-tag="reference" onclick="GUI.addTag('reference', true);" href="#">
             Reference
         </a></li>
-        <li><a data-tag="meta" onclick="Actions.addTag('meta', true);" href="#">
+        <li><a data-tag="meta" onclick="GUI.addTag('meta', true);" href="#">
             Meta
         </a></li>
-        <li><a data-tag="text" onclick="Actions.addTag('text', true);" href="#">
+        <li><a data-tag="text" onclick="GUI.addTag('text', true);" href="#">
             Text
         </a></li>
-        <li><a data-tag="title" onclick="Actions.addTag('title', true);" href="#">
+        <li><a data-tag="title" onclick="GUI.addTag('title', true);" href="#">
             Title
         </a></li>
-        <li><a data-tag="author" onclick="Actions.addTag('author', true);" href="#">
+        <li><a data-tag="author" onclick="GUI.addTag('author', true);" href="#">
             Author
         </a></li>
-        <li><a data-tag="abstract" onclick="Actions.addTag('abstract', true);" href="#">
+        <li><a data-tag="abstract" onclick="GUI.addTag('abstract', true);" href="#">
             Abstract
         </a></li>
     </div>
     <!-- parser mode -->
     <div class="refs-button-grid anystyle visible-in-refs-mode enabled-if-selection">
-        <li><a data-tag="citation-number" onclick="Actions.addTag('citation-number');" href="#">
+        <li><a data-tag="citation-number" onclick="GUI.addTag('citation-number');" href="#">
             Cit.Number
         </a></li>
-        <li><a data-tag="signal" onclick="Actions.addTag('signal');" href="#">
+        <li><a data-tag="signal" onclick="GUI.addTag('signal');" href="#">
             Signal
         </a></li>
-        <li><a data-tag="author" onclick="Actions.addTag('author');" href="#">
+        <li><a data-tag="author" onclick="GUI.addTag('author');" href="#">
             Author(s)
         </a></li>
-        <li><a data-tag="date" onclick="Actions.addTag('date');" href="#">
+        <li><a data-tag="date" onclick="GUI.addTag('date');" href="#">
             Date
         </a></li>
-        <li><a data-tag="title" onclick="Actions.addTag('title');" href="#">
+        <li><a data-tag="title" onclick="GUI.addTag('title');" href="#">
             Title
         </a></li>
-        <li><a data-tag="editor" onclick="Actions.addTag('editor');" href="#">
+        <li><a data-tag="editor" onclick="GUI.addTag('editor');" href="#">
             Editor(s)
         </a></li>
-        <li><a data-tag="location" onclick="Actions.addTag('location');" href="#">
+        <li><a data-tag="location" onclick="GUI.addTag('location');" href="#">
             Location
         </a></li>
-        <li><a data-tag="publisher" onclick="Actions.addTag('publisher');" href="#">
+        <li><a data-tag="publisher" onclick="GUI.addTag('publisher');" href="#">
             Publisher
         </a></li>
-        <li><a data-tag="journal" onclick="Actions.addTag('journal');" href="#">
+        <li><a data-tag="journal" onclick="GUI.addTag('journal');" href="#">
             Journal
         </a></li>
-        <li><a data-tag="container-title" onclick="Actions.addTag('container-title');" href="#">
+        <li><a data-tag="container-title" onclick="GUI.addTag('container-title');" href="#">
             Container
         </a></li>
-        <li><a data-tag="collection-title" onclick="Actions.addTag('collection-title');" href="#">
+        <li><a data-tag="collection-title" onclick="GUI.addTag('collection-title');" href="#">
             Collection
         </a></li>
-        <li><a data-tag="volume" onclick="Actions.addTag('volume');" href="#">
+        <li><a data-tag="volume" onclick="GUI.addTag('volume');" href="#">
             Volume
         </a></li>
-        <li><a data-tag="pages" onclick="Actions.addTag('pages');" href="#">
+        <li><a data-tag="pages" onclick="GUI.addTag('pages');" href="#">
             Pages
         </a></li>
-        <li><a data-tag="doi" onclick="Actions.addTag('doi');" href="#">
+        <li><a data-tag="doi" onclick="GUI.addTag('doi');" href="#">
             DOI
         </a></li>
-        <li><a data-tag="isbn" onclick="Actions.addTag('isbn');" href="#">
+        <li><a data-tag="isbn" onclick="GUI.addTag('isbn');" href="#">
             ISBN
         </a></li>
-        <li><a data-tag="url" onclick="Actions.addTag('url');" href="#">
+        <li><a data-tag="url" onclick="GUI.addTag('url');" href="#">
             URL
         </a></li>
-        <li><a data-tag="note" onclick="Actions.addTag('note');" href="#">
+        <li><a data-tag="note" onclick="GUI.addTag('note');" href="#">
             Note
         </a></li>
-        <li><a data-tag="backref" onclick="Actions.addTag('backref');" href="#">
+        <li><a data-tag="backref" onclick="GUI.addTag('backref');" href="#">
             BackRef
         </a></li>
-        <li><a data-tag="ignore" onclick="Actions.addTag('ignore');" href="#">
+        <li><a data-tag="ignore" onclick="GUI.addTag('ignore');" href="#">
             Ignore
         </a></li>
     </div>
 
     <div class="refs-button-grid exparser visible-in-refs-mode enabled-if-selection">
         <li><a id="btn-surname" data-tag="surname"
-               tabindex="-1" onclick="Actions.addTag('surname');" href="#">
+               tabindex="-1" onclick="GUI.addTag('surname');" href="#">
             Surname
         </a></li>
         <li><a id="btn-given-names" data-tag="given-names"
-               tabindex="-1" onclick="Actions.addTag('given-names');" href="#">
+               tabindex="-1" onclick="GUI.addTag('given-names');" href="#">
             Given&#8209;names
         </a></li>
         <li><a id="btn-year" data-tag="year"
-               tabindex="-1" onclick="Actions.addTag('year');" href="#">
+               tabindex="-1" onclick="GUI.addTag('year');" href="#">
             Year
         </a></li>
         <li><a id="btn-title" data-tag="title"
-               tabindex="-1" onclick="Actions.addTag('title');" href="#">
+               tabindex="-1" onclick="GUI.addTag('title');" href="#">
             Title
         </a></li>
         <li><a id="btn-editor" data-tag="editor"
-               tabindex="-1" onclick="Actions.addTag('editor');" href="#">
+               tabindex="-1" onclick="GUI.addTag('editor');" href="#">
             Editor(s)
         </a></li>
         <li><a id="btn-publisher" data-tag="publisher"
-               tabindex="-1" onclick="Actions.addTag('publisher');" href="#">
+               tabindex="-1" onclick="GUI.addTag('publisher');" href="#">
             Publisher
         </a></li>
         <li><a id="btn-source" data-tag="source"
-               tabindex="-1" onclick="Actions.addTag('source');" href="#">
+               tabindex="-1" onclick="GUI.addTag('source');" href="#">
             Source
         </a></li>
         <li><a id="btn-volume" data-tag="volume"
-               tabindex="-1" onclick="Actions.addTag('volume');" href="#">
+               tabindex="-1" onclick="GUI.addTag('volume');" href="#">
             Volume
         </a></li>
         <li><a id="btn-issue" data-tag="issue"
-               tabindex="-1" onclick="Actions.addTag('issue');" href="#">
+               tabindex="-1" onclick="GUI.addTag('issue');" href="#">
             Issue
         </a></li>
         <li><a id="btn-fpage" data-tag="fpage"
-               tabindex="-1" onclick="Actions.addTag('fpage');" href="#">
+               tabindex="-1" onclick="GUI.addTag('fpage');" href="#">
             First page
         </a></li>
         <li><a id="btn-lpage" data-tag="lpage"
-               tabindex="-1" onclick="Actions.addTag('lpage');" href="#">
+               tabindex="-1" onclick="GUI.addTag('lpage');" href="#">
             Last Page
         </a></li>
         <li><a id="btn-identifier" data-tag="identifier"
-               tabindex="-1" onclick="Actions.addTag('identifier');" href="#">
+               tabindex="-1" onclick="GUI.addTag('identifier');" href="#">
             Identifier
         </a></li>
         <li><a id="btn-url" data-tag="url"
-               tabindex="-1" onclick="Actions.addTag('url');" href="#">
+               tabindex="-1" onclick="GUI.addTag('url');" href="#">
             URL
         </a></li>
         <li><a id="btn-other" data-tag="other"
-               tabindex="-1" onclick="Actions.addTag('other');" href="#">
+               tabindex="-1" onclick="GUI.addTag('other');" href="#">
             Ignore
         </a></li>
     </div>
 
     <!-- visible in all modes -->
     <li><a class="ui-state-disabled enabled-if-selection" tabindex="-1"
-           onclick="Actions.removeTag();" href="#">
-        <i class="fas fa-trash"></i>Remove Tag
+           onclick="GUI.mergeSelection();" href="#">
+        Merge selected tags
     </a></li>
     <li><a class="ui-state-disabled enabled-if-selection" tabindex="-1"
-           onclick="Actions.removeAllTags();" href="#">
-        Remove all tags inside selection
+           onclick="GUI.removeTag();" href="#">
+        <i class="fas fa-trash"></i>Remove tag
     </a></li>
+
     <li><a class="ui-state-disabled enabled-if-selection" tabindex="-1"
-           onclick="Actions.removeAllTags(true);" href="#">
+           onclick="GUI.removeTagsInSelection();" href="#">
+        Remove all selected tags
+    </a></li>
+    <!--<li><a class="ui-state-disabled enabled-if-selection" tabindex="-1"
+           onclick="GUI.removeAllTags(true);" href="#">
         Remove all tags in line(s)
-    </a></li>
+    </a></li>-->
 </ul>
 <!-- help window -->
 <div id="modal-help" class="modal" tabindex="-1" role="dialog">

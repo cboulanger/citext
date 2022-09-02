@@ -15,7 +15,7 @@ cgi = CGI.new
 model_name = cgi.params["model"].first
 target = cgi.params["target"].first
 channel_id = cgi.params["channel_id"].first
-max_seq_count = 1500 #cgi.params["max_seq_count"] || [1500]).first.to_i
+max_seq_count = 2000 #cgi.params["max_seq_count"] || [1500]).first.to_i
 
 # sse
 sse = SSE.new(channel_id)

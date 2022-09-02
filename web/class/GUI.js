@@ -132,9 +132,10 @@ class GUI {
       var keycode = (event.keyCode ? event.keyCode : event.which);
       if (keycode == '13') {
         textContent.one("keyup", () => {
+          GUI.saveState()
           let re1 = /<div>(<span[^>]*>.*<\/span>)<\/div>/g
           while (textContent.html().match(re1)) {
-            textContent.html(textContent.html().replace(re1, "$1"))
+            textContent.html(textContent.html().replace(re1, "$1<br>"))
           }
           // let re2 = /(<span[^>]*>)<\/span><br>/g
           // while (textContent.html().match(re2)) {
@@ -363,9 +364,13 @@ class GUI {
       throw new Error("Argument must be annotation")
     }
     this.annotation = annotation;
-    this.setHtmlContent(annotation.toHtml())
     this.resetVersions()
-    this.updateButtons()
+    this.update()
+  }
+
+  static update() {
+    let annotation = this.getAnnotation()
+    this.setHtmlContent(annotation.toHtml())
     this.setTextFileName(annotation.getFileName())
     if (annotation.numPages && annotation.numPages > 0) {
       $("#label-page-number").html("1");
@@ -482,51 +487,6 @@ class GUI {
     $(".enabled-if-text-content").removeClass("ui-state-disabled");
   }
 
-  static addTag(tag_name, wholeLine = false) {
-    GUI.saveState();
-    let sel = window.getSelection();
-    let text = sel.toString();
-    if (text.trim() === "") return;
-    if (wholeLine) {
-      sel.setBaseAndExtent(sel.anchorNode, 0, sel.focusNode, sel.focusNode.length);
-    }
-    // prevent nesting of tag inside other tag
-    let node = sel.focusNode;
-    if (!node || !node.parentNode) {
-      return
-    }
-    let tag = node.dataset && node.dataset.tag;
-    if (tag) {
-      // replace node tag
-      node.dataset.tag = tag_name;
-    } else {
-      // wrap selection in new span
-      let newParentNode = document.createElement("span");
-      newParentNode.setAttribute("data-tag", tag_name);
-      sel.getRangeAt(0).surroundContents(newParentNode);
-      // remove all <span>s from selected text
-      $(newParentNode).html($(newParentNode).html().replace(Config.REGEX.SPAN, ""));
-      // check if grandparent node has a tag and split node if so
-      let grandParent = newParentNode.parentNode
-      let grandParentTag = grandParent.dataset && grandParent.dataset.tag
-      if (grandParentTag) {
-        if (grandParentTag === tag_name) {
-          // if same tag, simply remove the span
-          $(grandParent).html($(grandParent).html().replace(Config.REGEX.SPAN, ""));
-        } else {
-          // split grandparent via regexes
-          let outerHTML = grandParent.outerHTML
-          grandParent.outerHTML = outerHTML
-            .replace(/(?!^)<span/, "</spxn><span")
-            .replace(/<\/span>(?!$)/, `</span><span data-tag="${grandParentTag}">`)
-            .replace(/<\/spxn>/, "</span>")
-            .replace(/(<span [^>]+>)<br ?\/?>/, "<br>$1")
-            .replace(/<span[^>]*><\/span>/g, "");
-        }
-      }
-    }
-    GUI.updateMarkedUpText();
-  }
 
   static updateMarkedUpText() {
     let html = $("#text-content").html();
@@ -693,6 +653,137 @@ class GUI {
     GUI.versions.push($("#text-content").html());
     $("#btn-undo").removeClass("ui-state-disabled")
     this.saveToLocalStorage()
+  }
+
+  static addTag(tag_name, wholeLine = false) {
+    GUI.saveState();
+    let sel = window.getSelection();
+    let text = sel.toString();
+    if (text.trim() === "") return;
+    if (wholeLine) {
+      sel.setBaseAndExtent(sel.anchorNode, 0, sel.focusNode, sel.focusNode.length);
+    }
+    // prevent nesting of tag inside other tag
+    let node = sel.focusNode;
+    if (!node || !node.parentNode) {
+      return
+    }
+    let tag = node.dataset && node.dataset.tag;
+    if (tag) {
+      // replace node tag
+      node.dataset.tag = tag_name;
+    } else {
+      // wrap selection in new span
+      let newParentNode = document.createElement("span");
+      newParentNode.setAttribute("data-tag", tag_name);
+      sel.getRangeAt(0).surroundContents(newParentNode);
+      // remove all <span>s from selected text
+      $(newParentNode).html($(newParentNode).html().replace(Config.REGEX.SPAN, ""));
+      // check if grandparent node has a tag and split node if so
+      let grandParent = newParentNode.parentNode
+      let grandParentTag = grandParent.dataset && grandParent.dataset.tag
+      if (grandParentTag) {
+        if (grandParentTag === tag_name) {
+          // if same tag, simply remove the span
+          $(grandParent).html($(grandParent).html().replace(Config.REGEX.SPAN, ""));
+        } else {
+          // split grandparent via regexes
+          let outerHTML = grandParent.outerHTML
+          grandParent.outerHTML = outerHTML
+            .replace(/(?!^)<span/, "</spxn><span")
+            .replace(/<\/span>(?!$)/, `</span><span data-tag="${grandParentTag}">`)
+            .replace(/<\/spxn>/, "</span>")
+            .replace(/(<span [^>]+>)<br ?\/?>/, "<br>$1")
+            .replace(/<span[^>]*><\/span>/g, "")
+            .replace(/(<span[^>]*>) *(.+) *(<\/span>)/g, "$1$2$3")
+        }
+      }
+    }
+    GUI.updateMarkedUpText();
+  }
+
+  static removeTag() {
+    GUI.saveState();
+    let sel = window.getSelection();
+    if (!sel) return;
+    let el = sel.focusNode;
+    while (el) {
+      if (el.dataset && el.dataset.tag) break;
+      el = el.parentElement;
+    }
+    if (!el) return;
+    el.textContent = ` ${el.textContent}`
+    $(el).contents().unwrap();
+    GUI.updateMarkedUpText();
+  }
+
+  static removeTagsInSelection() {
+    GUI.saveState()
+    let s, r, a, p, c, t
+    s = window.getSelection();
+    if (!s || !s.rangeCount) {
+      return
+    }
+    s.setBaseAndExtent(s.anchorNode, 0, s.focusNode, s.focusNode.length)
+    r = s.getRangeAt(0)
+    a = s.anchorNode
+    p = a instanceof Text ? a.parentNode : a
+    c = document.createTextNode("")
+    p.parentNode.insertBefore(c, p)
+    t = []
+    r.extractContents().childNodes.forEach(node => {
+      t.push(node.textContent)
+    })
+    c.textContent = " " + t.join(" ") + " "
+    c.nextElementSibling.remove()
+    c.nextElementSibling.remove()
+    GUI.updateMarkedUpText();
+  }
+
+
+  static mergeSelection() {
+    GUI.saveState()
+    let s, r, a, p, c, t
+    s = window.getSelection();
+    if (!s || !s.rangeCount) {
+      return
+    }
+    s.setBaseAndExtent(s.anchorNode, 0, s.focusNode, s.focusNode.length)
+    r = s.getRangeAt(0)
+    a = s.anchorNode
+    p = a instanceof Text ? a.parentNode : a
+    c = p.cloneNode()
+    p.parentNode.insertBefore(c, p)
+    t = []
+    r.extractContents().childNodes.forEach(node => {
+      t.push(node.textContent)
+    })
+    c.textContent = t.join(" ")
+    c.nextElementSibling.remove()
+    c.nextElementSibling.remove()
+    GUI.updateMarkedUpText();
+    r
+  }
+
+  // not working
+  static removeTagsInLines() {
+    let startNode = a instanceof Text ? a.parentNode : a;
+    while (startNode.previousSibling && startNode.previousSibling.nodeName !== "BR") {
+      startNode = startNode.previousSibling;
+    }
+    let endNode = f instanceof Text ? f.parentNode : f;
+    while (endNode.nextSibling && endNode.nextSibling.nodeName !== "BR") {
+      endNode = endNode.nextSibling;
+    }
+    if (startNode && endNode) {
+      s.setBaseAndExtent(startNode, 0, endNode, endNode.length);
+    }
+    let container = document.createElement("div");
+    container.appendChild(r.cloneContents());
+    let replacementText = container.innerHTML
+      .replace(Config.REGEX.BR, "\n")
+      .replace(Config.REGEX.TAG, "")
+    GUI.replaceSelection(replacementText);
   }
 }
 

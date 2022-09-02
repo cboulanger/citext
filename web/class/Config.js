@@ -52,16 +52,24 @@ class Config {
   ]
   static SIGNAL_WORDS = {
     START_CITATION: [
-      /(see |cf\.? |e\.g\. |accord )(also )?/ig,
+      /(see, )(for example, |on the contrary, |on the other hand, |generally, )/gi,
+      /(also |although )?(see,? |cf\.? |e\.g\.,? |accord |compare )(also ,?)?/ig,
+      /(also, |similarly, )/ig,
       /(siehe |vgl\. |näher |etwa | beispielsweise )(dazu |hierzu )?(etwa |näher )?(auch )?/gi,
       /(dazu |hierzu )(etwa |näher )?(auch)?/gi,
       /(anders etwa |ähnlich auch )/gi,
       /(sowie )(bei )?/gi,
-      /(zitiert:|zitiert als:?)/gi
+      /(zitiert:|zitiert als:?)/gi,
+      /(zuerst )?(abgedruckt in:?|zitiert als:?)/gi,
+      /(first )?(published as |reprinted in )/gi
     ],
     END_CITATION: [
-      /([\d]+\s*)(-\s*)?([\d]+\s*)?(f\.?|ff\.?| (et |and )?passim)\s*([;.]\s*)/
-    ],
+      /([\d]+\s*)(-\s*)?([\d]+\s*)?(ff| (et |and )?passim)?\s*([;.]\s*)/gi,
+      /\d+, at \d+\. /gi,
+      /\d+, and /gi
+    ]
+  }
+  static BACKREFERENCES ={
     PREVIOUS_FOOTNOTE: [/ (fn|n|)\./i, /(fußnote|note)/i],
     PREVIOUS_PUBLICATION: [/(ebd|a\.a\.o|ibid|op\. cit)\./i],
     PREVIOUS_AUTHOR: [/(ders|dies)/i, /^[_-]{3}/]

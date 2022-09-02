@@ -12,6 +12,7 @@ model_name = cgi.params["model"].first
 if model_name != "default"
     AnyStyle.parser.load_model File.join("Models", model_name, "parser.mod").untaint
 end
+STDERR.puts seq
 xml = REXML::Document.new seq.gsub(/\n */,"")
 seqs = Wapiti::Dataset.parse(xml)
 csl =  AnyStyle.parser.format_csl(seqs)
