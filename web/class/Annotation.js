@@ -78,7 +78,8 @@ class Annotation {
   loadFromHtml(html) {
     let markedUpText = html
       .replace(Config.REGEX.DIV, "")
-      .replace(/<span[^>]*>(<br>)?<\/span>/,"")
+      .replace(/<span[^>]*>(<br>)<\/span>/g,"<br>")
+      .replace(/<span[^>]*> *<\/span>/g,"<br>")
       .replace(Config.REGEX.BR, "\n")
       .replace(Config.REGEX.DATA_TAG_SPAN, "<$1>$2</$1>")
 
