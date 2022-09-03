@@ -53,14 +53,16 @@ class Config {
   static SIGNAL_WORDS = {
     START_CITATION: [
       /(see, )(for example, |on the contrary, |on the other hand, |generally, )/gi,
+      /(see )(the discussion in )/gi,
       /(also |although )?(see,? |cf\.? |e\.g\.,? |accord |compare )(also ,?)?/ig,
-      /(also, |similarly, )/ig,
+      /(also, |similarly, |alternatively, )/ig,
+      /(as )?(discussed |detailed |described |cited )(in |by )/ig,
       /(siehe |vgl\. |näher |etwa | beispielsweise )(dazu |hierzu )?(etwa |näher )?(auch )?/gi,
       /(dazu |hierzu )(etwa |näher )?(auch)?/gi,
       /(anders etwa |ähnlich auch )/gi,
       /(sowie )(bei )?/gi,
       /(zitiert:|zitiert als:?)/gi,
-      /(zuerst )?(abgedruckt in:?|zitiert als:?)/gi,
+      /(zuerst )?(abgedruckt |zitiert )(als |in ):?/gi,
       /(first )?(published as |reprinted in )/gi
     ],
     END_CITATION: [
