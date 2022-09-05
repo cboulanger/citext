@@ -124,33 +124,38 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
   }
 
   extractReferences() {
+    let lines = this.getContent().split("\n")
     let in_ref = false
-    let is_ref = line => {
-      let m = line.match(/^(\S*)\s+\| ?/)
-      if (m) {
-        switch (m[1].trim()) {
-          case "blank":
-            if (in_ref) {
-              in_ref = false;
-              return true
-            }
-            return false
+    function* extractRefs(lines) {
+      for (let line of lines) {
+        let m = line.match(/^(\S*)\s+\| ?(.*)/)
+        if (!m) {
+          continue
+        }
+        let label = m[1].trim()
+        let text = m[2].trim()
+        switch (label) {
           case "ref":
             in_ref = true
-            return true
+            yield text + " "
+            break
           case "":
-            return in_ref;
+            if (in_ref) {
+              yield text + " "
+            }
+            break
           default:
-            in_ref = false
-            return false
+            if (in_ref) {
+              yield "\n"
+            }
+            in_ref = false;
         }
       }
     }
-    let refs = this.getContent()
-      .split("\n")
-      .filter(is_ref)
-      .map(line => line.replace(/^.+\| ?/, ""))
-      .join("\n")
+    let refs = "";
+    for (let line of extractRefs(lines)) {
+      refs += line
+    }
     return refs
   }
 

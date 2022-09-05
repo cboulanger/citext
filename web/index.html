@@ -111,12 +111,16 @@
             <ul class="dropdown-menu" aria-labelledby="btn-excite-tools">
                 <li><a class="dropdown-item ui-state-disabled enabled-if-refs"
                        href="#"
-                       onclick="Actions.handleFootnotes();">
+                       onclick="Actions.preprocessFootnotes();">
                     Preprocess footnote references</a></li>
                 <li><a class="dropdown-item ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.removeIgnoreTags();">
                     Remove ignored labels</a></li>
+                <li><a class="dropdown-item ui-state-disabled enabled-if-refs"
+                       href="#"
+                       onclick="Actions.ignore2text();">
+                    Translate &lt;ignore&gt; to &lt;text&gt;/&lt;ref&gt; </a></li>
                 <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.parseReferences();">
@@ -290,11 +294,14 @@
         <li><a data-tag="citation-number" onclick="GUI.addTag('citation-number');" href="#">
             Cit.Number
         </a></li>
-        <li><a data-tag="signal" onclick="GUI.addTag('signal');" href="#">
-            Signal
-        </a></li>
         <li><a data-tag="author" onclick="GUI.addTag('author');" href="#">
             Author(s)
+        </a></li>
+        <li><a data-tag="editor" onclick="GUI.addTag('editor');" href="#">
+            Editor(s)
+        </a></li>
+        <li><a data-tag="authority" onclick="GUI.addTag('authority');" href="#">
+            Authority
         </a></li>
         <li><a data-tag="date" onclick="GUI.addTag('date');" href="#">
             Date
@@ -302,8 +309,8 @@
         <li><a data-tag="title" onclick="GUI.addTag('title');" href="#">
             Title
         </a></li>
-        <li><a data-tag="editor" onclick="GUI.addTag('editor');" href="#">
-            Editor(s)
+        <li><a data-tag="legal-ref" onclick="GUI.addTag('legal-ref');" href="#">
+            Legal-ref
         </a></li>
         <li><a data-tag="location" onclick="GUI.addTag('location');" href="#">
             Location
@@ -341,8 +348,17 @@
         <li><a data-tag="backref" onclick="GUI.addTag('backref');" href="#">
             BackRef
         </a></li>
+        <li><a data-tag="signal" onclick="GUI.addTag('signal');" href="#">
+            Signal
+        </a></li>
         <li><a data-tag="ignore" onclick="GUI.addTag('ignore');" href="#">
             Ignore
+        </a></li>
+        <li><a data-tag="ref" onclick="GUI.addTag('ref');" href="#">
+            Is ref
+        </a></li>
+        <li><a data-tag="text" onclick="GUI.addTag('text');" href="#">
+            Is not ref
         </a></li>
     </div>
 

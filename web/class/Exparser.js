@@ -92,6 +92,7 @@ class ExparserExtractionAnnotation extends FinderAnnotation {
   }
 
   extractReferences() {
+    throw new Error("Not implemented")
     return this.getContent()
   }
 

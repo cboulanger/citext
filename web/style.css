@@ -116,10 +116,20 @@ nav {
 
 .document-view {
     background-color: #ccf1e9 !important;
+    white-space: nowrap !important;
 }
 
 .references-view {
     background-color: #bed3ff !important;
+}
+
+.references-view > br {
+    display: block;
+    content: "";
+    margin-bottom: 1em;
+    line-height: 190%;
+    vertical-align: top;
+    border-bottom: lightgrey dotted 1px;
 }
 
 .page-marker::before {
@@ -143,7 +153,6 @@ nav {
     cursor: text;
     overflow: scroll;
     padding: 10px;
-    white-space: nowrap !important;
 }
 
 .view-markup-display {
@@ -212,14 +221,15 @@ nav {
     display: none
 }
 
-
-/* ref identification anystyle */
+/* data-tag */
 
 [data-tag] {
     z-index: 0;
 }
 
-[data-tag="reference"] {
+/* ref identification anystyle */
+
+[data-tag="reference"], [data-tag="ref"] {
     background-color: rgb(155, 194, 229);
 }
 
@@ -244,34 +254,6 @@ nav {
 }
 
 /* ref identification exparser */
-
-[data-tag="ref"]:nth-child(7n) {
-    background-color: rgb(255, 255, 153);
-}
-
-[data-tag="ref"]:nth-child(7n-1) {
-    background-color: rgb(252, 201, 108);
-}
-
-[data-tag="ref"]:nth-child(7n-2) {
-    background-color: rgb(236, 184, 249);
-}
-
-[data-tag="ref"]:nth-child(7n-3) {
-    background-color: rgb(152, 230, 249);
-}
-
-[data-tag="ref"]:nth-child(7n-4) {
-    background-color: rgb(135, 245, 168);
-}
-
-[data-tag="ref"]:nth-child(7n-5) {
-    background-color: rgb(244, 132, 112);
-}
-
-[data-tag="ref"]:nth-child(7n-6) {
-    background-color: rgb(111, 252, 226);
-}
 
 [data-tag="oth"] {
     background-color: rgb(162, 165, 165);
@@ -301,6 +283,10 @@ nav {
 
 [data-tag="journal"] {
     background-color: #1f91e0;
+}
+
+[data-tag="legal-ref"] {
+    background-color: #20a2fc;
 }
 
 [data-tag="collection-title"] {

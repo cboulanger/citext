@@ -52,18 +52,28 @@ class Config {
   ]
   static SIGNAL_WORDS = {
     START_CITATION: [
+      // English
       /(see, )(for example, |on the contrary, |on the other hand, |generally, )/gi,
       /(see )(the discussion in )/gi,
       /(also |although )?(see,? |cf\.? |e\.g\.,? |accord |compare )(also ,?)?/ig,
       /(also, |similarly, |alternatively, )/ig,
       /(as )?(discussed |detailed |described |cited )(in |by )/ig,
-      /(siehe |vgl\. |näher |etwa | beispielsweise )(dazu |hierzu )?(etwa |näher )?(auch )?/gi,
-      /(dazu |hierzu )(etwa |näher )?(auch)?/gi,
-      /(anders etwa |ähnlich auch )/gi,
-      /(sowie )(bei )?/gi,
-      /(zitiert:|zitiert als:?)/gi,
-      /(zuerst )?(abgedruckt |zitiert )(als |in ):?/gi,
-      /(first )?(published as |reprinted in )/gi
+      /(on |regarding )([^,]+, )(see )(also )?/ig,
+      /(first )?(published as |reprinted in )/gi,
+      // German
+      /(siehe |vgl\. |näher |etwa | beispielsweise )(dazu |hierzu )?(etwa |näher )?(auch )?(meinen beitrag |den beitrag von )?/gi,
+      /(ausführlich )?(dazu |hierzu )(etwa |näher )?(auch)?[: ]*/gi,
+      /(anders |ähnlich |ausführlich )(etwa |auch )/gi,
+      /(sowie)( bei |[: ]+)/gi,
+      /(zitiert)( als| in| bei)?[: ]+/gi,
+      /(zuerst | wieder )?(abgedruckt |zitiert |überarbeitet |erscheint )(als|in)[: ]+/gi,
+      /(speziell |insbesondere |ausführlich |beispielsweise )(zu[rm]? )([^.;,]+?):/gi,
+      /(siehe |s\. )?(zu[mr]?)( .+? )(ausführlich |beispielsweise )/gi,
+      /(als überblick|allgemein)( zu .+?)?: ?/gi,
+      /(mit Hinweis auf )/gi,
+      /(unter vielen )/gi,
+      /(etwa)[: ]+/gi
+
     ],
     END_CITATION: [
       /([\d]+\s*)(-\s*)?([\d]+\s*)?(ff| (et |and )?passim)?\s*([;.]\s*)/gi,
@@ -71,7 +81,7 @@ class Config {
       /\d+, and /gi
     ]
   }
-  static BACKREFERENCES ={
+  static BACKREFERENCES = {
     PREVIOUS_FOOTNOTE: [/ (fn|n|)\./i, /(fußnote|note)/i],
     PREVIOUS_PUBLICATION: [/(ebd|a\.a\.o|ibid|op\. cit)\./i],
     PREVIOUS_AUTHOR: [/(ders|dies)/i, /^[_-]{3}/]

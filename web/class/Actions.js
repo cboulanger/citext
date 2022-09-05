@@ -203,6 +203,7 @@ class Actions {
   static async findAndExtractReferencesInPdf() {
     const msg = `Do you want to extract text from the PDF and identify the references?`
     if (!confirm(msg)) return
+    GUI.removeTextFile(false)
     const pdfFile = GUI.pdfFile
     const url = Config.URL.UPLOAD
     GUI.showSpinner()
@@ -240,7 +241,7 @@ class Actions {
       model: State.model.name
     }
     GUI.saveState()
-    GUI.showSpinner()
+    GUI.showSpinner("Parsing references")
     const content = await Actions.runCgiScript("parse.rb", params, "post")
     GUI.hideSpinner()
     annotation.load(content)
@@ -324,14 +325,17 @@ class Actions {
         })
       }
       let result = await response.json()
+      // very naive and basic error handling
       if (result && typeof result === "object" && result.error) {
-        alert(error)
-        return
+        alert(result.error)
       }
       return result
     } catch (e) {
       console.error(e)
       alert(e.message)
+      return {
+        error: e.message
+      }
     }
   }
 
@@ -593,7 +597,7 @@ class Actions {
     Utils.download(JSON.stringify(csl, null, 2), filename, "text/plain;encoding=utf-8")
   }
 
-  static handleFootnotes() {
+  static preprocessFootnotes() {
     let annotation = GUI.getAnnotation()
     if (!annotation) return
     GUI.saveState()
@@ -616,12 +620,12 @@ class Actions {
       for (let re of Config.SIGNAL_WORDS.START_CITATION) {
         let m = line.match(re)
         if (m) {
-          line = line.replace(re, separator)
+          line = line.replace(re, separator + "<text>$&</text>")
         }
       }
       // semicolons are a relatively reliable marker of a new reference
       if (line.match(/;/)) {
-        line = line.replace(/(?<!&[a-z]+); ?/g, ";" + separator)
+        line = line.replace(/(?<!&[a-z]+); ?/g, "<text>;</text>" + separator)
       }
       // now do end of citation markers
       for (let re of Config.SIGNAL_WORDS.END_CITATION) {
@@ -651,6 +655,7 @@ class Actions {
     GUI.saveState()
     let content = GUI.getAnnotation().getContent()
     content = content.replace(/<ignore>[^<]*<\/ignore>/g, "")
+    content = content.replace(/<text>[^<]*<\/text>/g, "")
     // remove empty lines
     while (content.match(/\n *\n/)) {
       content = content.replace(/\n *\n/, "\n")
@@ -659,5 +664,19 @@ class Actions {
     GUI.update()
   }
 
+  static ignore2text() {
+    GUI.saveState()
+    let content = GUI.getAnnotation().getContent()
+    content = content.replace(/<ignore>([^<]+)<\/ignore>/gm, "<text>$1</text>")
+    content = content.replace(/<\/text>([^<]+)\n/gm, "</text><ref>$1</ref>\n")
+    content = content.replace(/\n([^<]+)<text>/gm, "\n<ref>$1</ref><text>")
+    //content = content.replace(/\n([^<]+)\n/gm, "\n<ref>$1</ref>\n\n")
+    // remove empty lines
+    while (content.match(/\n *\n/)) {
+      content = content.replace(/\n *\n/, "\n")
+    }
+    GUI.getAnnotation().setContent(content)
+    GUI.update()
+  }
 }
 

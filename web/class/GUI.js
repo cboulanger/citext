@@ -133,14 +133,29 @@ class GUI {
       if (keycode == '13') {
         textContent.one("keyup", () => {
           GUI.saveState()
-          let re1 = /<div>(<span[^>]*>.*<\/span>)<\/div>/g
-          while (textContent.html().match(re1)) {
-            textContent.html(textContent.html().replace(re1, "$1<br>"))
-          }
-          // let re2 = /(<span[^>]*>)<\/span><br>/g
-          // while (textContent.html().match(re2)) {
-          //   textContent.html(textContent.html().replace(re2, "$1<br></span>"))
+          let re;
+          // let re1 = /<div>(<span[^>]*>.*<\/span>)<\/div>/g
+          // while (textContent.html().match(re1)) {
+          //   textContent.html(textContent.html().replace(re1, "$1<br>"))
           // }
+          let html = textContent.html()
+          re = /<\/span><span/g
+          // while (html.match(re)) {
+          //   html = html.replace(re, "</span><br><span")
+          // }
+          re = /<div>/g
+          while (html.match(re)) {
+            html = html.replace(re, "")
+          }
+          re = /<\/div>/g
+          while (html.match(re)) {
+            html = html.replace(re, "<br>")
+          }
+          re = /<br><br>/g
+          while (html.match(re)) {
+            html = html.replace(re, "<br>")
+          }
+          textContent.html(html)
           GUI.updateMarkedUpText()
         })
       }
@@ -392,9 +407,11 @@ class GUI {
     $("#text-label").html(filename);
   }
 
-  static removeTextFile() {
-    if (!confirm("Do you really want to clear the document?")) {
-      return;
+  static removeTextFile(doConfirm = true) {
+    if (doConfirm) {
+      if (!confirm("Do you really want to clear the document?")) {
+        return;
+      }
     }
     $("#text-content").html("");
     $("#markup-content").html("");
