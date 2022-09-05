@@ -11,7 +11,6 @@ ENV LANG en_US.UTF-8
 
 WORKDIR /app
 ADD *.py /app/
-ADD *.jar /app/
 ADD *.txt /app/
 RUN apt-get -y install poppler-utils && \
     apt-get -y install python3 python3-pip && \
