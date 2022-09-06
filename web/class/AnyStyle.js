@@ -127,21 +127,24 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
     let lines = this.getContent().split("\n")
     let in_ref = false
     function* extractRefs(lines) {
-      for (let line of lines) {
+      for (let [index,line] of lines.entries()) {
         let m = line.match(/^(\S*)\s+\| ?(.*)/)
         if (!m) {
           continue
         }
         let label = m[1].trim()
         let text = m[2].trim()
+        let isFnNum = text.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START)
+          // && index > 0 && lines[index-1].length < line.length // heuristic needs to be tested
+        let prefix = isFnNum ? "\n" : ""
         switch (label) {
           case "ref":
             in_ref = true
-            yield text + " "
+            yield prefix + text + " "
             break
           case "":
             if (in_ref) {
-              yield text + " "
+              yield prefix + text + " "
             }
             break
           default:

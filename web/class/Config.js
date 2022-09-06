@@ -61,8 +61,6 @@ class Config {
       /(on |regarding )([^,]+, )(see )(also )?/ig,
       /(first )?(published as |reprinted in )/gi,
       // German
-      /(siehe |vgl\. |näher |etwa | beispielsweise )(dazu |hierzu )?(etwa |näher )?(auch )?(meinen beitrag |den beitrag von )?/gi,
-      /(ausführlich )?(dazu |hierzu )(etwa |näher )?(auch)?[: ]*/gi,
       /(anders |ähnlich |ausführlich )(etwa |auch )/gi,
       /(sowie)( bei |[: ]+)/gi,
       /(zitiert)( als| in| bei)?[: ]+/gi,
@@ -72,8 +70,8 @@ class Config {
       /(als überblick|allgemein)( zu .+?)?: ?/gi,
       /(mit Hinweis auf )/gi,
       /(unter vielen )/gi,
-      /(etwa)[: ]+/gi
-
+      /(dazu |hierzu )(ausführlich |etwa |näher )?(auch )?(meinen beitrag |den beitrag von )?[: ]*?/gi,
+      /(siehe |vgl\. )/gi
     ],
     END_CITATION: [
       /([\d]+\s*)(-\s*)?([\d]+\s*)?(ff| (et |and )?passim)?\s*([;.]\s*)/gi,
