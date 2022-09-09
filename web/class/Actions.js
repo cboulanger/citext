@@ -1,5 +1,123 @@
 class Actions {
 
+  static init() {
+    GUI.init()
+    let hash = (new URL(document.URL)).hash;
+    let lastLoadUrl = localStorage.getItem(Config.LOCAL_STORAGE.LAST_LOAD_URL) || false;
+    const params = Object.fromEntries(new URLSearchParams(hash.slice(1)))
+    let downloadUrl = params.load
+    let downloadType = params.type
+    let textInLocalStorage = Actions._hasTextInLocalStorage();
+    let textLoaded = false
+    if (textInLocalStorage /*&& !(downloadUrl !== lastLoadUrl)*/) {
+      console.log("Loading document from local storage.");
+      Actions._loadTextFromLocalStorage();
+      textLoaded = true
+    }
+    if (lastLoadUrl && (!downloadUrl || downloadUrl === lastLoadUrl)) {
+      console.log("Loading document from stored URL: " + lastLoadUrl)
+      Actions.loadFromUrl(lastLoadUrl)
+    } else if (downloadUrl) {
+      console.log("Loading document from URL hash: " + downloadUrl)
+      Actions.loadFromUrl(downloadUrl)
+      document.location.hash = ""
+    } else {
+      Actions.switchToFinder()
+    }
+    if (!textLoaded) {
+      $("#modal-help").show();
+    }
+
+    // save text before leaving the page
+    window.onbeforeunload = Actions.saveToLocalStorage;
+
+    // check if we have a backend and intialize UI
+    fetch(Config.SERVER_URL + "status.py")
+      .then(response => response.json())
+      .then(result => GUI._configureStatus(result))
+
+    // check if Zotero is running
+    fetch(Config.SERVER_URL + "zotero/proxy.py?connector/ping")
+      .then(response => response.text())
+      .then(result => $(".visible-if-zotero-connection")
+        .toggleClass("hidden", !result.includes("Zotero Connector Server is Available")));
+
+    // SSE
+    const channel_id = State.channel_id = Math.random().toString().slice(2)
+    const source = new EventSource(Config.SERVER_URL + "sse.py?" + channel_id);
+    let toasts = {};
+    source.addEventListener("open", () => {
+      console.log("Initialized SSE connection with id " + channel_id)
+    })
+    for (let type of ['success', 'info', 'warning', 'error']) {
+      source.addEventListener(type, evt => {
+        let data = evt.data;
+        let title, text;
+        let sepPos = data.indexOf(":")
+        if (sepPos !== -1) {
+          title = data.slice(0, sepPos) || type
+          text = data.slice(sepPos + 1)
+        } else {
+          title = type
+          text = data
+        }
+        //console.log({title, text})
+        let toastId = type + "|" + title;
+        let toast = toasts[toastId];
+        if (toast && toast.css("visibility")) {
+          if (text.trim()) {
+            toast.find(".toast-message").text(text)
+          } else {
+            toastr.clear(toast)
+          }
+        } else if (text.trim()) {
+          // const onCloseClick = type === "info" ? () => {
+          //   if (confirm("Cancel the current server process?")) {
+          //     Actions.runCgiScript("abort.py", {id: channel_id})
+          //   }
+          // } : undefined;
+          toast = toastr[type](text, title, {
+            positionClass: "toast-bottom-full-width",
+            timeOut: 0,
+            extendedTimeOut: 0,
+            closeButton: true,
+            onCloseClick: undefined
+          })
+          toasts[toastId] = toast
+        }
+      });
+      source.addEventListener("debug", evt => {
+        console.log(evt.data);
+      })
+    }
+
+    source.addEventListener("error", evt => {
+      console.error("EventSource failed:", evt);
+    });
+  }
+
+  static _hasTextInLocalStorage() {
+    return Boolean(localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT));
+  }
+
+  static async _loadTextFromLocalStorage() {
+    let filename = localStorage.getItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME);
+    let content = localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT);
+    if (filename && content) {
+      let type = filename.endsWith(".xml") ? "text/xml" : "text/plain"
+      let file = new File([content], filename, {
+        lastModified: 1534584790000,
+        type: `${type};charset=utf8`
+      });
+      try {
+        await Actions.loadFile(file)
+      } catch (e) {
+        alert(e.message)
+      }
+      return true;
+    }
+  }
+
   static async load() {
     const uploadBtn = document.getElementById("btn-upload");
     switch (uploadBtn.files.length) {
@@ -45,9 +163,9 @@ class Actions {
     GUI.showSpinner()
     try {
       await this.loadFile(file);
+      GUI.hideSpinner()
     } catch (e) {
       alert(e.message)
-    } finally {
       GUI.hideSpinner()
     }
   }
@@ -105,7 +223,7 @@ class Actions {
   }
 
   static async loadFile(file) {
-    return new Promise(async (resolve, reject) => {
+    return new Promise((resolve, reject) => {
       let fileName = file.name;
       // FIXME ad-hoc filename fix to remave ".pdfa" infix, needs to be configurable
       fileName = fileName.replace(/\.pdfa\./, ".")
@@ -117,17 +235,14 @@ class Actions {
         // remove encoding etc.
         fileType = fileType.split(";").shift().trim();
       } else {
-        reject(new Error("Cannot determine file type for " + fileName));
-        return;
+        return reject(new Error("Cannot determine file type for " + fileName));
       }
       console.log(`Loading ${fileName} of type ${fileType}`)
       let annotation;
       switch (fileType) {
         case "pdf":
         case "application/pdf":
-          await GUI.loadPdfFile(file);
-          resolve()
-          return;
+          return resolve(GUI.loadPdfFile(file));
         case "xml":
         case "application/xml":
         case "txt":
@@ -142,7 +257,8 @@ class Actions {
       }
       // load file and determine type of Annotation
       const fileReader = new FileReader();
-      fileReader.onload = (e) => {
+      fileReader.onload = e => {
+        console.log("File received.")
         let text = String(e.target.result);
         switch (fileType) {
           case "xml":
@@ -167,8 +283,7 @@ class Actions {
             annotation = new AnystyleFinderAnnotation(text, fileName)
             break;
           default:
-            reject(new Error("Unknown file type: " + fileType));
-            return;
+            return reject(new Error("Unknown file type: " + fileType));
         }
         GUI.loadAnnotation(annotation);
         resolve(annotation)
@@ -206,7 +321,7 @@ class Actions {
     GUI.removeTextFile(false)
     const pdfFile = GUI.pdfFile
     const url = Config.URL.UPLOAD
-    GUI.showSpinner()
+    GUI.showSpinner("Extracting references, please wait...")
     try {
       await Utils.upload(pdfFile, url)
       const content = await Actions.runCgiScript("find.rb", {filename: pdfFile.name, model: State.model.name})
@@ -614,24 +729,6 @@ class Actions {
         if (fnNumber > fnCounter && (fnNumber - fnCounter) <= 30 && fnLine.length > 70) {
           fnCounter = fnNumber
           line = separator + line
-        }
-      }
-      // remove signal words that preceed a citation
-      for (let re of Config.SIGNAL_WORDS.START_CITATION) {
-        let m = line.match(re)
-        if (m) {
-          line = line.replace(re, separator + "<text>$&</text>")
-        }
-      }
-      // semicolons are a relatively reliable marker of a new reference
-      if (line.match(/;/)) {
-        line = line.replace(/(?<!&[a-z]+); ?/g, "<text>;</text>" + separator)
-      }
-      // now do end of citation markers
-      for (let re of Config.SIGNAL_WORDS.END_CITATION) {
-        let m = line.match(re)
-        if (m) {
-          line = line.replace(re, "$&" + separator)
         }
       }
       return line

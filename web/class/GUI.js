@@ -12,100 +12,10 @@ class GUI {
     this.__pdfJsApplication = null;
 
     $(() => {
+      GUI.toggleMarkedUpView(false);
       this.resetVersions()
       this._setupEventListeners();
       GUI.toggleMarkedUpView(false);
-      let hash = (new URL(document.URL)).hash;
-      let lastLoadUrl = localStorage.getItem(Config.LOCAL_STORAGE.LAST_LOAD_URL) || false;
-      let downloadUrl = hash.startsWith("#load=") && hash.substr(6).trim();
-      let textInLocalStorage = this._hasTextInLocalStorage();
-      let textLoaded = false
-      if (textInLocalStorage /*&& !(downloadUrl !== lastLoadUrl)*/) {
-        console.log("Loading document from local storage.");
-        this._loadTextFromLocalStorage();
-        textLoaded = true
-      }
-      if (lastLoadUrl && (!downloadUrl || downloadUrl === lastLoadUrl)) {
-        console.log("Loading document from stored URL: " + lastLoadUrl)
-        Actions.loadFromUrl(lastLoadUrl).catch(console.error);
-        return;
-      } else if (downloadUrl) {
-        console.log("Loading document from URL hash: " + downloadUrl)
-        Actions.loadFromUrl(downloadUrl).catch(console.error);
-        return;
-      } else {
-        Actions.switchToFinder()
-      }
-      if (!textLoaded) {
-        $("#modal-help").show();
-      }
-    });
-
-    // save text before leaving the page
-    window.onbeforeunload = Actions.saveToLocalStorage;
-
-    // check if we have a backend and intialize UI
-    fetch(Config.SERVER_URL + "status.py")
-      .then(response => response.json())
-      .then(result => GUI._configureStatus(result))
-
-    // check if Zotero is running
-    fetch(Config.SERVER_URL + "zotero/proxy.py?connector/ping")
-      .then(response => response.text())
-      .then(result => $(".visible-if-zotero-connection")
-        .toggleClass("hidden", !result.includes("Zotero Connector Server is Available")));
-
-    // SSE
-    const channel_id = State.channel_id = Math.random().toString().slice(2)
-    const source = new EventSource(Config.SERVER_URL + "sse.py?" + channel_id);
-    let toasts = {};
-    source.addEventListener("open", () => {
-      console.log("Initialized SSE connection with id " + channel_id)
-    })
-    for (let type of ['success', 'info', 'warning', 'error']) {
-      source.addEventListener(type, evt => {
-        let data = evt.data;
-        let title, text;
-        let sepPos = data.indexOf(":")
-        if (sepPos !== -1) {
-          title = data.slice(0, sepPos) || type
-          text = data.slice(sepPos + 1)
-        } else {
-          title = type
-          text = data
-        }
-        //console.log({title, text})
-        let toastId = type + "|" + title;
-        let toast = toasts[toastId];
-        if (toast && toast.css("visibility")) {
-          if (text.trim()) {
-            toast.find(".toast-message").text(text)
-          } else {
-            toastr.clear(toast)
-          }
-        } else if (text.trim()) {
-          // const onCloseClick = type === "info" ? () => {
-          //   if (confirm("Cancel the current server process?")) {
-          //     Actions.runCgiScript("abort.py", {id: channel_id})
-          //   }
-          // } : undefined;
-          toast = toastr[type](text, title, {
-            positionClass: "toast-bottom-full-width",
-            timeOut: 0,
-            extendedTimeOut: 0,
-            closeButton: true,
-            onCloseClick: undefined
-          })
-          toasts[toastId] = toast
-        }
-      });
-      source.addEventListener("debug", evt => {
-        console.log(evt.data);
-      })
-    }
-
-    source.addEventListener("error", evt => {
-      console.error("EventSource failed:", evt);
     });
   }
 
@@ -251,27 +161,7 @@ class GUI {
     //$('[data-toggle="tooltip"]').tooltip();
   }
 
-  static _hasTextInLocalStorage() {
-    return Boolean(localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT));
-  }
 
-  static async _loadTextFromLocalStorage() {
-    let filename = localStorage.getItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME);
-    let content = localStorage.getItem(Config.LOCAL_STORAGE.DOCUMENT);
-    if (filename && content) {
-      let type = filename.endsWith(".xml") ? "text/xml" : "text/plain"
-      let file = new File([content], filename, {
-        lastModified: 1534584790000,
-        type: `${type};charset=utf8`
-      });
-      try {
-        await Actions.loadFile(file)
-      } catch (e) {
-        alert(e.message)
-      }
-      return true;
-    }
-  }
 
   static updateButtons() {
     const annotation = GUI.getAnnotation()
