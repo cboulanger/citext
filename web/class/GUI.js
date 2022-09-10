@@ -397,7 +397,9 @@ class GUI {
 
   static updateMarkedUpText() {
     let html = $("#text-content").html();
-    let markedUpText = GUI.getAnnotation().loadFromHtml(html).replace(Config.REGEX.EMPTY_NODE, "")
+    let markedUpText = GUI.getAnnotation()
+      .loadFromHtml(html)
+      .replace(Config.REGEX.EMPTY_NODE, "")
     $("#markup-content").html(markedUpText.replace(/</g, "&lt;"));
     switch (GUI.getAnnotation()?.getType()) {
       case Annotation.TYPE.FINDER: {

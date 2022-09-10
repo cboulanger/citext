@@ -2,31 +2,33 @@ class Actions {
 
   static init() {
     GUI.init()
-    let hash = (new URL(document.URL)).hash;
-    let lastLoadUrl = localStorage.getItem(Config.LOCAL_STORAGE.LAST_LOAD_URL) || false;
-    const params = Object.fromEntries(new URLSearchParams(hash.slice(1)))
-    let downloadUrl = params.load
-    let downloadType = params.type
-    let textInLocalStorage = Actions._hasTextInLocalStorage();
-    let textLoaded = false
-    if (textInLocalStorage /*&& !(downloadUrl !== lastLoadUrl)*/) {
-      console.log("Loading document from local storage.");
-      Actions._loadTextFromLocalStorage();
-      textLoaded = true
-    }
-    if (lastLoadUrl && (!downloadUrl || downloadUrl === lastLoadUrl)) {
-      console.log("Loading document from stored URL: " + lastLoadUrl)
-      Actions.loadFromUrl(lastLoadUrl)
-    } else if (downloadUrl) {
-      console.log("Loading document from URL hash: " + downloadUrl)
-      Actions.loadFromUrl(downloadUrl)
-      document.location.hash = ""
-    } else {
-      Actions.switchToFinder()
-    }
-    if (!textLoaded) {
-      $("#modal-help").show();
-    }
+    $(() => {
+      let hash = (new URL(document.URL)).hash;
+      let lastLoadUrl = localStorage.getItem(Config.LOCAL_STORAGE.LAST_LOAD_URL) || false;
+      const params = Object.fromEntries(new URLSearchParams(hash.slice(1)))
+      let downloadUrl = params.load
+      let downloadType = params.type
+      let textInLocalStorage = Actions._hasTextInLocalStorage();
+      let textLoaded = false
+      if (textInLocalStorage /*&& !(downloadUrl !== lastLoadUrl)*/) {
+        console.log("Loading document from local storage.");
+        Actions._loadTextFromLocalStorage();
+        textLoaded = true
+      }
+      if (lastLoadUrl && (!downloadUrl || downloadUrl === lastLoadUrl)) {
+        console.log("Loading document from stored URL: " + lastLoadUrl)
+        Actions.loadFromUrl(lastLoadUrl)
+      } else if (downloadUrl) {
+        console.log("Loading document from URL hash: " + downloadUrl)
+        Actions.loadFromUrl(downloadUrl)
+        document.location.hash = ""
+      } else {
+        Actions.switchToFinder()
+      }
+      if (!textLoaded) {
+        $("#modal-help").show();
+      }
+    })
 
     // save text before leaving the page
     window.onbeforeunload = Actions.saveToLocalStorage;
@@ -315,15 +317,49 @@ class Actions {
     }
   }
 
-  static async findAndExtractReferencesInPdf() {
+  static async findRefsInText() {
+    const annotation = GUI.getAnnotation()
+    if (annotation.getType() !== Annotation.TYPE.FINDER) {
+      alert("works only in finder mode")
+      return
+    }
+    const msg = `Do you want to identify the references in the current text? This will discard any manual changes.`
+    if (!confirm(msg)) return
+    let content = annotation.getContent()
+        .split("\n")
+        .map(line => line.replace(/^[^|]+\| ?/g, ""))
+        .join("\n")
+    console.warn(content)
+    let filename = annotation.getFileName()
+    GUI.showSpinner("Indentifying references, please wait...")
+    try {
+      const annoFile1 = new File([content], filename, {
+        lastModified: 1534584790000,
+        type: "text/plain; encoding=utf-8"
+      });
+      await Utils.upload(annoFile1, Config.URL.UPLOAD)
+      content = await Actions.runCgiScript("find.rb", {filename, model: State.model.name})
+      filename = filename.replace(/(\.pdf)/,"").replace(/\.txt/,".ttx")
+      const annoFile2 = new File([content], filename, {
+        lastModified: 1534584790000,
+        type: "text/plain; encoding=utf-8"
+      });
+      await Actions.loadFile(annoFile2)
+    } catch (e) {
+      alert(e.message)
+    } finally {
+      GUI.hideSpinner()
+    }
+  }
+
+  static async findRefsInPdf() {
     const msg = `Do you want to extract text from the PDF and identify the references?`
     if (!confirm(msg)) return
     GUI.removeTextFile(false)
     const pdfFile = GUI.pdfFile
-    const url = Config.URL.UPLOAD
-    GUI.showSpinner("Extracting references, please wait...")
+    GUI.showSpinner("Indentifying references, please wait...")
     try {
-      await Utils.upload(pdfFile, url)
+      await Utils.upload(pdfFile, Config.URL.UPLOAD)
       const content = await Actions.runCgiScript("find.rb", {filename: pdfFile.name, model: State.model.name})
       const filename = pdfFile.name.replace(".pdf", ".ttx")
       const annoFile = new File([content], filename, {
