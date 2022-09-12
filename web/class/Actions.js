@@ -329,7 +329,6 @@ class Actions {
         .split("\n")
         .map(line => line.replace(/^[^|]+\| ?/g, ""))
         .join("\n")
-    console.warn(content)
     let filename = annotation.getFileName()
     GUI.showSpinner("Indentifying references, please wait...")
     try {

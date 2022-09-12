@@ -127,7 +127,7 @@
                 <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.parseReferences();">
-                    Auto-tag reference components</a></li>
+                    Auto-label reference components</a></li>
             </ul>
         </div>
         <!-- save -->
@@ -448,14 +448,13 @@
     <div class="modal-dialog" role="document">
         <div class="modal-content">
             <div class="modal-header">
-                <h3 class="modal-title" style="float: left">Citation extraction and segmentation annotation for AnyStyle
-                    and EXparser</h3>
+                <h3 class="modal-title" style="float: left">Citext: Citation annotation and extraction tool</h3>
             </div>
             <div class="modal-body">
                 <p>This web application is meant to help the annotation of training documents for machine learning-based
                     reference extraction.</p>
-                <p>It supports the annotation formats of <a href="https://github.com/inukshuk/anystyle">AnyStyle</a> and
-                    of <a href="http://exparser.readthedocs.io">EXparser</a>.
+                <p>It supports the annotation format of <a href="https://github.com/inukshuk/anystyle">AnyStyle</a>,
+                    which also powers the docker-based backend, providing automatic reference extraction and segmentation.
                 </p>
                 <p>See the <a href="https://github.com/cboulanger/excite-docker/blob/main/docs/readme.md"
                               target="_blank">
