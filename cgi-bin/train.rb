@@ -18,7 +18,6 @@ channel_id = cgi.params["channel_id"].first
 
 max_seq_count = 2000 #cgi.params["max_seq_count"] || [1500]).first.to_i
 
-
 # sse
 sse = SSE.new(channel_id)
 
@@ -54,8 +53,8 @@ if target == "parser" or target == "both"
     # remove all <ignore> nodes
     doc2.xpath("//ignore").map(&:remove)
     # work around wapiti bug by removing leading or trailing <note>
-    doc2.xpath("//sequence/*[1][name()='note']").map(&:remove)
-    doc2.xpath("//sequence/*[last()][name()='note']").map(&:remove)
+    doc2.xpath("//sequence/*[1][name()=='note']").map(&:remove)
+    doc2.xpath("//sequence/*[last()][name()=='note']").map(&:remove)
     if model_name == "fn-segmentation" # TODO remove hardcoding, this needs to be configured somehow, maybe with a model config file
       # remove all low quality sequences (i.e. nodes that have fewer than 3 child nodes)
       doc2.xpath("//sequence[count(./*) < 3 ]").map(&:remove)
@@ -76,12 +75,14 @@ if target == "parser" or target == "both"
     end
   end
 
-  # remove blank lines
+  # remove blank & empty nodes
   doc.xpath('//text()').find_all {|t| t.to_s.strip == ''}.map(&:remove)
-  STDERR.puts "Saving xml with #{doc.xpath('count(//sequence)').to_i.to_s}"
+  doc.xpath('//*[not(normalize-space())]').map(&:remove)
+  STDERR.puts "Training model with #{doc.xpath('count(//sequence)').to_i.to_s} sequences"
   tmp_xml_path = File.join(Dir.pwd, "tmp", model_name + "-parser.xml")
   doc = REXML::Document.new(doc.to_xml())
   formatter = REXML::Formatters::Pretty.new(2)
+  formatter.width = 10000 # no wrap
   formatter.compact = true
   formatter.write(doc, File.open(tmp_xml_path, "w"))
   doc = nil

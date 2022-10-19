@@ -670,7 +670,7 @@ class Actions {
     const filename = annotation.getFileName();
     const type = annotation.getType()
     const engine = annotation.getEngine()
-    const data = GUI.getTextToExport();
+    const data = annotation.export();
     if (!confirm(`Save current annotation to model dataset '${State.model.name}?'`)) return
     GUI.showSpinner(`Saving training data.`);
     let body = JSON.stringify({filename, type, engine, data, modelName: State.model.name}) + "\n\n";
