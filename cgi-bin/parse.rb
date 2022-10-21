@@ -2,6 +2,7 @@
 require 'cgi'
 require 'json'
 require 'anystyle'
+require_relative '../lib/utils.rb'
 
 # params
 cgi = CGI.new
@@ -14,5 +15,6 @@ if model_name != "default"
 end
 seqs = AnyStyle.parser.label refs
 labelled_refs = seqs.to_xml(indent:2)
+
 # return to client
 cgi.out("application/json") { labelled_refs.to_json }

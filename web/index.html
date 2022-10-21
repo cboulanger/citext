@@ -120,10 +120,10 @@
                        href="#"
                        onclick="Actions.removeIgnoreTags();">
                     Remove ignored labels</a></li>
-                <li><a class="dropdown-item ui-state-disabled enabled-if-refs"
+                <!--<li><a class="dropdown-item ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.ignore2text();">
-                    Translate &lt;ignore&gt; to &lt;text&gt;/&lt;ref&gt; </a></li>
+                    Translate &lt;ignore&gt; to &lt;text&gt;/&lt;ref&gt; </a></li>-->
                 <li><a class="dropdown-item hidden visible-if-backend ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.parseReferences();">
@@ -166,11 +166,11 @@
                 <li><a class="dropdown-item ui-state-disabled enabled-if-refs"
                        href="#"
                        onclick="Actions.exportCsl();">
-                    Export current markup as CSL</a></li>
+                    Export refs as CSL</a></li>
                 <li><a class="dropdown-item hidden visible-if-zotero-connection enabled-if-segmented"
                        href="#"
                        onclick="Actions.exportToZotero();">
-                    Export to Zotero item</a></li>
+                    Export refs to Zotero item</a></li>
             </ul>
         </div>
 
@@ -314,6 +314,9 @@
         </a></li>
         <li><a data-tag="legal-ref" onclick="GUI.addTag('legal-ref');" href="#">
             Legal-ref
+        </a></li>
+        <li><a data-tag="edition" onclick="GUI.addTag('edition');" href="#">
+            Edition
         </a></li>
         <li><a data-tag="location" onclick="GUI.addTag('location');" href="#">
             Location

@@ -127,8 +127,7 @@ class ExparserSegmentationAnnotation extends ParserAnnotation {
       content = textLines.join("\n");
     }
     super(content, fileName);
-    this.numRefs = content.split("\n").length
-
+    this.numRefs = content.match(/\n/g).length
   }
 
 

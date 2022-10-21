@@ -2,14 +2,16 @@
 # This script works around the CORS restrictions of the zotero server on localhost
 
 import sys, os, requests
+from dotenv import load_dotenv
 
 request_method = os.environ.get('REQUEST_METHOD')
 content_length = os.environ.get('CONTENT_LENGTH')
 content_type = os.environ.get('CONTENT_TYPE')
 endpoint = os.environ.get('QUERY_STRING')
 
-docker_host = "host.docker.internal" # works for Windows & Mac
-# docker_host = "172.17.0.1" # this is for linux hosts, but how to know when to use this?
+load_dotenv()
+
+docker_host = os.environ.get('DOCKER_HOST') or "host.docker.internal"
 zotero_connector_url = "http://" + docker_host + ":23119/"
 endpoint_url = zotero_connector_url + endpoint
 

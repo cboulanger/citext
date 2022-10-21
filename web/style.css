@@ -297,6 +297,10 @@ nav {
     background-color: #9a74ea;
 }
 
+[data-tag="edition"] {
+    background-color: #aca2c4;
+}
+
 [data-tag="location"] {
     background-color: #ffe446;
 }

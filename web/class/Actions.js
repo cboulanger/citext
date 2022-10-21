@@ -326,9 +326,9 @@ class Actions {
     const msg = `Do you want to identify the references in the current text? This will discard any manual changes.`
     if (!confirm(msg)) return
     let content = annotation.getContent()
-        .split("\n")
-        .map(line => line.replace(/^[^|]+\| ?/g, ""))
-        .join("\n")
+      .split("\n")
+      .map(line => line.replace(/^[^|]+\| ?/g, ""))
+      .join("\n")
     let filename = annotation.getFileName()
     GUI.showSpinner("Indentifying references, please wait...")
     try {
@@ -338,7 +338,7 @@ class Actions {
       });
       await Utils.upload(annoFile1, Config.URL.UPLOAD)
       content = await Actions.runCgiScript("find.rb", {filename, model: State.model.name})
-      filename = filename.replace(/(\.pdf)/,"").replace(/\.txt/,".ttx")
+      filename = filename.replace(/(\.pdf)/, "").replace(/\.txt/, ".ttx")
       const annoFile2 = new File([content], filename, {
         lastModified: 1534584790000,
         type: "text/plain; encoding=utf-8"
@@ -376,10 +376,10 @@ class Actions {
   static async parseReferences() {
     const annotation = GUI.getAnnotation()
     if (annotation.getType() !== Annotation.TYPE.PARSER) {
-      alert("Can only parse references, not documents")
+      alert("Can only label references, not documents")
       return
     }
-    const msg = `Do you want to automatically tag the references?`
+    const msg = `Do you want to automatically label the references?`
     if (!confirm(msg)) return
     const refs = annotation.getContent()
       .replace(Config.REGEX.TAG_OPEN, "")
@@ -391,35 +391,11 @@ class Actions {
       model: State.model.name
     }
     GUI.saveState()
-    GUI.showSpinner("Parsing references")
+    GUI.showSpinner("Labelling references")
     const content = await Actions.runCgiScript("parse.rb", params, "post")
     GUI.hideSpinner()
     annotation.load(content)
     GUI.update()
-  }
-
-  static async autoTagReferences() {
-    // not working
-    // const annotation = GUI.getAnnotation()
-    // if (annotation.getType() !== Annotation.TYPE.PARSER) {
-    //   alert("Only available for list of references")
-    //   return
-    // }
-    // GUI.saveState()
-    // let autoTaggedText = annotation.getContent().split("\n")
-    //   // citation numbers
-    //   .map(line => line.replace(
-    //     /^(<(?!cit)[^/>]+>)([0-9]{1,3}\s+)(\S[^>]+<\/[^>]+>)/,
-    //     "<citation-number>$2</citation-number>$1$3"))
-    //   // signal words
-    //   .map(line => Config.SIGNAL_WORDS.forEach(re => line.replace(re, "<signal>$0</signal>")))
-    //   .join("\n")
-    // annotation.load(autoTaggedText)
-  }
-
-  static async separateReferencesInFootnotes() {
-    const annotation = GUI.getAnnotation()
-    let content = annotation.getContent()
   }
 
   static async trainModel(target = "both") {
@@ -474,10 +450,21 @@ class Actions {
           }
         })
       }
-      let result = await response.json()
-      // very naive and basic error handling
+      let result = await response.text()
+      if (result) {
+        try {
+          result = JSON.parse(result)
+        } catch (e) {
+          console.error(e)
+          result = {
+            error: result.replace(/<(\/p|br)>/g, "\n").replace(/<[^>]+>/g, "")
+          }
+        }
+      } else {
+        result = {error: "No response from server. Please check error log."}
+      }
       if (result && typeof result === "object" && result.error) {
-        alert(result.error)
+        throw new Error(result.error)
       }
       return result
     } catch (e) {
@@ -487,26 +474,6 @@ class Actions {
         error: e.message
       }
     }
-  }
-
-  static extractReferences(markedUpText) {
-    let textLines = markedUpText.split("\n");
-    // remove cermine layout info if exists
-    textLines = textLines.map(line => line.split('\t').shift())
-    let tmp = textLines
-      //  .map(line => line.trim().replace(/[-]$/, "~~HYPHEN~~"))
-      .join(" ")
-    //  .replace(/~~HYPHEN~~ /g, "");
-    textLines = [];
-    for (let match of tmp.matchAll(/<ref[^>]*>(.*?)<\/ref[^>]*>/g)) {
-      textLines.push(match[1]);
-    }
-    let text = textLines.filter(line => Boolean(line.trim())).join("\n");
-    // redundant?
-    while (text.match(/\n\n/)) {
-      text = text.replace(/\n\n/g, "\n");
-    }
-    return text;
   }
 
   static export() {
@@ -539,7 +506,7 @@ class Actions {
     let unknown_types = csl_data.filter(item => !item.type)
     if (unknown_types.length > 0) {
       let question = `Extracted reference data contains ${unknown_types.length} unrecognized item types. 
-      Do you want to skip them during import (OK) or correct the markup (cancel)?`.replace(/\n */g, " ")
+      Do you want to skip them during import (OK) or edit the references first (cancel)?`.replace(/\n */g, " ")
       if (!confirm(question)) {
         return;
       }

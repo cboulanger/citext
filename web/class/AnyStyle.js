@@ -197,13 +197,13 @@ class AnystyleParserAnnotation extends ParserAnnotation {
         .replace(/ *<\/sequence> */g, "\n")
     }
     this.content = content.trim()
-    this.numRefs = content.split("\n").length
+    this.numRefs = content.match(/\n/g).length
   }
 
   export() {
     let textToExport = this.content
       .split(/\n(?=<)/g)
-      .filter(Boolean)
+      .filter(line => Boolean(line.trim()))
       .map(line => `<sequence>${line}</sequence>`)
       .map(line => line.replace(/(<\/[^>]+>)([^<]*)(<[^>/]+>)/g, "$2$1$3"))
       .join("\n").trim();

@@ -50,7 +50,13 @@ class Zotero {
       if (result.toLowerCase().includes("endpoint")) {
         throw new Error(result.replace(/(endpoint)/i, "$1 " + endpoint));
       }
-      result = JSON.parse(result);
+      try {
+        result = JSON.parse(result);
+      } catch (e) {
+        result = {
+          error: result.replace(/<(\/p|br)>/g,"\n").replace(/<[^>]+>/g,"")
+        }
+      }
       if (result.error) {
         throw new Error(result.error);
       }
