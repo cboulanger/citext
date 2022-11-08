@@ -8,13 +8,13 @@ docker run -d -it \
   -p $EXCITE_PORT:8000 \
   -v ${ZOTERO_STORAGE_PATH}:/zotero-storage \
   -v $(pwd):/app \
-  --name excite-app \
-  excite_toolchain server start > /dev/null
+  --name citext-app \
+  citext server start > /dev/null
 
 echo "Waiting for webserver to start..."
 
 # wait for end of OCR container setup
-while ! docker logs excite-app 2>&1 | grep -q 'Serving'; do
+while ! docker logs citext-app 2>&1 | grep -q 'Serving'; do
     sleep 1
 done
 

@@ -16,11 +16,7 @@ else
     if model_name != "default"
         AnyStyle.finder.load_model File.join("Models", model_name, "finder.mod").untaint
     end
-    response = AnyStyle.finder.find(file_path, format: :wapiti)[0]
-        .to_s(tagged:true)
-        .gsub(/Generiert durch Max\-Planck\-Institut für Rechtsgeschichte und Rechtstheorie, am ([^,]+), ([^.]+)\./,"")
-        .gsub(/Das Erstellen und Weitergeben von Kopien dieses PDFs ist nicht zulässig\./,"")
-        .gsub(/https:\/\/doi\.org\/[\d.\/_]+/,"")
+    response = AnyStyle.finder.find(file_path, format: :wapiti)[0].to_s(tagged:true)
 end
 
 # return to client

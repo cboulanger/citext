@@ -2,4 +2,4 @@
 
 chmod +x ./bin/*
 chmod +x ./cgi-bin/*
-chown -R "$(whoami)":"$(whoami)" ./{Models,Data,tmp}
+chown -R "$(whoami)":"$(whoami)" ./{Models,Dataset,tmp}

@@ -596,7 +596,7 @@ class Actions {
           // if we have several entries, user should select but we're taking the first matching one for now
           let foundItem = foundItems.find(foundItem => item.itemType === foundItem.itemType);
           if (foundItem) {
-            // merge properties from exparser into found item without overwriting any existing ones
+            // merge properties from extracted item into found item without overwriting any existing ones
             let newItem = Object.assign(item, foundItem);
             // update only if properties have been added
             let newItemHasMoreProperties =
