@@ -54,15 +54,15 @@ if target == "parser" or target == "both"
     doc2.xpath("//ignore").map(&:remove)
     # work around wapiti bug by removing leading or trailing <note>
     doc2.xpath("//sequence/*[1][name()='note']").map(&:remove)
-    doc2.xpath("//sequence/*[last()][name()='note']").map(&:remove)
+    # doc2.xpath("//sequence/*[last()][name()='note']").map(&:remove)
     # remove all low quality sequences (i.e. nodes that have fewer than 3 child nodes)
-    doc2.xpath("//sequence[count(./*) < 3 ]").map(&:remove)
+    # doc2.xpath("//sequence[count(./*) < 3 ]").map(&:remove)
     # remove all sequences that don't at least have an author/editor, title or date
-    doc2.xpath("//sequence[not(./author) and not(./editor)]").map(&:remove)
-    doc2.xpath("//sequence[not(./date) and not(./title)]").map(&:remove)
+    # doc2.xpath("//sequence[not(./author) and not(./editor)]").map(&:remove)
+    # doc2.xpath("//sequence[not(./date) and not(./title)]").map(&:remove)
     count_nodes_after = doc2.xpath("count(//sequence)")
     count_nodes_removed = count_nodes_before - count_nodes_after
-    STDERR.puts "After removing #{count_nodes_removed.to_i.to_s} low quality sequences, #{count_nodes_after.to_i.to_s} sequences can be merged."
+    STDERR.puts "After removing #{count_nodes_removed.to_i.to_s} sequences, #{count_nodes_after.to_i.to_s} sequences can be merged."
     break unless doc2.xpath("//sequence").each do |seq|
       seq_count += 1
       if seq_count > max_seq_count

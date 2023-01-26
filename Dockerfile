@@ -19,5 +19,5 @@ ADD requirements.txt .
 RUN  pip install --upgrade pip && \
      pip install -r requirements.txt && \
      gem install anystyle nokogiri serrano
-RUN chmod 0777 app/tmp && chmod 0777 app/Dataset && chmod 00777 app/Models && chmod 0777 app/cgi-bin/*
+#RUN chmod 0777 app/tmp && chmod 0777 app/Dataset && chmod 00777 app/Models && chmod 0777 app/cgi-bin/*
 ENTRYPOINT ["python3", "/app/run-main.py"]
