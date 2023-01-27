@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+./bin/update-permissions
+
 # configuration
 EXCITE_PORT=${EXCITE_PORT:-8000}
 ZOTERO_STORAGE_PATH=${ZOTERO_STORAGE_PATH:-~/Zotero/storage}

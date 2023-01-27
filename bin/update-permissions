@@ -2,4 +2,5 @@
 
 chmod +x ./bin/*
 chmod +x ./cgi-bin/*
-chown -R "$(whoami)":"$(whoami)" ./{Models,Dataset,tmp}
+find ./{Models,Dataset,tmp} -type d -exec chmod 777 {} +
+find ./{Models,Dataset,tmp} -type f -exec chmod 666 {} +
