@@ -9,16 +9,22 @@ try:
     if not url:
         raise RuntimeError("No URL given")
 
-    if url.startswith("file://zotero-storage/"):
-        filepath = url[6:]
-        filename = url.split("/").pop()
-        if not os.path.isfile(filepath):
-            raise Exception(filepath + " does not exist.")
-    else:
-        filename = url.rsplit('/', 1)[1]
-        tmpdir = tempfile.gettempdir()
-        filepath = tmpdir + "/" + filename
-        urllib.request.urlretrieve(url, filepath)
+    filename = url.split("/").pop()
+    match url.split(":"):
+        case ['file', filepath]:
+            if filepath.startswith('/zotero-storage') or filepath.startswith('Dataset'):
+                if not os.path.isfile(filepath):
+                    raise Exception(f"{filepath} does not exist.")
+            else:
+                raise Exception(f"Access forbidden for {filepath}")
+
+        case ['http' | 'https']:
+            tmpdir = tempfile.gettempdir()
+            filepath = tmpdir + "/" + filename
+            urllib.request.urlretrieve(url, filepath)
+
+        case _:
+            raise Exception("Invalid URL")
 
     print("Content-type: application/octet-stream")
     print("Content-Disposition: attachment; filename=%s" % filename)

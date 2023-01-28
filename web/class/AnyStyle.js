@@ -197,7 +197,8 @@ class AnystyleParserAnnotation extends ParserAnnotation {
         .replace(/ *<\/sequence> */g, "\n")
     }
     this.content = content.trim()
-    this.numRefs = content.match(/\n/g).length
+    let m = content.match(/\n/g)
+    this.numRefs = m ? m.length : 0
   }
 
   export() {

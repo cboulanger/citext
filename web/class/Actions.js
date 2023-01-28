@@ -159,6 +159,16 @@ class Actions {
     } else {
       res = await fetch(`${Config.URL.LOAD_FROM_URL}?url=${url}`)
     }
+    if (res.headers.get('Content-Type') === "application/json") {
+      res = await res.json()
+      if (res.error) {
+        alert(res.error)
+      } else {
+        alert("Unknown error")
+        console.error(res)
+      }
+      return
+    }
     let blob = await res.blob();
     filename = filename || url.split("/").pop();
     let file = new File([blob], filename, {lastModified: 1534584790000});
@@ -216,7 +226,7 @@ class Actions {
         s = filepath.split("/");
       }
       State.zotero.attachmentPath = s.slice(s.indexOf("storage") + 1).join("/");
-      await this.loadFromUrl("file://zotero-storage/" + State.zotero.attachmentPath, filename)
+      await this.loadFromUrl("file:/zotero-storage/" + State.zotero.attachmentPath, filename)
     } catch (e) {
       alert(e.message);
     } finally {
@@ -292,6 +302,39 @@ class Actions {
       }
       fileReader.readAsText(file, "UTF-8");
     })
+  }
+
+  static openFilePicker() {
+    if (this.__filePicker) {
+      return this.__filePicker.focus()
+    }
+    const annotation =  GUI.getAnnotation()
+    const model_type = annotation ? annotation.getType() : 'finder'
+    const model_name = State.model.name
+    const features = "popup,width=320,height=320"
+    const url = `/cgi-bin/filepicker.rb?model=${model_name}&type=${model_type}`
+    function onFilePicked(ev){
+      console.log(ev)
+      let file_path = ev.data
+      if (!file_path){
+        console.log("Cancelled")
+        return
+      }
+      return Actions.loadFromUrl(`file:${file_path}`)
+    }
+    this.__filePicker = window.open(url,"filepicker", features);
+    window.addEventListener("message", onFilePicked)
+    this.__filePicker.addEventListener("load",() => {
+      this.__filePicker.addEventListener("beforeunload", () => {
+        window.removeEventListener("message", onFilePicked)
+        this.__filePicker = null;
+        console.log("Popup closed.")
+      })
+      window.addEventListener("beforeunload",() => {
+        this.__filePicker.close()
+      })
+    })
+    console.log("Window opened")
   }
 
   static async extractTextFromPdf() {
