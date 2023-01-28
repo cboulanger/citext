@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 
-import sys, json, os
+import sys, json, os, shutil, re
+import xml.dom.minidom
+from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from configs import *
 
@@ -19,7 +21,7 @@ try:
     payload = json.loads(payload)
     data_type = payload["type"]
     engine = payload["engine"]
-    data = payload["data"].encode("utf8")
+    data = payload["data"]
     file_name = payload["filename"]
     model_name = payload["modelName"]
 
@@ -33,9 +35,23 @@ try:
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
 
-    file = open(os.path.join(dir_name, file_name), "wb")
-    file.write(data)
-    file.close()
+    # pretty-print xml
+    if file_name.endswith(".xml"):
+        data = xml.dom.minidom.parseString(data)
+        data = data.toprettyxml(encoding="utf-8", indent="    ").decode("utf-8")
+        data = re.sub("\n *\n", "\n", data)
+        data = re.sub("\n *\n", "\n", data)
+
+    file_path = os.path.join(dir_name, file_name)
+
+    # backup existing files in tmp dir
+    if os.path.exists(file_path):
+        time_string = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+        backup_path = os.path.join("tmp", os.path.basename(file_path) + f".{time_string}.bak")
+        shutil.move(file_path, backup_path)
+
+    with open(file_path, "w", encoding="utf-8") as f:
+        f.write(data)
 
     result["success"] = True
 
