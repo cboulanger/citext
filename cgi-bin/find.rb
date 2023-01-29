@@ -12,11 +12,18 @@ file_path = File.join("tmp", file_name).untaint
 if ! File.exists?(file_path)
     response = {error: "File #{file_name} cannot be found."}
 else
-    # find refs in document
-    if model_name != "default"
-        AnyStyle.finder.load_model File.join("Models", model_name, "finder.mod").untaint
+    begin
+        # find refs in document
+        if model_name != "default"
+            AnyStyle.finder.load_model File.join("Models", model_name, "finder.mod").untaint
+        end
+        response = AnyStyle.finder.find(file_path, format: :wapiti)[0].to_s(tagged:true)
+    rescue => e
+        STDERR.puts "Error: #{$!}\n\t#{e.backtrace.join("\n\t")}"
+        response = {
+            error: e.message
+        }
     end
-    response = AnyStyle.finder.find(file_path, format: :wapiti)[0].to_s(tagged:true)
 end
 
 # return to client

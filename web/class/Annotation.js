@@ -83,6 +83,7 @@ class Annotation {
       .replace(Config.REGEX.BR, "\n")
       .replace(Config.REGEX.DATA_TAG_SPAN, "<$1>$2</$1>")
 
+    console.log(markedUpText)
 
     // check if translation removed all <span> tags and warn if not
     if (markedUpText.match(Config.REGEX.SPAN)) {

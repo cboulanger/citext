@@ -53,7 +53,7 @@ if target == "parser" or target == "both"
     # remove all <ignore> nodes
     doc2.xpath("//ignore").map(&:remove)
     # work around wapiti bug by removing leading or trailing <note>
-    doc2.xpath("//sequence/*[1][name()='note']").map(&:remove)
+    # doc2.xpath("//sequence/*[1][name()='note']").map(&:remove)
     # doc2.xpath("//sequence/*[last()][name()='note']").map(&:remove)
     # remove all low quality sequences (i.e. nodes that have fewer than 3 child nodes)
     # doc2.xpath("//sequence[count(./*) < 3 ]").map(&:remove)

@@ -292,7 +292,7 @@ class Actions {
           case "text/plain":
           case "txt":
           case "ttx":
-            annotation = new AnystyleFinderAnnotation(text, fileName)
+            annotation = new AnystyleFinderAnnotation(text, fileName.replace(/\.[^.]+$/,'.ttx'))
             break;
           default:
             return reject(new Error("Unknown file type: " + fileType));
@@ -311,7 +311,7 @@ class Actions {
     const annotation =  GUI.getAnnotation()
     const model_type = annotation ? annotation.getType() : 'finder'
     const model_name = State.model.name
-    const features = "popup,width=320,height=320"
+    const features = "popup,width=500,height=400"
     const url = `/cgi-bin/filepicker.rb?model=${model_name}&type=${model_type}`
     function onFilePicked(ev){
       console.log(ev)
@@ -369,9 +369,6 @@ class Actions {
     const msg = `Do you want to identify the references in the current text? This will discard any manual changes.`
     if (!confirm(msg)) return
     let content = annotation.getContent()
-      .split("\n")
-      .map(line => line.replace(/^[^|]+\| ?/g, ""))
-      .join("\n")
     let filename = annotation.getFileName()
     GUI.showSpinner("Indentifying references, please wait...")
     try {
@@ -381,14 +378,13 @@ class Actions {
       });
       await Utils.upload(annoFile1, Config.URL.UPLOAD)
       content = await Actions.runCgiScript("find.rb", {filename, model: State.model.name})
+      console.log(content)
       filename = filename.replace(/(\.pdf)/, "").replace(/\.txt/, ".ttx")
       const annoFile2 = new File([content], filename, {
         lastModified: 1534584790000,
         type: "text/plain; encoding=utf-8"
       });
       await Actions.loadFile(annoFile2)
-    } catch (e) {
-      alert(e.message)
     } finally {
       GUI.hideSpinner()
     }
@@ -409,8 +405,6 @@ class Actions {
         type: "text/plain; encoding=utf-8"
       });
       await Actions.loadFile(annoFile)
-    } catch (e) {
-      alert(e.message)
     } finally {
       GUI.hideSpinner()
     }
@@ -511,11 +505,8 @@ class Actions {
       }
       return result
     } catch (e) {
-      console.error(e)
       alert(e.message)
-      return {
-        error: e.message
-      }
+      throw e
     }
   }
 

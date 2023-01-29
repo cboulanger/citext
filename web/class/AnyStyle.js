@@ -32,6 +32,7 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
       if (line === "") {
         tag = "blank"
       }
+
       switch (tag) {
         case "blank":
           if (ttx_curr_tag) {
@@ -100,6 +101,10 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
             tag = tag || lastTagBeforeBlank || "text"
             currentTag = tag
             lastTagBeforeBlank = null
+          }
+          // hack! this works around a deeper problem with the html -> <xml> conversion
+          if (tag.startsWith("span")) {
+            tag = tag.replace(/span data-tag="([^"]+)"/, "$1")
           }
           return tag.padEnd(14, " ") + "| " + prefix + suffix
         }
