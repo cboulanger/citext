@@ -49,6 +49,10 @@ nav {
     margin-left: 5px;
 }
 
+#context-menu {
+    z-index: 0;
+}
+
 #context-menu > li, #context-menu > div > li {
     user-select: none;
 }
@@ -117,10 +121,12 @@ nav {
 .document-view {
     background-color: #ccf1e9 !important;
     white-space: nowrap !important;
+    z-index: 0;
 }
 
 .references-view {
     background-color: #bed3ff !important;
+    z-index: 0;
 }
 
 .references-view > br {
@@ -182,7 +188,9 @@ nav {
     margin-bottom: 2px;
     box-shadow: 0 0 0 1px white;
 }
-
+.references-view > [data-tag], .document-view > [data-tag] {
+    z-index: -1;
+}
 .references-view > [data-tag]:hover {
     box-shadow: 0 0 5px rgba(33, 33, 33, .8);
 }
@@ -209,7 +217,6 @@ nav {
     color: #000;
     text-align: center;
     display: none;
-    z-index: 99999;
 }
 
 [data-tag]:hover:before {
@@ -222,11 +229,6 @@ nav {
 }
 
 /* data-tag */
-
-[data-tag] {
-    z-index: 0;
-}
-
 /* ref identification anystyle */
 
 [data-tag="reference"], [data-tag="ref"] {

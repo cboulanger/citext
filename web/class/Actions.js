@@ -292,7 +292,7 @@ class Actions {
           case "text/plain":
           case "txt":
           case "ttx":
-            annotation = new AnystyleFinderAnnotation(text, fileName.replace(/\.[^.]+$/,'.ttx'))
+            annotation = new AnystyleFinderAnnotation(text, fileName.replace(/\.[^.]+$/, '.ttx'))
             break;
           default:
             return reject(new Error("Unknown file type: " + fileType));
@@ -308,29 +308,31 @@ class Actions {
     if (this.__filePicker) {
       return this.__filePicker.focus()
     }
-    const annotation =  GUI.getAnnotation()
+    const annotation = GUI.getAnnotation()
     const model_type = annotation ? annotation.getType() : 'finder'
     const model_name = State.model.name
     const features = "popup,width=500,height=400"
     const url = `/cgi-bin/filepicker.rb?model=${model_name}&type=${model_type}`
-    function onFilePicked(ev){
+
+    function onFilePicked(ev) {
       console.log(ev)
       let file_path = ev.data
-      if (!file_path){
+      if (!file_path) {
         console.log("Cancelled")
         return
       }
       return Actions.loadFromUrl(`file:${file_path}`)
     }
-    this.__filePicker = window.open(url,"filepicker", features);
+
+    this.__filePicker = window.open(url, "filepicker", features);
     window.addEventListener("message", onFilePicked)
-    this.__filePicker.addEventListener("load",() => {
+    this.__filePicker.addEventListener("load", () => {
       this.__filePicker.addEventListener("beforeunload", () => {
         window.removeEventListener("message", onFilePicked)
         this.__filePicker = null;
         console.log("Popup closed.")
       })
-      window.addEventListener("beforeunload",() => {
+      window.addEventListener("beforeunload", () => {
         this.__filePicker.close()
       })
     })
@@ -429,10 +431,14 @@ class Actions {
     }
     GUI.saveState()
     GUI.showSpinner("Labelling references")
-    const content = await Actions.runCgiScript("parse.rb", params, "post")
-    GUI.hideSpinner()
-    annotation.load(content)
-    GUI.update()
+    try {
+      const content = await Actions.runCgiScript("parse.rb", params, "post")
+      annotation.load(content)
+      GUI.update()
+    } finally {
+      GUI.hideSpinner()
+    }
+
   }
 
   static async trainModel(target = "both") {

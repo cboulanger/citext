@@ -40,34 +40,54 @@ class GUI {
     textContent.keypress(function (event) {
       GUI.saveState()
       var keycode = (event.keyCode ? event.keyCode : event.which);
-      if (keycode == '13') {
-        textContent.one("keyup", () => {
-          GUI.saveState()
-          let re;
-          // let re1 = /<div>(<span[^>]*>.*<\/span>)<\/div>/g
-          // while (textContent.html().match(re1)) {
-          //   textContent.html(textContent.html().replace(re1, "$1<br>"))
-          // }
-          let html = textContent.html()
-          re = /<\/span><span/g
-          // while (html.match(re)) {
-          //   html = html.replace(re, "</span><br><span")
-          // }
-          re = /<div>/g
-          while (html.match(re)) {
-            html = html.replace(re, "")
+      if (keycode === 13) {
+        // when enter is pressed, work around the problem of inserting a <br> within a tag
+        let sel = window.getSelection()
+        let focusNode = sel.focusNode
+        let focusParent = focusNode.parentNode
+        let tag = focusParent && focusParent.getAttribute('data-tag')
+        if (tag) {
+          event.preventDefault()
+          let focusText = focusNode.textContent
+          let [t1, t2] = [focusText.slice(0, sel.focusOffset), focusText.slice(sel.focusOffset)]
+          focusNode.textContent = t1
+          let blankNode = document.createElement("span")
+          blankNode.setAttribute('data-tag', "blank")
+          let newNode = document.createElement("span")
+          newNode.setAttribute('data-tag', tag)
+          newNode.setAttribute('data-new', "foo")
+          let newText = document.createTextNode(t2)
+          newNode.append(newText)
+          let sibling = focusNode.nextSibling
+          let siblings = []
+          while (sibling) {
+            siblings.push(sibling)
+            sibling = sibling.nextSibling
           }
-          re = /<\/div>/g
-          while (html.match(re)) {
-            html = html.replace(re, "<br>")
+          if (siblings.length) {
+            newNode.append(...siblings)
           }
-          re = /<br><br>/g
-          while (html.match(re)) {
-            html = html.replace(re, "<br>")
+          let nodes = [
+            document.createElement("br"),
+            blankNode,
+            document.createElement("br"),
+            newNode
+          ].reverse()
+          if (focusParent.nextSibling) {
+            nodes.map(n => focusParent.parentNode.insertBefore(n, focusParent.nextSibling))
+          } else {
+            nodes.map(n => focusParent.parentNode.append(n))
           }
-          textContent.html(html)
-          GUI.updateMarkedUpText()
-        })
+          if (focusParent.innerHTML.endsWith("<br>")) {
+            focusParent.innerHTML = focusParent.innerHTML.replace(/<br>$/,'')
+          }
+          let range = new Range();
+          range.setStart(newNode, 0);
+          range.setEnd(newNode, 0);
+          sel.removeAllRanges();
+          sel.addRange(range);
+        }
+        GUI.updateMarkedUpText()
       }
     });
     textContent.on("keyup", GUI.updateMarkedUpText.bind(GUI))
@@ -119,6 +139,7 @@ class GUI {
       if (!longpress) return;
       let sel = window.getSelection();
       //if (sel.toString().length) return; // so that <oth> element can be inserted into selection
+
       if (!sel.focusNode || !sel.focusNode.parentElement) return;
       let p = sel.focusNode.parentElement;
       if (e.target !== p) return;
@@ -160,7 +181,6 @@ class GUI {
     // tooltips
     //$('[data-toggle="tooltip"]').tooltip();
   }
-
 
 
   static updateButtons() {
@@ -567,6 +587,7 @@ class GUI {
   static addTag(tag_name, wholeLine = false) {
     GUI.saveState();
     let sel = window.getSelection();
+
     let text = sel.toString();
     if (text.trim() === "") return;
     if (wholeLine) {
@@ -574,6 +595,7 @@ class GUI {
     }
     // prevent nesting of tag inside other tag
     let node = sel.focusNode;
+
     if (!node || !node.parentNode) {
       return
     }
