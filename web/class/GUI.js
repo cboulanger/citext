@@ -17,6 +17,59 @@ class GUI {
       this._setupEventListeners();
       GUI.toggleMarkedUpView(false);
     });
+
+    // Display SSE messages
+    const channel_id = State.channel_id = Math.random().toString().slice(2)
+    const source = new EventSource(Config.SERVER_URL + "sse.py?" + channel_id);
+    let toasts = {};
+    source.addEventListener("open", () => {
+      console.log("Initialized SSE connection with id " + channel_id)
+    })
+    for (let type of ['success', 'info', 'warning', 'error']) {
+      source.addEventListener(type, evt => {
+        let data = evt.data;
+        let title, text;
+        let sepPos = data.indexOf(":")
+        if (sepPos !== -1) {
+          title = data.slice(0, sepPos) || type
+          text = data.slice(sepPos + 1)
+        } else {
+          title = type
+          text = data
+        }
+        //console.log({title, text})
+        let toastId = type + "|" + title;
+        let toast = toasts[toastId];
+        if (toast && toast.css("visibility")) {
+          if (text.trim()) {
+            toast.find(".toast-message").text(text)
+          } else {
+            toastr.clear(toast)
+          }
+        } else if (text.trim()) {
+          // const onCloseClick = type === "info" ? () => {
+          //   if (confirm("Cancel the current server process?")) {
+          //     Actions.runCgiScript("abort.py", {id: channel_id})
+          //   }
+          // } : undefined;
+          toast = toastr[type](text, title, {
+            positionClass: "toast-bottom-full-width",
+            timeOut: 0,
+            extendedTimeOut: 0,
+            closeButton: true,
+            onCloseClick: undefined
+          })
+          toasts[toastId] = toast
+        }
+      });
+      source.addEventListener("debug", evt => {
+        console.log(evt.data);
+      })
+    }
+
+    source.addEventListener("error", evt => {
+      console.error("EventSource failed:", evt);
+    });
   }
 
   static _configureStatus(status) {

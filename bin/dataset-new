@@ -1,0 +1,15 @@
+#!/usr/bin/env bash
+
+dataset=$1
+if [[ "$dataset" == "" ]] ; then
+  echo "No dataset name given."
+  exit 1
+fi
+
+mkdir -p "Dataset/$dataset/anystyle/parser"
+touch    "Dataset/$dataset/anystyle/parser/_merge-datasets.txt"
+mkdir -p "Dataset/$dataset/anystyle/finder"
+touch    "Dataset/$dataset/anystyle/finder/_merge-datasets.txt"
+mkdir -p "Models/$dataset/"
+
+bin/update-permissions
