@@ -30,7 +30,8 @@ class Config {
     EMPTY_NODE: /<[^>]+><\/[^>]+>/g,
     DATA_TAG_SPAN: /<span data-tag="([^"]+)"[^>]*>([^<]*)<\/span>/gm,
     PAGE_NUMBER_IN_LINE: /^[0-9]{1,3}|[0-9]{1,3}/,
-    FOOTNOTE_NUMBER_AT_LINE_START: /^([\d]{1,3}\.?\s+)(\p{L}.{30,})$/iu
+    FOOTNOTE_NUMBER_AT_LINE_START: /^([\d]{1,3}\.?\s+)(\p{L}.{30,})$/iu,
+    DASH_AT_LINE_END: /[\s\u00AD\u002D\u058A\u05BE\u1400\u1806\u2010\u2011\u2012\u2053\u207B\u208B\u2212\uFE58\uFE63]+$/gu
   }
   static KNOWN_IDENTIFIERS = [
     {

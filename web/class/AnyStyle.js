@@ -133,7 +133,7 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
     let content = this.getContent()
     let maybeFn = content
       .split("\n")
-      .map(l => l.replace(/^(\S*)\s+\| /,''))
+      .map(l => l.replace(/^(\S*)\s+\| /, ''))
       .filter(l => l.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START))
     return maybeFn.length > 10 ? this.extractFootnotes(content) : this.extractLabelledLines(content, "ref")
   }
@@ -146,7 +146,7 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
     return this;
   }
 
-   extractLabelledLines(content, label) {
+  extractLabelledLines(content, label) {
     let inLabel = false;
     let lines = content.split("\n");
     let labelledLines = [];
@@ -162,16 +162,28 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
           labelledLines.push("\n")
         }
         if (inLabel) {
-          labelledLines.push(l[2].trim())
+          let text = this.prepareUnwrapLine(l[2])
+          labelledLines.push(text)
         }
       }
     }
     return labelledLines.join("")
   }
 
+  prepareUnwrapLine(line) {
+    line = line.trim()
+    if (line.match(Config.REGEX.DASH_AT_LINE_END)) {
+      line = line.replace(Config.REGEX.DASH_AT_LINE_END,'')
+    } else {
+      line += " "
+    }
+    return line
+  }
+
   extractFootnotes(content) {
     let lines = content.split("\n")
     let in_ref = false
+    let self = this
     function* extractRefs(lines) {
       for (let line of lines) {
         let m = line.match(/^(\S*)\s+\| ?(.*)/)
@@ -179,28 +191,22 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
           continue
         }
         let label = m[1].trim()
-        let text = m[2].trim()
+        let text = self.prepareUnwrapLine(m[2])
         let isFnNum = text.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START)
-          // && index > 0 && lines[index-1].length < line.length // heuristic needs to be tested
+        // && index > 0 && lines[index-1].length < line.length // heuristic needs to be tested
         let prefix = isFnNum ? "\n" : ""
-        switch (label) {
-          case "ref":
-            in_ref = true
-            yield prefix + text + " "
-            break
-          case "":
-            if (in_ref) {
-              yield prefix + text + " "
-            }
-            break
-          default:
-            if (in_ref) {
-              yield "\n"
-            }
-            in_ref = false;
+        if (label === "ref") {
+          in_ref = true
+        } else if (label !== "") {
+          in_ref = false
+        }
+        if (in_ref) {
+          console.log(text)
+          yield prefix + text
         }
       }
     }
+
     let footnotes = "";
     for (let line of extractRefs(lines)) {
       footnotes += line
