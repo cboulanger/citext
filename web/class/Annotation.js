@@ -153,6 +153,7 @@ class FinderAnnotation extends Annotation {
   toParserAnnotation() {
     throw new Error("Implemented by subclass")
   }
+
 }
 
 class ParserAnnotation extends Annotation {

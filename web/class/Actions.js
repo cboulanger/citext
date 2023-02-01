@@ -277,13 +277,11 @@ class Actions {
       this.__filePicker.addEventListener("beforeunload", () => {
         window.removeEventListener("message", onFilePicked)
         this.__filePicker = null;
-        console.log("Popup closed.")
       })
       window.addEventListener("beforeunload", () => {
         this.__filePicker.close()
       })
     })
-    console.log("Window opened")
   }
 
   static async extractTextFromPdf() {

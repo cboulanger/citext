@@ -37,7 +37,7 @@ class GUI {
           title = type
           text = data
         }
-        //console.log({title, text})
+        console.log({type, title, text})
         let toastId = type + "|" + title;
         let toast = toasts[toastId];
         if (toast && toast.css("visibility")) {

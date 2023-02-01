@@ -128,11 +128,52 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
     return this.content;
   }
 
+
   extractReferences() {
-    let lines = this.getContent().split("\n")
+    let content = this.getContent()
+    let maybeFn = content
+      .split("\n")
+      .map(l => l.replace(/^(\S*)\s+\| /,''))
+      .filter(l => l.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START))
+    return maybeFn.length > 10 ? this.extractFootnotes(content) : this.extractLabelledLines(content, "ref")
+  }
+
+  toParserAnnotation() {
+    return new AnystyleParserAnnotation(this.extractReferences(), this.getFileName().replace(/.ttx/, ".xml"))
+  }
+
+  toFinderAnnotation() {
+    return this;
+  }
+
+   extractLabelledLines(content, label) {
+    let inLabel = false;
+    let lines = content.split("\n");
+    let labelledLines = [];
+    for (let line of lines) {
+      let l = line.match(/^(\S*)\s+\| ?(.*)/)
+      if (l) {
+        l[1] = l[1].trim()
+        if (l[1] === label) {
+          inLabel = true;
+        } else if (l[1]) {
+          inLabel = false
+          // end of reference
+          labelledLines.push("\n")
+        }
+        if (inLabel) {
+          labelledLines.push(l[2].trim())
+        }
+      }
+    }
+    return labelledLines.join("")
+  }
+
+  extractFootnotes(content) {
+    let lines = content.split("\n")
     let in_ref = false
     function* extractRefs(lines) {
-      for (let [index,line] of lines.entries()) {
+      for (let line of lines) {
         let m = line.match(/^(\S*)\s+\| ?(.*)/)
         if (!m) {
           continue
@@ -160,19 +201,11 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
         }
       }
     }
-    let refs = "";
+    let footnotes = "";
     for (let line of extractRefs(lines)) {
-      refs += line
+      footnotes += line
     }
-    return refs
-  }
-
-  toParserAnnotation() {
-    return new AnystyleParserAnnotation(this.extractReferences(), this.getFileName().replace(/.ttx/, ".xml"))
-  }
-
-  toFinderAnnotation() {
-    return this;
+    return footnotes
   }
 }
 
