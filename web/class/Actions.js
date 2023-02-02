@@ -762,5 +762,54 @@ class Actions {
     GUI.getAnnotation().setContent(content)
     GUI.update()
   }
+
+  static editXml() {
+    if (this.__xmlEditor) {
+      return this.__xmlEditor.focus()
+    }
+    const annotation = GUI.getAnnotation()
+    const features = "popup,width=800,height=400"
+    const url = `/cgi-bin/xmleditor.rb`
+    const onMessage = (ev) => {
+      let message = ev.data
+      if (!message) {
+        console.log("Cancelled")
+        return
+      }
+      message = JSON.parse(message)
+      if (message.ready) {
+        const xml = GUI.getAnnotation().export()
+        const docSpec = {
+          elements: {}
+        }
+        // this list needs to be generated programmatically
+        const oneliners = [
+          'citation-number','signal','author','location','date','pages','title',
+          'publisher','note','container-title','collection-title','edition', 'journal',
+          'volume', 'authority', 'legal-ref', 'editor','backref'
+        ];
+        for (let tag of oneliners) {
+          docSpec.elements[tag] = {oneliner:true}
+        }
+        this.__xmlEditor.postMessage(JSON.stringify({xml, docSpec}))
+      } else if (message.xml) {
+        alert("Not implemented")
+        return
+        const annotation = new AnystyleParserAnnotation(message.xml)
+        GUI.loadAnnotation(annotation);
+      }
+    }
+    this.__xmlEditor = window.open(url, "xmleditor", features);
+    window.addEventListener("message", onMessage)
+    this.__xmlEditor.addEventListener("load", () => {
+      this.__xmlEditor.addEventListener("beforeunload", () => {
+        window.removeEventListener("message", onMessage)
+        this.__xmlEditor = null;
+      })
+      window.addEventListener("beforeunload", () => {
+        this.__xmlEditor.close()
+      })
+    })
+  }
 }
 

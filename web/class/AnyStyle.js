@@ -201,7 +201,6 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
           in_ref = false
         }
         if (in_ref) {
-          console.log(text)
           yield prefix + text
         }
       }
