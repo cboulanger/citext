@@ -13,5 +13,6 @@ for dirname in os.listdir(model_dir):
     path = os.path.join(model_dir, dirname)
     if os.path.isdir(path) and not dirname.startswith("test_"):
         model_names.append(dirname)
+model_names.sort(reverse=True)
 result = {'model_names': model_names}
 print(json.dumps(result))

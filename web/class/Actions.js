@@ -811,5 +811,17 @@ class Actions {
       })
     })
   }
+
+  static async syncDatasets() {
+    //GUI.showSpinner("Synchronizing datasets with repository, please wait...")
+    try {
+      await Actions.runCgiScript('sync.py', {
+        channel_id: State.channel_id,
+        model_name: State.model.name
+      })
+    } finally {
+      //GUI.hideSpinner()
+    }
+  }
 }
 
