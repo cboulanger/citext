@@ -61,10 +61,26 @@ def get_local_file_info(model_name, download_missing=False):
 
         # make a list of local files, including newly downloaded
         for file_name in os.listdir(local_dir):
+            if file_name.endswith(".info"):
+                continue
             file_path = os.path.join(local_dir, file_name)
-            local_file_info[file_path] = {
-                "modified": os.path.getmtime(file_path)
-            }
+            info_file_path = file_path + ".info"
+            file_info = None
+            if os.path.exists(info_file_path):
+                try:
+                    with open(info_file_path) as f:
+                        file_info = json.load(f)
+                except:
+                    sys.stderr.write(f"Problem parsing {info_file_path}, discarding it...\n")
+            if file_info is None:
+                file_info = {
+                    "modified": os.path.getmtime(file_path),
+                    "version": 1
+                }
+                with open(info_file_path, "w", encoding="utf-8") as f:
+                    json.dump(file_info, f)
+            local_file_info[file_path] = file_info
+
     return local_file_info
 
 try:
@@ -104,39 +120,44 @@ try:
     num_updated_remotely = 0
     local_files = local_file_info.keys()
     for i, local_file_path in enumerate(local_files):
-        push_event(channel_id, "info", f"Updating file {i+1}/{len(local_file_info)}")
         l = local_file_info[local_file_path]
         remote_file_path = f"{remote_path}/{local_file_path}"
+        local_file_info_path = local_file_path + '.info'
+        remote_file_info_path = remote_file_path + '.info'
         # find corresponding entry in remote files
         if local_file_path in remote_sync_data['files'].keys():
             r = remote_sync_data['files'][local_file_path]
             #sys.stderr.write(f"{local_file_path}: Remote: {r['modified']}, local: {l['modified']}\n")
-            if r['modified'] < l['modified']:
+            if 'version' not in r or r['version'] < l['version']:
+                push_event(channel_id, "info", f"Uploading file {i + 1}/{len(local_file_info)}")
                 sys.stderr.write(f"{local_file_path}: Local file is newer, uploading...\n")
                 num_updated_remotely += 1
                 client.upload_sync(remote_file_path, local_file_path)
-            elif r['modified'] > l['modified']:
+                client.upload_sync(remote_file_info_path, local_file_info_path)
+            elif r['version'] > l['version']:
+                push_event(channel_id, "info", f"Downloading file {i + 1}/{len(local_file_info)}")
                 sys.stderr.write(f"{local_file_path}: Remote file is newer, downloading...\n")
+                client.download_sync(remote_file_path, local_file_path)
+                l['version'] = r['version']
                 l['modified'] = r['modified']
                 num_updated_locally += 1
-                client.download_sync(remote_file_path, local_file_path)
-                try:
-                    os.utime(local_file_path, (r['modified'], r['modified']))
-                except PermissionError:
-                    sys.stderr.write(f"{local_file_path}: Problem setting file modification date.\n")
+                with open(local_file_info_path, "w", encoding="utf-8") as f:
+                    json.dump(l, f)
             # else:
             #    sys.stderr.write(f"Local == remote\n")
         else:
+            push_event(channel_id, "info", f"Uploading file {i + 1}/{len(local_file_info)}")
             sys.stderr.write(f"{local_file_path}: Remote file is missing, uploading...\n")
             num_updated_remotely += 1
             client.download_sync(remote_file_path, local_file_path)
+            client.upload_sync(remote_file_info_path, local_file_info_path)
 
     # update sync data
     local_sync_data = {
         "files": local_file_info
     }
-    with open(local_sync_data_path, "w") as f:
-        f.write(json.dumps(local_sync_data))
+    with open(local_sync_data_path, "w", encoding="utf-8") as f:
+        json.dump(local_sync_data, f)
     if num_updated_remotely > 0:
         sys.stderr.write(f"Updating remote sync data...\n")
         client.upload_sync(remote_sync_data_path, local_sync_data_path)

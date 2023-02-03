@@ -50,8 +50,25 @@ try:
         backup_path = os.path.join("tmp", os.path.basename(file_path) + f".{time_string}.bak")
         shutil.move(file_path, backup_path)
 
+    # save file
     with open(file_path, "w", encoding="utf-8") as f:
         f.write(data)
+
+    # save sync info
+    file_info_path = file_path + ".info"
+    if os.path.exists(file_info_path):
+        with open(file_info_path) as f:
+            file_info = json.load(f)
+    else:
+        file_info = {
+            "modified": 0,
+            "version": 0
+        }
+    file_version = file_info['version'] if 'version' in file_info.keys() else 1
+    file_info['version'] += 1
+    file_info['modified'] = os.path.getmtime(file_path)
+    with open(file_info_path, "w", encoding="utf-8") as f:
+        json.dump(file_info, f)
 
     result["success"] = True
 
