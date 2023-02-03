@@ -62,7 +62,9 @@ def get_local_file_info(model_name, download_missing=False):
         # make a list of local files, including newly downloaded
         for file_name in os.listdir(local_dir):
             file_path = os.path.join(local_dir, file_name)
-            local_file_info[file_path] = {"modified": os.path.getmtime(file_path)}
+            local_file_info[file_path] = {
+                "modified": os.path.getmtime(file_path)
+            }
     return local_file_info
 
 try:
@@ -102,7 +104,7 @@ try:
     num_updated_remotely = 0
     local_files = local_file_info.keys()
     for i, local_file_path in enumerate(local_files):
-        push_event(channel_id, "info", f"Updating annotation {i+1}/{len(local_file_info)}")
+        push_event(channel_id, "info", f"Updating file {i+1}/{len(local_file_info)}")
         l = local_file_info[local_file_path]
         remote_file_path = f"{remote_path}/{local_file_path}"
         # find corresponding entry in remote files
@@ -118,6 +120,7 @@ try:
                 l['modified'] = r['modified']
                 num_updated_locally += 1
                 client.download_sync(remote_file_path, local_file_path)
+                os.utime(local_file_path, (r['modified'], r['modified']))
             # else:
             #    sys.stderr.write(f"Local == remote\n")
         else:
@@ -135,7 +138,7 @@ try:
         sys.stderr.write(f"Updating remote sync data...\n")
         client.upload_sync(remote_sync_data_path, local_sync_data_path)
 
-    push_event(channel_id, "info", f"Updated {num_updated_locally} files here and {num_updated_remotely} on server.")
+    push_event(channel_id, "success", f"Updated {num_updated_locally} files here and {num_updated_remotely} on server.")
 
     result["success"] = True
 except Exception as err:

@@ -42,7 +42,7 @@ begin
       AnyStyle.finder.train files
       finder_model_path = File.join(Dir.pwd, "Models", model_name, "finder.mod").untaint
       AnyStyle.finder.model.save finder_model_path
-      sse.push_event("info", "Finder Model: Training is done. The new parser model can now be used.")
+      sse.push_event("success", "Finder Model: Training is done. The new parser model can now be used.")
     end
 
     # parser model
@@ -102,14 +102,17 @@ begin
       AnyStyle.parser.train Wapiti::Dataset.open(tmp_xml_path)
       parser_model_path = File.join(Dir.pwd, "Models",  model_name, "parser.mod").untaint
       AnyStyle.parser.model.save parser_model_path
-      sse.push_event("info", "Parser Model: Training is done. The new parser model can now be used.")
+      sse.push_event("success", "Parser Model: Training is done. The new parser model can now be used.")
     end
     response = { result: "OK" }
 rescue => e
-    sse.push_event("info", "")
     STDERR.puts "Error: #{$!}\n\t#{e.backtrace.join("\n\t")}"
     response = { error: e.message }
 end
+
+# remove info popup
+sse.push_event("info", "")
+sleep(0.5)
 
 # return to client
 cgi.out("application/json") { response.to_json }
