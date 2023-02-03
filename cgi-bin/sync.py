@@ -5,6 +5,7 @@ import os
 import sys
 import traceback
 
+from pathlib import Path
 from dotenv import load_dotenv
 from webdav3.client import Client
 
@@ -27,66 +28,115 @@ client = Client(options)
 
 remote_path = os.environ.get('WEBDAV_PATH')
 dataset_path = "Dataset"
+model_path ="Models"
 
 result = {}
+local_lock_path = os.path.join(dataset_path, model_name, "lock")
+local_lock_created = False
+remote_lock_path = os.path.join(remote_path, local_lock_path)
+remote_lock_created = False
+
+def get_local_file_info(model_name, download_missing=False):
+    local_file_info = {}
+    dir_list = [
+        os.path.join(dataset_path, model_name, "anystyle", "finder"),
+        os.path.join(dataset_path, model_name, "anystyle", "parser"),
+        os.path.join(model_path, model_name)
+    ]
+    for local_dir in dir_list:
+        remote_dir = os.path.join(remote_path, local_dir)
+        # download missing remote files
+        if download_missing:
+            if client.check(remote_dir):
+                push_event(channel_id, "info", "Downloading missing files...")
+                client.pull(remote_dir, local_dir)
+            else:
+                client.mkdir(remote_dir)
+        # make a list of local files, including newly downloaded
+        for file_name in os.listdir(local_dir):
+            file_path = os.path.join(local_dir, file_name)
+            local_file_info[file_path] = {"modified": os.path.getmtime(file_path)}
+    return local_file_info
+
 try:
     if not os.path.exists(dataset_path):
         raise f"Model {model_name} does not exist."
-    local_files = []
-    remote_files = []
-    # retrieve files
-    push_event(channel_id, "info", "Retrieving files...")
-    for dir in ['anystyle/finder', 'anystyle/parser']:
-        # local files
-        local_dir = os.path.join(dataset_path, model_name, dir)
-        for l in os.listdir(local_dir):
-            file_path = os.path.join(local_dir, l)
-            local_files.append({"path": file_path,
-                                "size": os.path.getsize(file_path),
-                                "created": os.path.getctime(file_path),
-                                "modified": os.path.getmtime(file_path)
-                                })
-        # remote files
-        remote_dir = os.path.join(remote_path, dataset_path, model_name, dir)
-        if client.check(remote_dir):
-            remote_files.extend(client.list(remote_dir, get_info=True))
+
+    # get lock, this has serious race condition issues, but good enough for now
+    if client.check(remote_lock_path):
+        raise "Remote sync in progress. Try again later."
+    if os.path.exists(local_lock_path):
+        raise "Local sync in progress. Try again later."
+    Path(local_lock_path).touch()
+    local_lock_created = True
+    client.upload_sync(remote_lock_path,local_lock_path)
+    remote_lock_created = True
+
+    # check sync data file
+    sync_data_file = '_sync.json'
+    remote_sync_data_path = os.path.join(remote_path, dataset_path, model_name, sync_data_file)
+    local_sync_data_path  = os.path.join(dataset_path, model_name, sync_data_file)
+
+    # download remote sync data if exists
+    push_event(channel_id, "info", "Getting file data...")
+    if client.check(remote_sync_data_path):
+        client.download_sync(remote_sync_data_path, local_sync_data_path)
+        with open(local_sync_data_path, "r") as f:
+            remote_sync_data = json.load(f)
+    else:
+        remote_sync_data = {
+            "files": {}
+        }
+
+    # create local sync data or create it
+    local_file_info = get_local_file_info(model_name)
+    num_updated_locally = 0
+    num_updated_remotely = 0
+    local_files = local_file_info.keys()
+    for i, local_file_path in enumerate(local_files):
+        push_event(channel_id, "info", f"Updating annotation {i+1}/{len(local_file_info)}")
+        l = local_file_info[local_file_path]
+        remote_file_path = f"{remote_path}/{local_file_path}"
+        # find corresponding entry in remote files
+        if local_file_path in remote_sync_data['files'].keys():
+            r = remote_sync_data['files'][local_file_path]
+            #sys.stderr.write(f"{local_file_path}: Remote: {r['modified']}, local: {l['modified']}\n")
+            if r['modified'] < l['modified']:
+                sys.stderr.write(f"{local_file_path}: Local file is newer, uploading...\n")
+                num_updated_remotely += 1
+                client.upload_sync(remote_file_path, local_file_path)
+            elif r['modified'] > l['modified']:
+                sys.stderr.write(f"{local_file_path}: Remote file is newer, downloading...\n")
+                l['modified'] = r['modified']
+                num_updated_locally += 1
+                client.download_sync(remote_file_path, local_file_path)
+            # else:
+            #    sys.stderr.write(f"Local == remote\n")
         else:
-            client.mkdir(remote_dir)
+            sys.stderr.write(f"{local_file_path}: Remote file is missing, uploading...\n")
+            num_updated_remotely += 1
+            client.download_sync(remote_file_path, local_file_path)
 
-    # Dataset/zfrsoz/anystyle/finder/10.1515_zfrs-1980-0104.ttx
-    # /remote.php/nonshib-webdav/WebDav/CitExt/Dataset/zfrsoz/anystyle/finder/10.1515_zfrs-1985-0205.ttx
+    # update sync data
+    local_sync_data = {
+        "files": local_file_info
+    }
+    with open(local_sync_data_path, "w") as f:
+        f.write(json.dumps(local_sync_data))
+    if num_updated_remotely > 0:
+        sys.stderr.write(f"Updating remote sync data...\n")
+        client.upload_sync(remote_sync_data_path, local_sync_data_path)
 
-    # file_info file
-    info_file = '_info.json'
-    tmp_info_path = os.path.join("tmp", model_name + info_file)
-    with open(tmp_info_path, "w") as f:
-        f.write(json.dumps(local_files))
-    remote_info_path = os.path.join(remote_path, dataset_path, model_name, info_file)
-    if client.check(remote_info_path):
-        client.download_sync(remote_info_path, tmp_info_path)
-        with open(tmp_info_path, "r") as f:
-            remote_info = json.load(f)
-
-    for i, l in enumerate(local_files):
-        push_event(channel_id, "info", f"Uploading locally changed files {i+1}/{len(local_files)}")
-        rl = [r for r in remote_info if os.path.basename(r['path']) == os.path.basename(l['path'])]
-        r = rl[0] if len(rl) > 0 else None
-        sys.stderr.write(f"{l['path']}: Remote: {r['modified'] if r else 'none'}, local: {l['modified']}\n")
-        if r is None or r['modified'] < l['modified']:
-            sys.stderr.write(f"Local is newer, uploading...\n")
-            # client.upload_sync(remote_info_path, tmp_info_path)
-        elif r['modified'] > l['modified']:
-            sys.stderr.write(f"Remote is newer, downloading...\n")
-        else:
-            sys.stderr.write(f"Local == remote\n")
-
-    client.upload_sync(remote_info_path, tmp_info_path)
-    push_event(channel_id, "info", "")
+    push_event(channel_id, "info", f"Updated {num_updated_locally} files here and {num_updated_remotely} on server.")
 
     result["success"] = True
 except Exception as err:
     traceback.print_exc()
     result["error"] = str(err)
 finally:
+    if local_lock_created:
+        os.remove(local_lock_path)
+    if remote_lock_created:
+        client.clean(remote_lock_path)
     print("Content-Type: application/json\n")
     print(json.dumps(result))

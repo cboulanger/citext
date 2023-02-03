@@ -26,6 +26,7 @@ def push_event(channel_id, event_name: str, event_data: str):
         "name": event_name,
         "data": event_data
     })
+    # sys.stderr.write(f"To client: {event_json}\n")
     # connect to event server and send event
     client = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     client.connect(('', port))
