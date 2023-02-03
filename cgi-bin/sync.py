@@ -123,7 +123,7 @@ try:
                 try:
                     os.utime(local_file_path, (r['modified'], r['modified']))
                 except PermissionError:
-                    pass
+                    sys.stderr.write(f"{local_file_path}: Problem setting file modification date.\n")
             # else:
             #    sys.stderr.write(f"Local == remote\n")
         else:
