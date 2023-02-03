@@ -120,7 +120,10 @@ try:
                 l['modified'] = r['modified']
                 num_updated_locally += 1
                 client.download_sync(remote_file_path, local_file_path)
-                os.utime(local_file_path, (r['modified'], r['modified']))
+                try:
+                    os.utime(local_file_path, (r['modified'], r['modified']))
+                except PermissionError:
+                    pass
             # else:
             #    sys.stderr.write(f"Local == remote\n")
         else:
