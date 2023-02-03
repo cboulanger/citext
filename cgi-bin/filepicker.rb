@@ -54,8 +54,8 @@ end
 if !model_name || !model_type || !Dir.exist?("Dataset/#{model_name}")
     html = "Dataset '#{model_name}' does not exist"
 else
-    finder_files = Dir.glob("Dataset/#{model_name}/anystyle/finder/*").select {|f| !f.start_with? '.' }
-    parser_files = Dir.glob("Dataset/#{model_name}/anystyle/parser/*").select {|f| !f.start_with? '.' }
+    finder_files = Dir.glob("Dataset/#{model_name}/anystyle/finder/*").select {|f| f.match(/\.(ttx|txt)$/) }
+    parser_files = Dir.glob("Dataset/#{model_name}/anystyle/parser/*").select {|f| f.match(/\.xml$/) }
     html = create_document finder_files, parser_files
 end
 
