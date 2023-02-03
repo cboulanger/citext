@@ -44,14 +44,21 @@ def get_local_file_info(model_name, download_missing=False):
         os.path.join(model_path, model_name)
     ]
     for local_dir in dir_list:
-        remote_dir = os.path.join(remote_path, local_dir)
+        remote_dir = f"{remote_path}/{local_dir}"
         # download missing remote files
-        if download_missing:
-            if client.check(remote_dir):
+        if client.check(remote_dir):
+            if download_missing:
                 push_event(channel_id, "info", "Downloading missing files...")
                 client.pull(remote_dir, local_dir)
-            else:
-                client.mkdir(remote_dir)
+        else:
+            parts = remote_dir.split("/")
+            curr_dir = ""
+            while len(parts):
+                part = parts.pop(0)
+                if part:
+                    curr_dir += f"/{part}"
+                    client.mkdir(curr_dir)
+
         # make a list of local files, including newly downloaded
         for file_name in os.listdir(local_dir):
             file_path = os.path.join(local_dir, file_name)
@@ -61,6 +68,8 @@ def get_local_file_info(model_name, download_missing=False):
 try:
     if not os.path.exists(dataset_path):
         raise f"Model {model_name} does not exist."
+
+    push_event(channel_id, "info", "Getting synchronization data...")
 
     # get lock, this has serious race condition issues, but good enough for now
     if client.check(remote_lock_path):
@@ -78,7 +87,6 @@ try:
     local_sync_data_path  = os.path.join(dataset_path, model_name, sync_data_file)
 
     # download remote sync data if exists
-    push_event(channel_id, "info", "Getting file data...")
     if client.check(remote_sync_data_path):
         client.download_sync(remote_sync_data_path, local_sync_data_path)
         with open(local_sync_data_path, "r") as f:
@@ -134,6 +142,7 @@ except Exception as err:
     traceback.print_exc()
     result["error"] = str(err)
 finally:
+    push_event(channel_id, "info", "")
     if local_lock_created:
         os.remove(local_lock_path)
     if remote_lock_created:
