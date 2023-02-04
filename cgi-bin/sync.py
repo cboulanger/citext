@@ -152,7 +152,7 @@ try:
             # else:
             #    sys.stderr.write(f"Local == remote\n")
         else:
-            toast.show("Uploading {file_name} ({i + 1}/{num_files})")
+            toast.show(f"Uploading {file_name} ({i + 1}/{num_files})")
             sys.stderr.write(f"{local_file_path}: Remote file is missing, uploading...\n")
             num_updated_remotely += 1
             client.upload_sync(remote_file_path, local_file_path)
