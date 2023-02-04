@@ -48,7 +48,7 @@ def get_local_file_info(model_name, download_missing=False):
         # download missing remote files
         if client.check(remote_dir):
             if download_missing:
-                push_event(channel_id, "info", "Downloading missing files...")
+                push_event(channel_id, "info", "Synchronizing model data:Downloading missing files...")
                 client.pull(remote_dir, local_dir)
         else:
             parts = remote_dir.split("/")
@@ -87,7 +87,7 @@ try:
     if not os.path.exists(dataset_path):
         raise f"Model {model_name} does not exist."
 
-    push_event(channel_id, "info", "Getting synchronization data...")
+    push_event(channel_id, "info", "Synchronizing model data:Retrieving version information...")
 
     # get lock, this has serious race condition issues, but good enough for now
     if client.check(remote_lock_path):
@@ -129,13 +129,13 @@ try:
             r = remote_sync_data['files'][local_file_path]
             #sys.stderr.write(f"{local_file_path}: Remote: {r['modified']}, local: {l['modified']}\n")
             if 'version' not in r or r['version'] < l['version']:
-                push_event(channel_id, "info", f"Uploading file {i + 1}/{len(local_file_info)}")
+                push_event(channel_id, "info", f"Synchronizing model data:Uploading file {i + 1}/{len(local_file_info)}")
                 sys.stderr.write(f"{local_file_path}: Local file is newer, uploading...\n")
                 num_updated_remotely += 1
                 client.upload_sync(remote_file_path, local_file_path)
                 client.upload_sync(remote_file_info_path, local_file_info_path)
             elif r['version'] > l['version']:
-                push_event(channel_id, "info", f"Downloading file {i + 1}/{len(local_file_info)}")
+                push_event(channel_id, "info", f"Synchronizing model data:Downloading file {i + 1}/{len(local_file_info)}")
                 sys.stderr.write(f"{local_file_path}: Remote file is newer, downloading...\n")
                 client.download_sync(remote_file_path, local_file_path)
                 l['version'] = r['version']
@@ -146,7 +146,7 @@ try:
             # else:
             #    sys.stderr.write(f"Local == remote\n")
         else:
-            push_event(channel_id, "info", f"Uploading file {i + 1}/{len(local_file_info)}")
+            push_event(channel_id, "info", f"Synchronizing model data:Uploading file {i + 1}/{len(local_file_info)}")
             sys.stderr.write(f"{local_file_path}: Remote file is missing, uploading...\n")
             num_updated_remotely += 1
             client.upload_sync(remote_file_path, local_file_path)
@@ -162,7 +162,7 @@ try:
         sys.stderr.write(f"Updating remote sync data...\n")
         client.upload_sync(remote_sync_data_path, local_sync_data_path)
 
-    push_event(channel_id, "success", f"Updated {num_updated_locally} files here and {num_updated_remotely} on server.")
+    push_event(channel_id, "success", f"Synchronized model data:Updated {num_updated_locally} files here and {num_updated_remotely} on server.")
 
     result["success"] = True
 except Exception as err:

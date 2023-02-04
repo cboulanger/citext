@@ -5,6 +5,7 @@ require 'anystyle'
 require 'nokogiri'
 require "rexml/document"
 require_relative '../lib/sse.rb'
+require_relative '../lib/utils.rb'
 
 threads = 4
 AnyStyle::Finder.defaults[:threads] = threads
@@ -42,8 +43,9 @@ begin
       AnyStyle.finder.train files
       finder_model_path = File.join(Dir.pwd, "Models", model_name, "finder.mod").untaint
       AnyStyle.finder.model.save finder_model_path
-      sse.push_event("info", "")
-      sse.push_event("success", "Finder Model: Training is done. The new parser model can now be used.")
+      Utils.increment_file_version finder_model_path
+      sse.push_event "info", ""
+      sse.push_event "success", "Finder Model: Training is done. The new parser model can now be used."
     end
 
     # parser model
@@ -99,12 +101,13 @@ begin
       doc = nil
       doc = REXML::Document.new File.new(tmp_xml_path)
       STDERR.puts "#{tmp_xml_path} seems legit"
-      sse.push_event("info", "Parser Model: Training model with #{num_sequences.to_i} sequences, please wait...")
+      sse.push_event "info", "Parser Model: Training model with #{num_sequences.to_i} sequences, please wait..."
       AnyStyle.parser.train Wapiti::Dataset.open(tmp_xml_path)
       parser_model_path = File.join(Dir.pwd, "Models",  model_name, "parser.mod").untaint
       AnyStyle.parser.model.save parser_model_path
-      sse.push_event("info", "")
-      sse.push_event("success", "Parser Model: Training is done. The new parser model can now be used.")
+      Utils.increment_file_version parser_model_path
+      sse.push_event "info", ""
+      sse.push_event "success", "Parser Model: Training is done. The new parser model can now be used."
     end
     response = { result: "OK" }
 rescue => e

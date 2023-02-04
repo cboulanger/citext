@@ -150,3 +150,19 @@ def run_command(command) -> str:
         raise RuntimeError(err_msg)
 
     return "\n".join(lines)
+
+def increment_file_version(file_path):
+    file_info_path = file_path + ".info"
+    if os.path.exists(file_info_path):
+        with open(file_info_path) as f:
+            file_info = json.load(f)
+    else:
+        file_info = {
+            "modified": 0,
+            "version": 0
+        }
+    file_version = file_info['version'] if 'version' in file_info.keys() else 0
+    file_info['version'] = file_version + 1
+    file_info['modified'] = os.path.getmtime(file_path)
+    with open(file_info_path, "w", encoding="utf-8") as f:
+        json.dump(file_info, f)

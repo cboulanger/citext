@@ -1,4 +1,5 @@
 require 'rexml'
+require 'json'
 
 class Utils
   # split multiple references in sequences, using a very naive heuristic
@@ -29,6 +30,21 @@ class Utils
       end
     end
     doc
+  end
+
+  def self.increment_file_version(file_path)
+    file_info_path = "#{file_path}.info"
+    file_info = if File.exist? file_info_path
+                  JSON.load_file file_info_path
+                else
+                  {
+                    "modified": 0,
+                    "version": 0
+                  }
+                end
+    file_info['version'] = (file_info['version'] || 0) + 1
+    file_info['modified'] = File.mtime file_path
+    File.write file_info_path, file_info.to_json
   end
 end
 

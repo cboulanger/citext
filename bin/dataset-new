@@ -7,9 +7,9 @@ if [[ "$dataset" == "" ]] ; then
 fi
 
 mkdir -p "Dataset/$dataset/anystyle/parser"
-touch    "Dataset/$dataset/anystyle/parser/_merge-datasets.txt"
+touch    "Dataset/$dataset/anystyle/parser/_merge-datasets"
 mkdir -p "Dataset/$dataset/anystyle/finder"
-touch    "Dataset/$dataset/anystyle/finder/_merge-datasets.txt"
+touch    "Dataset/$dataset/anystyle/finder/_merge-datasets"
 mkdir -p "Models/$dataset/"
 
 bin/update-permissions

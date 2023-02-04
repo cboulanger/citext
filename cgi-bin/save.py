@@ -5,6 +5,7 @@ import xml.dom.minidom
 from datetime import datetime
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from configs import *
+from lib.utils import increment_file_version
 
 print("Content-type: application/json")
 print()
@@ -55,20 +56,7 @@ try:
         f.write(data)
 
     # save sync info
-    file_info_path = file_path + ".info"
-    if os.path.exists(file_info_path):
-        with open(file_info_path) as f:
-            file_info = json.load(f)
-    else:
-        file_info = {
-            "modified": 0,
-            "version": 0
-        }
-    file_version = file_info['version'] if 'version' in file_info.keys() else 1
-    file_info['version'] += 1
-    file_info['modified'] = os.path.getmtime(file_path)
-    with open(file_info_path, "w", encoding="utf-8") as f:
-        json.dump(file_info, f)
+    increment_file_version(file_path)
 
     result["success"] = True
 
