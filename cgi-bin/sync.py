@@ -129,6 +129,10 @@ try:
             "files": {}
         }
 
+    # counter
+    num_updated_locally = 0
+    num_updated_remotely = 0
+
     # download files that do not exist locally
     for local_file_path in remote_file_info['files']:
         file_info = remote_file_info['files'][local_file_path]
@@ -137,11 +141,10 @@ try:
             sys.stderr.write(f"Downloading missing {os.path.basename(local_file_path)} ...\n")
             remote_file_path = os.path.join(remote_path, local_file_path)
             client.download_sync(remote_file_path, local_file_path)
+            num_updated_locally +=1
 
     # create local sync data and start synchronizing
     local_file_info = get_local_file_info(model_name)
-    num_updated_locally = 0
-    num_updated_remotely = 0
     local_files = local_file_info.keys()
     num_files = len(local_files)
     for i, local_file_path in enumerate(local_files):
@@ -164,7 +167,7 @@ try:
                     os.rename(file_path, deleted_file_path)
                 except Exception as e:
                     sys.stderr.write(f"{local_file_path}: Problem renaming: {str(e)} ...\n")
-                l['deleted'] = true
+                l['deleted'] = True
             elif 'deleted' in l and not 'deleted' in r:
                 toast.show(f"Deleting {file_name} on server ({i + 1}/{num_files})")
                 sys.stderr.write(f"{local_file_path}: Was deleted here, deleting on server, too...\n")
