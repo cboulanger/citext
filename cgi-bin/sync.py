@@ -168,7 +168,7 @@ try:
                     toast.show(f"Deleting {file_name} here ({i + 1}/{num_files})")
                     sys.stderr.write(f"{local_file_path}: Was deleted on server, deleting (renaming) here, too...\n")
                     try:
-                        deleted_file_path = f"{file_path}.deleted"
+                        deleted_file_path = f"{local_file_path}.deleted"
                         if os.path.exists(deleted_file_path):
                             os.remove(deleted_file_path)
                         os.rename(local_file_path, deleted_file_path)
