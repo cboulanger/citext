@@ -22,7 +22,7 @@ max_seq_count = 2000 #cgi.params["max_seq_count"] || [1500]).first.to_i
 sse = SSE.new(channel_id)
 
 # merging datasets
-merge_datasets_file = "_merge-datasets.txt"
+merge_datasets_file = "_merge-datasets"
 
 begin
     # finder model
@@ -42,6 +42,7 @@ begin
       AnyStyle.finder.train files
       finder_model_path = File.join(Dir.pwd, "Models", model_name, "finder.mod").untaint
       AnyStyle.finder.model.save finder_model_path
+      sse.push_event("info", "")
       sse.push_event("success", "Finder Model: Training is done. The new parser model can now be used.")
     end
 
@@ -102,6 +103,7 @@ begin
       AnyStyle.parser.train Wapiti::Dataset.open(tmp_xml_path)
       parser_model_path = File.join(Dir.pwd, "Models",  model_name, "parser.mod").untaint
       AnyStyle.parser.model.save parser_model_path
+      sse.push_event("info", "")
       sse.push_event("success", "Parser Model: Training is done. The new parser model can now be used.")
     end
     response = { result: "OK" }
