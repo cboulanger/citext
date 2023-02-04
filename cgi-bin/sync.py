@@ -152,7 +152,8 @@ try:
                 sys.stderr.write(f"{local_file_path}: Was deleted on server, deleting (renaming) here, too...\n")
                 try:
                     deleted_file_path = f"{file_path}.deleted"
-                    os.remove(deleted_file_path) if os.path.exists(deleted_file_path)
+                    if os.path.exists(deleted_file_path):
+                        os.remove(deleted_file_path)
                     os.rename(file_path, deleted_file_path)
                 except Exception as e:
                     sys.stderr.write(f"{local_file_path}: Problem renaming: {str(e)} ...\n")
