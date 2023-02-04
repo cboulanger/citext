@@ -35,6 +35,7 @@ def push_event(channel_id, event_name: str, event_data: str):
     return True
 
 
+
 def run_shell_command(channel_id, *args):
     # run shell command and write output to server output
     sys.stderr.write(f"Executing {' '.join(args)}\n")

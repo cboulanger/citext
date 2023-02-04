@@ -22,3 +22,25 @@ class SSE
     s.close()
   end
 end
+
+class Toast
+
+  def initialize(sse, type, title)
+    case type
+    in 'success' | 'info' | 'warning' | 'error'
+      @sse = sse
+      @type = type
+      @title = title
+    else
+      raise "Invalid type #{type}"
+    end
+  end
+
+  def show(message)
+    @sse.push_event(@type, "#{@title}:#{message}")
+  end
+
+  def close()
+    @sse.push_event(@type, "#{@title}:")
+  end
+end
