@@ -88,7 +88,12 @@ html = if !model_name || !model_type || !Dir.exist?(model_dir)
            File.delete deleted_file_path if File.exists? deleted_file_path
            File.rename file_path, deleted_file_path
            file_info_path = "#{file_path}.info"
-           File.write file_info_path, JSON.dump({ 'deleted' => true })
+           if File.exist?
+             file_info = JSON.parse(File.read(file_info_path))
+             file_info['deleted'] = true
+             file_info['modified'] = Time.now.to_f
+             File.write file_info_path, JSON.dump(file_info)
+            end
            <<~HTML
               <p>"#{File.basename file_path}" was deleted.</p>
               <b><a href='?model=#{model_name}&type=#{model_type}'>Continue</a></b>

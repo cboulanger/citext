@@ -157,32 +157,43 @@ try:
         if local_file_path in remote_file_info['files'].keys():
             r = remote_file_info['files'][local_file_path]
             # sys.stderr.write(f"{local_file_path}: Remote: {r['version']}, local: {l['version']}\n")
+
+            # deal with deleted files
             if 'deleted' in r and not 'deleted' in l:
-                toast.show(f"Deleting {file_name} here ({i + 1}/{num_files})")
-                sys.stderr.write(f"{local_file_path}: Was deleted on server, deleting (renaming) here, too...\n")
-                try:
-                    deleted_file_path = f"{file_path}.deleted"
-                    if os.path.exists(deleted_file_path):
-                        os.remove(deleted_file_path)
-                    os.rename(file_path, deleted_file_path)
-                except Exception as e:
-                    sys.stderr.write(f"{local_file_path}: Problem renaming: {str(e)} ...\n")
-                l['deleted'] = True
+                if 'modified' in r and r['modified'] > l['modified']:
+                    toast.show(f"Deleting {file_name} here ({i + 1}/{num_files})")
+                    sys.stderr.write(f"{local_file_path}: Was deleted on server, deleting (renaming) here, too...\n")
+                    try:
+                        deleted_file_path = f"{file_path}.deleted"
+                        if os.path.exists(deleted_file_path):
+                            os.remove(deleted_file_path)
+                        os.rename(local_file_path, deleted_file_path)
+                    except Exception as e:
+                        sys.stderr.write(f"{local_file_path}: Problem renaming: {str(e)} ...\n")
+                    l = r
+                else:
+                    sys.stderr.write(f"{local_file_path}: Was deleted on server but file here is newer, recreating...\n")
             elif 'deleted' in l and not 'deleted' in r:
-                toast.show(f"Deleting {file_name} on server ({i + 1}/{num_files})")
-                sys.stderr.write(f"{local_file_path}: Was deleted here, deleting on server, too...\n")
-                try:
-                    client.clean(remote_file_path)
-                    # client.clean(remote_file_info_path)
-                except Exception as e:
-                    sys.stderr.write(f"{local_file_path}: Problem deleting on server: {str(e)}.\n")
-            elif 'version' not in r or r['version'] < l['version']:
+                if 'modified' in l and l['modified'] > r['modified']:
+                    toast.show(f"Deleting {file_name} on server ({i + 1}/{num_files})")
+                    sys.stderr.write(f"{local_file_path}: Was deleted here, deleting on server, too...\n")
+                    try:
+                        client.clean(remote_file_path)
+                        # client.clean(remote_file_info_path)
+                    except Exception as e:
+                        sys.stderr.write(f"{local_file_path}: Problem deleting on server: {str(e)}.\n")
+                else:
+                    sys.stderr.write(f"{local_file_path}: Was deleted on here but file on the server is newer, recreating...\n")
+                    l = r
+
+            # upload or download
+            if 'version' not in r or r['version'] < l['version']:
                 toast.show(f"Uploading {file_name} ({i + 1}/{num_files})")
                 sys.stderr.write(f"{local_file_path}: Local file is newer, uploading...\n")
                 num_updated_remotely += 1
                 client.upload_sync(remote_file_path, local_file_path)
                 client.upload_sync(remote_file_info_path, local_file_info_path)
-            elif r['version'] > l['version']:
+            elif 'version' not in l or r['version'] > l['version']:
                 toast.show(f"Downloading {file_name} ({i + 1}/{num_files})")
                 sys.stderr.write(f"{local_file_path}: Remote file is newer, downloading...\n")
                 client.download_sync(remote_file_path, local_file_path)
