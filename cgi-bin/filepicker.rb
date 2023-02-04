@@ -88,7 +88,7 @@ html = if !model_name || !model_type || !Dir.exist?(model_dir)
            File.delete deleted_file_path if File.exists? deleted_file_path
            File.rename file_path, deleted_file_path
            file_info_path = "#{file_path}.info"
-           if File.exist?
+           if File.exist? file_info_path
              file_info = JSON.parse(File.read(file_info_path))
              file_info['deleted'] = true
              file_info['modified'] = Time.now.to_f

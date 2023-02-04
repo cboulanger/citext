@@ -140,8 +140,12 @@ try:
             toast.show(f"Downloading missing {local_file_path}...")
             sys.stderr.write(f"Downloading missing {os.path.basename(local_file_path)} ...\n")
             remote_file_path = os.path.join(remote_path, local_file_path)
-            client.download_sync(remote_file_path, local_file_path)
-            num_updated_locally +=1
+            try:
+                client.download_sync(remote_file_path, local_file_path)
+                num_updated_locally +=1
+            except Exception as e:
+                sys.stderr.write(f"Problem downloading {os.path.basename(local_file_path)}:{str(e)} ...\n")
+                pass
 
     # create local sync data and start synchronizing
     local_file_info = get_local_file_info(model_name)
@@ -220,9 +224,8 @@ try:
     }
     with open(local_sync_data_path, "w", encoding="utf-8") as f:
         json.dump(local_sync_data, f)
-    if num_updated_remotely > 0:
-        sys.stderr.write(f"Updating remote sync data...\n")
-        client.upload_sync(remote_sync_data_path, local_sync_data_path)
+    sys.stderr.write(f"Updating remote sync data...\n")
+    client.upload_sync(remote_sync_data_path, local_sync_data_path)
 
     toast.close()
     Toast(sse, "success", "Synchronization finished") \
