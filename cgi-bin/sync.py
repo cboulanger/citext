@@ -4,8 +4,8 @@ import json
 import os
 import sys
 import traceback
-
 from pathlib import Path
+
 from dotenv import load_dotenv
 from webdav3.client import Client
 
@@ -28,7 +28,7 @@ client = Client(options)
 
 remote_path = os.environ.get('WEBDAV_PATH')
 dataset_path = "Dataset"
-model_path ="Models"
+model_path = "Models"
 
 result = {}
 local_lock_path = os.path.join(dataset_path, model_name, "lock")
@@ -39,7 +39,8 @@ remote_lock_created = False
 sse = SSE(channel_id)
 toast = Toast(sse, "info", "Synchronizing model data")
 
-def get_local_file_info(model_name, download_missing=False):
+
+def get_local_file_info(model_name):
     local_file_info = {}
     dir_list = [
         os.path.join(dataset_path, model_name, "anystyle", "finder"),
@@ -49,12 +50,8 @@ def get_local_file_info(model_name, download_missing=False):
     for local_dir in dir_list:
         remote_dir = f"{remote_path}/{local_dir}"
 
-        # download missing remote files
-        if client.check(remote_dir):
-            if download_missing:
-                toast.show("Downloading missing files...")
-                client.pull(remote_dir, local_dir)
-        else:
+        # create non-existing remote dirs, this is inefficient! Needs only be checkes when uploading
+        if not client.check(remote_dir):
             parts = remote_dir.split("/")
             curr_dir = ""
             while len(parts):
@@ -83,11 +80,11 @@ def get_local_file_info(model_name, download_missing=False):
 
             # load file info
             if os.path.exists(file_info_path):
-                    try:
-                        with open(file_info_path) as f:
-                            file_info = json.load(f)
-                    except:
-                        sys.stderr.write(f"Problem parsing {file_info_path}, discarding it...\n")
+                try:
+                    with open(file_info_path) as f:
+                        file_info = json.load(f)
+                except:
+                    sys.stderr.write(f"Problem parsing {file_info_path}, discarding it...\n")
             if file_info is None:
                 file_info = {
                     "modified": os.path.getmtime(file_path),
@@ -99,6 +96,7 @@ def get_local_file_info(model_name, download_missing=False):
             local_file_info[file_path] = file_info
 
     return local_file_info
+
 
 try:
     if not os.path.exists(dataset_path):
@@ -113,25 +111,34 @@ try:
         raise "Local sync in progress. Try again later."
     Path(local_lock_path).touch()
     local_lock_created = True
-    client.upload_sync(remote_lock_path,local_lock_path)
+    client.upload_sync(remote_lock_path, local_lock_path)
     remote_lock_created = True
 
     # check sync data file
     sync_data_file = '_sync.json'
     remote_sync_data_path = os.path.join(remote_path, dataset_path, model_name, sync_data_file)
-    local_sync_data_path  = os.path.join(dataset_path, model_name, sync_data_file)
+    local_sync_data_path = os.path.join(dataset_path, model_name, sync_data_file)
 
     # download remote sync data if exists
     if client.check(remote_sync_data_path):
         client.download_sync(remote_sync_data_path, local_sync_data_path)
         with open(local_sync_data_path, "r") as f:
-            remote_sync_data = json.load(f)
+            remote_file_info = json.load(f)
     else:
-        remote_sync_data = {
+        remote_file_info = {
             "files": {}
         }
 
-    # create local sync data or create it
+    # download files that do not exist locally
+    for local_file_path in remote_file_info['files']:
+        file_info = remote_file_info['files'][local_file_path]
+        if not os.path.exists(local_file_path) and not 'deleted' in file_info:
+            toast.show(f"Downloading missing {local_file_path}...")
+            sys.stderr.write(f"Downloading missing {os.path.basename(local_file_path)} ...\n")
+            remote_file_path = os.path.join(remote_path, local_file_path)
+            client.download_sync(remote_file_path, local_file_path)
+
+    # create local sync data and start synchronizing
     local_file_info = get_local_file_info(model_name)
     num_updated_locally = 0
     num_updated_remotely = 0
@@ -144,8 +151,8 @@ try:
         remote_file_info_path = remote_file_path + '.info'
         file_name = os.path.basename(local_file_path)
         # find corresponding entry in remote files
-        if local_file_path in remote_sync_data['files'].keys():
-            r = remote_sync_data['files'][local_file_path]
+        if local_file_path in remote_file_info['files'].keys():
+            r = remote_file_info['files'][local_file_path]
             # sys.stderr.write(f"{local_file_path}: Remote: {r['version']}, local: {l['version']}\n")
             if 'deleted' in r and not 'deleted' in l:
                 toast.show(f"Deleting {file_name} here ({i + 1}/{num_files})")
@@ -163,7 +170,7 @@ try:
                 sys.stderr.write(f"{local_file_path}: Was deleted here, deleting on server, too...\n")
                 try:
                     client.clean(remote_file_path)
-                    #client.clean(remote_file_info_path)
+                    # client.clean(remote_file_info_path)
                 except Exception as e:
                     sys.stderr.write(f"{local_file_path}: Problem deleting on server: {str(e)}.\n")
             elif 'version' not in r or r['version'] < l['version']:
@@ -204,7 +211,7 @@ try:
         client.upload_sync(remote_sync_data_path, local_sync_data_path)
 
     toast.close()
-    Toast(sse,"success", "Synchronization finished")\
+    Toast(sse, "success", "Synchronization finished") \
         .show(f"Updated {num_updated_locally} files here and {num_updated_remotely} on server.")
 
     result["success"] = True
