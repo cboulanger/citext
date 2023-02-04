@@ -258,7 +258,7 @@ class Actions {
     const annotation = GUI.getAnnotation()
     const model_type = annotation ? annotation.getType() : 'finder'
     const model_name = State.model.name
-    const features = "popup,width=500,height=400"
+    const features = "popup,width=1000,height=500"
     const url = `/cgi-bin/filepicker.rb?model=${model_name}&type=${model_type}`
 
     function onFilePicked(ev) {

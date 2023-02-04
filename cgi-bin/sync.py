@@ -65,24 +65,37 @@ def get_local_file_info(model_name, download_missing=False):
 
         # make a list of local files, including newly downloaded
         for file_name in os.listdir(local_dir):
-            if file_name.endswith(".info"):
-                continue
             file_path = os.path.join(local_dir, file_name)
-            info_file_path = file_path + ".info"
             file_info = None
-            if os.path.exists(info_file_path):
-                try:
-                    with open(info_file_path) as f:
-                        file_info = json.load(f)
-                except:
-                    sys.stderr.write(f"Problem parsing {info_file_path}, discarding it...\n")
+            if file_name.endswith('.deleted'):
+                # ignore deleted files
+                continue
+            elif file_name.endswith(".info"):
+                if os.path.exists(file_path[:-5]):
+                    # add file info for deleted files,
+                    file_info_path = file_path
+                    file_path = file_path[:-5]
+                else:
+                    continue
+            else:
+                # normal info file
+                file_info_path = file_path + ".info"
+
+            # load file info
+            if os.path.exists(file_info_path):
+                    try:
+                        with open(file_info_path) as f:
+                            file_info = json.load(f)
+                    except:
+                        sys.stderr.write(f"Problem parsing {file_info_path}, discarding it...\n")
             if file_info is None:
                 file_info = {
                     "modified": os.path.getmtime(file_path),
                     "version": 1
                 }
-                with open(info_file_path, "w", encoding="utf-8") as f:
+                with open(file_info_path, "w", encoding="utf-8") as f:
                     json.dump(file_info, f)
+
             local_file_info[file_path] = file_info
 
     return local_file_info
@@ -133,8 +146,26 @@ try:
         # find corresponding entry in remote files
         if local_file_path in remote_sync_data['files'].keys():
             r = remote_sync_data['files'][local_file_path]
-            #sys.stderr.write(f"{local_file_path}: Remote: {r['modified']}, local: {l['modified']}\n")
-            if 'version' not in r or r['version'] < l['version']:
+            # sys.stderr.write(f"{local_file_path}: Remote: {r['version']}, local: {l['version']}\n")
+            if 'deleted' in r and not 'deleted' in l:
+                toast.show(f"Deleting {file_name} here ({i + 1}/{num_files})")
+                sys.stderr.write(f"{local_file_path}: Was deleted on server, deleting (renaming) here, too...\n")
+                try:
+                    deleted_file_path = f"{file_path}.deleted"
+                    os.remove(deleted_file_path) if os.path.exists(deleted_file_path)
+                    os.rename(file_path, deleted_file_path)
+                except Exception as e:
+                    sys.stderr.write(f"{local_file_path}: Problem renaming: {str(e)} ...\n")
+                l['deleted'] = true
+            elif 'deleted' in l and not 'deleted' in r:
+                toast.show(f"Deleting {file_name} on server ({i + 1}/{num_files})")
+                sys.stderr.write(f"{local_file_path}: Was deleted here, deleting on server, too...\n")
+                try:
+                    client.clean(remote_file_path)
+                    #client.clean(remote_file_info_path)
+                except Exception as e:
+                    sys.stderr.write(f"{local_file_path}: Problem deleting on server: {str(e)}.\n")
+            elif 'version' not in r or r['version'] < l['version']:
                 toast.show(f"Uploading {file_name} ({i + 1}/{num_files})")
                 sys.stderr.write(f"{local_file_path}: Local file is newer, uploading...\n")
                 num_updated_remotely += 1
@@ -152,11 +183,14 @@ try:
             # else:
             #    sys.stderr.write(f"Local == remote\n")
         else:
-            toast.show(f"Uploading {file_name} ({i + 1}/{num_files})")
-            sys.stderr.write(f"{local_file_path}: Remote file is missing, uploading...\n")
-            num_updated_remotely += 1
-            client.upload_sync(remote_file_path, local_file_path)
-            client.upload_sync(remote_file_info_path, local_file_info_path)
+            if 'deleted' in l:
+                sys.stderr.write(f"{local_file_path}: Deleted locally, not uploading...\n")
+            else:
+                toast.show(f"Uploading {file_name} ({i + 1}/{num_files})")
+                sys.stderr.write(f"{local_file_path}: Remote file is missing, uploading...\n")
+                num_updated_remotely += 1
+                client.upload_sync(remote_file_path, local_file_path)
+                client.upload_sync(remote_file_info_path, local_file_info_path)
 
     # update sync data
     local_sync_data = {
