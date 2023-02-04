@@ -149,7 +149,7 @@ try:
             push_event(channel_id, "info", f"Uploading file {i + 1}/{len(local_file_info)}")
             sys.stderr.write(f"{local_file_path}: Remote file is missing, uploading...\n")
             num_updated_remotely += 1
-            client.download_sync(remote_file_path, local_file_path)
+            client.upload_sync(remote_file_path, local_file_path)
             client.upload_sync(remote_file_info_path, local_file_info_path)
 
     # update sync data
