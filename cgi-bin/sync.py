@@ -100,15 +100,16 @@ def get_local_file_info(model_name):
 
 try:
     if not os.path.exists(dataset_path):
-        raise f"Model {model_name} does not exist."
+        raise Exception(f"Model {model_name} does not exist.")
 
     toast.show("Retrieving version information...")
 
     # get lock, this has serious race condition issues, but good enough for now
+    # get lock, this has serious race condition issues, but good enough for now
     if client.check(remote_lock_path):
-        raise "Remote sync in progress. Try again later."
+        raise Exception("Remote sync in progress. Try again later.")
     if os.path.exists(local_lock_path):
-        raise "Local sync in progress. Try again later."
+        raise Exception("Local sync in progress. Try again later.")
     Path(local_lock_path).touch()
     local_lock_created = True
     client.upload_sync(remote_lock_path, local_lock_path)
@@ -175,6 +176,8 @@ try:
                     except Exception as e:
                         sys.stderr.write(f"{local_file_path}: Problem renaming: {str(e)} ...\n")
                     l = r
+                    with open(local_file_info_path) as f:
+                        json.dump(r, f)
                 else:
                     sys.stderr.write(f"{local_file_path}: Was deleted on server but file here is newer, recreating...\n")
             elif 'deleted' in l and not 'deleted' in r:
@@ -183,7 +186,7 @@ try:
                     sys.stderr.write(f"{local_file_path}: Was deleted here, deleting on server, too...\n")
                     try:
                         client.clean(remote_file_path)
-                        # client.clean(remote_file_info_path)
+                        client.upload_sync(remote_file_info_path, local_file_info_path)
                     except Exception as e:
                         sys.stderr.write(f"{local_file_path}: Problem deleting on server: {str(e)}.\n")
                 else:
@@ -196,7 +199,8 @@ try:
                 sys.stderr.write(f"{local_file_path}: Local file is newer, uploading...\n")
                 num_updated_remotely += 1
                 client.upload_sync(remote_file_path, local_file_path)
-                client.upload_sync(remote_file_info_path, local_file_info_path)
+
+
             elif 'version' not in l or r['version'] > l['version']:
                 toast.show(f"Downloading {file_name} ({i + 1}/{num_files})")
                 sys.stderr.write(f"{local_file_path}: Remote file is newer, downloading...\n")

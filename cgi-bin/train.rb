@@ -2,6 +2,7 @@
 require 'cgi'
 require 'json'
 require 'anystyle'
+require 'fileutils'
 require 'nokogiri'
 require 'rexml/document'
 require_relative '../lib/sse.rb'
@@ -17,7 +18,7 @@ model_name = cgi.params['model'].first
 target = cgi.params['target'].first
 channel_id = cgi.params['channel_id'].first
 
-max_seq_count = 2000 #cgi.params["max_seq_count"] || [1500]).first.to_i
+max_seq_count = 2000 # cgi.params["max_seq_count"] || [1500]).first.to_i
 
 # sse
 sse = SSE.new(channel_id)
@@ -26,16 +27,26 @@ sse = SSE.new(channel_id)
 merge_datasets_file = '_merge-datasets'
 
 begin
+
+  # get lock
+  lock_file = File.join('Dataset', model_name, "lock")
+  if File.exist? lock_file
+    raise Exception("Training or sync in progress. Try again later.")
+  end
+  FileUtils.touch(lock_file)
+
   # finder model
   if target == 'finder' or target == 'both'
     toast = Toast.new(sse, 'info', 'Training finder model')
     dataset_finder_dir = File.join('Dataset', model_name, 'anystyle', 'finder')
+
     # assemble finder annotations to train on
     files = Dir[File.join(dataset_finder_dir, '*.ttx')].map(&:untaint)
     merge_finder_datasets_file = File.join(dataset_finder_dir, merge_datasets_file)
     if File.exist? merge_finder_datasets_file
       File.read(merge_finder_datasets_file).split().each do |dataset|
-        new_files = Dir[File.join('Dataset', dataset, 'anystyle', 'finder', '*.ttx')].map(&:untaint)
+        new_files = Dir[File.join('Dataset', dataset, 'anystyle', 'finder', '*.ttx')]
+        new_files = new_files.map(&:untaint)
         STDERR.puts "Merging #{new_files.length} files from parser dataset #{dataset}"
         files = (files + new_files).uniq
       end
@@ -86,7 +97,7 @@ begin
     end
 
     # remove blank & empty nodes
-    doc.xpath('//text()').find_all {|t| t.to_s.strip == ''}.map(&:remove)
+    doc.xpath('//text()').find_all { |t| t.to_s.strip == '' }.map(&:remove)
     doc.xpath('//*[not(normalize-space())]').map(&:remove)
     num_sequences = doc.xpath('count(//sequence)')
     # write a new combined XML
@@ -103,7 +114,7 @@ begin
     STDERR.puts "#{tmp_xml_path} seems legit"
     toast.show "Using dataset with #{num_sequences.to_i} sequences, please wait..."
     AnyStyle.parser.train Wapiti::Dataset.open(tmp_xml_path)
-    parser_model_path = File.join(Dir.pwd, 'Models',  model_name, 'parser.mod').untaint
+    parser_model_path = File.join(Dir.pwd, 'Models', model_name, 'parser.mod').untaint
     AnyStyle.parser.model.save parser_model_path
     Utils.increment_file_version parser_model_path
     toast.close
@@ -118,8 +129,9 @@ begin
 rescue => e
   STDERR.puts "Error: #{$!}\n\t#{e.backtrace.join("\n\t")}"
   response = { error: e.message }
+ensure
+  File.remove(lock_file)
 end
-
 
 # return to client
 cgi.out('application/json') { response.to_json }

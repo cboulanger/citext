@@ -36,12 +36,22 @@ try:
     if not os.path.exists(dir_name):
         os.makedirs(dir_name)
 
-    # pretty-print xml
+    # fix & pretty-print xml
     if file_name.endswith(".xml"):
         data = xml.dom.minidom.parseString(data)
         data = data.toprettyxml(encoding="utf-8", indent="    ").decode("utf-8")
         data = re.sub("\n *\n", "\n", data)
         data = re.sub("\n *\n", "\n", data)
+
+    # fix ttf
+    elif file_name.endswith(".ttx"):
+        # avoid anystyle ttx parser crashes:
+        # add space after "|"
+        data = [ f"{line} " if line.endswith("|") else line for line in data.split("\n") ]
+        # don't end with a "blank" line
+        if data[-1].startswith("blank"):
+            data.append("text          | ---")
+        data = "\n".join(data)
 
     file_path = os.path.join(dir_name, file_name)
 
