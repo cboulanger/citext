@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+
+# This is a very naive synchronization implementation which will probably fail in a lot of edge cases
+# In order to track file deletions, the .info files of deleted files have to be dragged around
+# potentially forever. But it does it job in most cases.
+
 import cgi
 import json
 import os
@@ -40,7 +45,7 @@ sse = SSE(channel_id)
 toast = Toast(sse, "info", "Synchronizing model data")
 
 
-def get_local_file_info(model_name):
+def get_local_sync_data(model_name):
     local_file_info = {}
     dir_list = [
         os.path.join(dataset_path, model_name, "anystyle", "finder"),
@@ -104,8 +109,7 @@ try:
 
     toast.show("Retrieving version information...")
 
-    # get lock, this has serious race condition issues, but good enough for now
-    # get lock, this has serious race condition issues, but good enough for now
+    # get lock, this has race condition issues, but good enough for now
     if client.check(remote_lock_path):
         raise Exception("Remote sync in progress. Try again later.")
     if os.path.exists(local_lock_path):
@@ -124,20 +128,26 @@ try:
     if client.check(remote_sync_data_path):
         client.download_sync(remote_sync_data_path, local_sync_data_path)
         with open(local_sync_data_path, "r") as f:
-            remote_file_info = json.load(f)
+            remote_sync_data = json.load(f)
+            remote_sync_data = remote_sync_data['files']
     else:
-        remote_file_info = {
-            "files": {}
+        remote_sync_data = {
         }
 
     # counter
     num_updated_locally = 0
     num_updated_remotely = 0
 
-    # download files that do not exist locally
-    for local_file_path in remote_file_info['files']:
-        file_info = remote_file_info['files'][local_file_path]
-        if not os.path.exists(local_file_path) and not 'deleted' in file_info:
+    # download files that do not exist locally and haven't been deleted since the last sync
+    for local_file_path in remote_sync_data:
+        r = remote_sync_data[local_file_path]
+        local_file_info_path = f"{local_file_path}.info"
+        if os.path.exists(local_file_info_path):
+            with open(local_file_info_path) as f:
+                l = json.load(f)
+        else:
+            l = {}
+        if not os.path.exists(local_file_path) and not 'deleted' in r and not 'deleted' in l:
             toast.show(f"Downloading missing {local_file_path}...")
             sys.stderr.write(f"Downloading missing {os.path.basename(local_file_path)} ...\n")
             remote_file_path = os.path.join(remote_path, local_file_path)
@@ -149,18 +159,18 @@ try:
                 pass
 
     # create local sync data and start synchronizing
-    local_file_info = get_local_file_info(model_name)
-    local_files = local_file_info.keys()
+    local_sync_data = get_local_sync_data(model_name)
+    local_files = local_sync_data.keys()
     num_files = len(local_files)
     for i, local_file_path in enumerate(local_files):
-        l = local_file_info[local_file_path]
+        l = local_sync_data[local_file_path]
         remote_file_path = f"{remote_path}/{local_file_path}"
         local_file_info_path = local_file_path + '.info'
         remote_file_info_path = remote_file_path + '.info'
         file_name = os.path.basename(local_file_path)
         # find corresponding entry in remote files
-        if local_file_path in remote_file_info['files'].keys():
-            r = remote_file_info['files'][local_file_path]
+        if local_file_path in remote_sync_data.keys():
+            r = remote_sync_data[local_file_path]
             # sys.stderr.write(f"{local_file_path}: Remote: {r['version']}, local: {l['version']}\n")
 
             # deal with deleted files
@@ -223,11 +233,11 @@ try:
                 client.upload_sync(remote_file_info_path, local_file_info_path)
 
     # update sync data
-    local_sync_data = {
-        "files": local_file_info
+    data = {
+        "files": local_sync_data
     }
     with open(local_sync_data_path, "w", encoding="utf-8") as f:
-        json.dump(local_sync_data, f)
+        json.dump(data, f)
     sys.stderr.write(f"Updating remote sync data...\n")
     client.upload_sync(remote_sync_data_path, local_sync_data_path)
 

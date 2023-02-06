@@ -31,7 +31,7 @@ begin
   # get lock
   lock_file = File.join('Dataset', model_name, "lock")
   if File.exist? lock_file
-    raise Exception("Training or sync in progress. Try again later.")
+    raise RuntimeError("Training or sync in progress. Try again later.")
   end
   FileUtils.touch(lock_file)
 
@@ -130,7 +130,9 @@ rescue => e
   STDERR.puts "Error: #{$!}\n\t#{e.backtrace.join("\n\t")}"
   response = { error: e.message }
 ensure
-  File.remove(lock_file)
+  if File.exist? lock_file
+    File.delete(lock_file)
+   end
 end
 
 # return to client
