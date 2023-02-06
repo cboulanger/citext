@@ -303,7 +303,8 @@
     </div>
     <!-- parser mode -->
     <div class="refs-button-grid anystyle visible-in-refs-mode enabled-if-selection">
-        <li><a data-tag="citation-number" onclick="GUI.addTag('citation-number');" href="#">
+        <li><a data-tag="citation-number" onclick="GUI.addTag('citation-number');" href="#"
+               title="The citation numer">
             Cit.Number
         </a></li>
         <li><a data-tag="author" onclick="GUI.addTag('author');" href="#">
@@ -345,7 +346,9 @@
         <li><a data-tag="volume" onclick="GUI.addTag('volume');" href="#">
             Volume
         </a></li>
-        <li><a data-tag="pages" onclick="GUI.addTag('pages');" href="#">
+        <li><a data-tag="pages" onclick="GUI.addTag('pages');" href="#"
+               data-toggle="tooltip"  data-placement="bottom"
+               title="For pages and other locators, such as sections, chapters or paragraphs">
             Pages
         </a></li>
         <li><a data-tag="doi" onclick="GUI.addTag('doi');" href="#">
@@ -357,23 +360,21 @@
         <li><a data-tag="url" onclick="GUI.addTag('url');" href="#">
             URL
         </a></li>
-        <li><a data-tag="note" onclick="GUI.addTag('note');" href="#">
+        <li><a data-tag="note" onclick="GUI.addTag('note');" href="#"
+            title="Commentary and other text that are not part of the reference">
             Note
         </a></li>
-        <li><a data-tag="backref" onclick="GUI.addTag('backref');" href="#">
+        <li><a data-tag="backref" onclick="GUI.addTag('backref');" href="#"
+            title="Backreferences such as 'op. cit.', 'ders.', 'a.a.O.'">
             BackRef
         </a></li>
-        <li><a data-tag="signal" onclick="GUI.addTag('signal');" href="#">
+        <li><a data-tag="signal" onclick="GUI.addTag('signal');" href="#"
+            title="Signal words and phrases introducing a citation, such as 'See also', 'Vgl.' etc. ">
             Signal
         </a></li>
-        <li><a data-tag="ignore" onclick="GUI.addTag('ignore');" href="#">
+        <li><a data-tag="ignore" onclick="GUI.addTag('ignore');" href="#"
+            title="Use this only for text that has no information (such as OCR noise etc.)">
             Ignore
-        </a></li>
-        <li><a data-tag="ref" onclick="GUI.addTag('ref');" href="#">
-            Is ref
-        </a></li>
-        <li><a data-tag="text" onclick="GUI.addTag('text');" href="#">
-            Is not ref
         </a></li>
     </div>
 

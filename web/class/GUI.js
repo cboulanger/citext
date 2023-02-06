@@ -16,6 +16,8 @@ class GUI {
       this.resetVersions()
       this._setupEventListeners();
       GUI.toggleMarkedUpView(false);
+
+      $('[data-toggle="tooltip"]').tooltip()
     });
 
     // Display SSE messages
