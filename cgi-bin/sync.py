@@ -186,7 +186,7 @@ try:
                     except Exception as e:
                         sys.stderr.write(f"{local_file_path}: Problem renaming: {str(e)} ...\n")
                     l = r
-                    with open(local_file_info_path) as f:
+                    with open(local_file_info_path, "w") as f:
                         json.dump(r, f)
                 else:
                     sys.stderr.write(f"{local_file_path}: Was deleted on server but file here is newer, recreating...\n")
