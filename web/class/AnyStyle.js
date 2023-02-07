@@ -29,10 +29,12 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
       tag = line.slice(0, pipe_idx).trim()
       line = line.slice(pipe_idx + 1).trim()
       let text = line
-      if (line === "") {
+      if (text === "") {
         tag = "blank"
+      } else {
+        // isn't there any simpler way of escaping HTML entities?
+        text = $(document.createElement('span')).text(text).html()
       }
-
       switch (tag) {
         case "blank":
           if (ttx_curr_tag) {
@@ -59,6 +61,7 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
             line += `<div class="page-marker" data-page="${this.numPages}"></div>`;
           }
         }
+        // add new line
         line += `<${tag}>${text}`
         ttx_curr_tag = tag
         ttx_after_blank = false
