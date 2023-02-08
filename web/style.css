@@ -98,7 +98,7 @@ nav {
     text-align: center;
 }
 
-#pdf-label, #text-label {
+#pdf-label, #text-label, #model-label {
     vertical-align: middle;
     padding-left: 10px;
     overflow: hidden;

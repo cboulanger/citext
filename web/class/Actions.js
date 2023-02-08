@@ -691,12 +691,10 @@ class Actions {
   }
 
   static setModel(name) {
-    $("#btn-model-" + State.model.name).removeClass("btn-dropdown-radio-selected");
+    const oldName = State.model.name
     State.model.name = name;
-    $("#btn-model-" + State.model.name).addClass("btn-dropdown-radio-selected");
     localStorage.setItem(Config.LOCAL_STORAGE.LAST_MODEL_NAME, name);
-    $(".model-training").toggleClass("ui-state-disabled", name === "default")
-    $("#btn-save").toggleClass("ui-state-disabled", name === "default")
+    GUI.setModel(name, oldName)
     if (State.webdav_storage) {
       Actions.syncDatasets()
     }

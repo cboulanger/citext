@@ -369,8 +369,20 @@ class GUI {
     localStorage.setItem(Config.LOCAL_STORAGE.TEXT_FILE_NAME, GUI.getAnnotation().getFileName());
   }
 
+  static setModelName(model_name) {
+
+  }
+
   static setTextFileName(filename) {
     $("#text-label").html(filename);
+  }
+
+  static setModel(name, oldName) {
+    $("#btn-model-" + oldName).removeClass("btn-dropdown-radio-selected");
+    $("#btn-model-" + name).addClass("btn-dropdown-radio-selected");
+    $("#model-label").html(name);
+    $(".model-training").toggleClass("ui-state-disabled", name === "default")
+    $("#btn-save").toggleClass("ui-state-disabled", name === "default")
   }
 
   static removeTextFile(doConfirm = true) {
