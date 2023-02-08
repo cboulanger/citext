@@ -6,4 +6,6 @@ class State {
   static zotero = {
     attachmentPath: null
   }
+
+  static webdav_storage;
 }

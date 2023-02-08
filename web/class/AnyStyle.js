@@ -249,6 +249,7 @@ class AnystyleParserAnnotation extends ParserAnnotation {
 
   export() {
     let textToExport = this.content
+      .replace(/&nbsp;/g, " ")// hack, this needs to be solved more systematically
       .split(/\n(?=<)/g)
       .filter(line => Boolean(line.trim()))
       .map(line => `<sequence>${line}</sequence>`)

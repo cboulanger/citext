@@ -56,8 +56,8 @@ class GUI {
           // } : undefined;
           toast = toastr[type](text, title, {
             positionClass: "toast-bottom-full-width",
-            timeOut: 0,
-            extendedTimeOut: 0,
+            timeOut: 5000,
+            extendedTimeOut: 5000,
             closeButton: true,
             onCloseClick: undefined
           })
@@ -85,6 +85,7 @@ class GUI {
           `<a class="dropdown-item" href="#" id="btn-model-${name}" onclick="Actions.setModel('${name}')">${name}</a>` +
           `</li>`)));
     }
+    $(".visible-if-webdav").toggleClass("hidden", !status.webdav_storage);
     Actions.setModel(model_name);
   }
 

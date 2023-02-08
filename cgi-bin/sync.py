@@ -42,7 +42,7 @@ remote_lock_path = os.path.join(remote_path, local_lock_path)
 remote_lock_created = False
 
 sse = SSE(channel_id)
-toast = Toast(sse, "info", "Synchronizing model data")
+toast = Toast(sse, "info", f"Synchronizing data for model '{model_name}'")
 
 
 def get_local_sync_data(model_name):

@@ -68,9 +68,9 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-model" id="model-names">
-                <li><a href="#" class="sync-datasets"
+                <li><a href="#" class="visible-if-webdav hidden"
                        onclick="Actions.syncDatasets()">Synchronize current model with repository</a></li>
-                <li role="separator" class="divider"></li>
+                <li role="separator" class="divider visible-if-webdav hidden"></li>
                 <li><a href="#" class="model-training"
                        onclick="Actions.trainModel()">Train current finder/parser model</a></li>
                 <li><a href="#" class="model-training"

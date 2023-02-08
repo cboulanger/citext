@@ -36,13 +36,18 @@ class Actions {
     // check if we have a backend and intialize UI
     fetch(Config.SERVER_URL + "status.py")
       .then(response => response.json())
-      .then(result => GUI._configureStatus(result))
+      .then(result => Actions._configureStatus(result))
 
     // check if Zotero is running
     fetch(Config.SERVER_URL + "zotero/proxy.py?connector/ping")
       .then(response => response.text())
       .then(result => $(".visible-if-zotero-connection")
         .toggleClass("hidden", !result.includes("Zotero Connector Server is Available")));
+  }
+
+  static _configureStatus(status) {
+    State.webdav_storage = status.webdav_storage
+    GUI._configureStatus(status)
   }
 
   static _hasTextInLocalStorage() {
@@ -625,13 +630,24 @@ class Actions {
     const data = annotation.export();
     if (!confirm(`Save current annotation to model dataset '${State.model.name}?'`)) return
     GUI.showSpinner(`Saving training data.`);
-    let body = JSON.stringify({filename, type, engine, data, modelName: State.model.name}) + "\n\n";
-    let response = await fetch(`${Config.SERVER_URL}/save.py`, {
-      method: 'post', body
-    })
-    GUI.hideSpinner();
-    let result = await response.json()
-    if (result.error) alert(result.error);
+    let result;
+    try {
+      let body = JSON.stringify({filename, type, engine, data, modelName: State.model.name}) + "\n\n";
+      let response = await fetch(`${Config.SERVER_URL}/save.py`, {
+        method: 'post', body
+      })
+      GUI.hideSpinner();
+      result = await response.json()
+    } catch (e) {
+      result = {
+        "error": e.message
+      }
+    }
+    if (result.error) {
+      alert(result.error);
+    } else if (State.webdav_storage) {
+      Actions.syncDatasets()
+    }
   }
 
 
@@ -681,6 +697,9 @@ class Actions {
     localStorage.setItem(Config.LOCAL_STORAGE.LAST_MODEL_NAME, name);
     $(".model-training").toggleClass("ui-state-disabled", name === "default")
     $("#btn-save").toggleClass("ui-state-disabled", name === "default")
+    if (State.webdav_storage) {
+      Actions.syncDatasets()
+    }
   }
 
   static async exportCsl() {
@@ -784,12 +803,12 @@ class Actions {
         }
         // this list needs to be generated programmatically
         const oneliners = [
-          'citation-number','signal','author','location','date','pages','title',
-          'publisher','note','container-title','collection-title','edition', 'journal',
-          'volume', 'authority', 'legal-ref', 'editor','backref'
+          'citation-number', 'signal', 'author', 'location', 'date', 'pages', 'title',
+          'publisher', 'note', 'container-title', 'collection-title', 'edition', 'journal',
+          'volume', 'authority', 'legal-ref', 'editor', 'backref'
         ];
         for (let tag of oneliners) {
-          docSpec.elements[tag] = {oneliner:true}
+          docSpec.elements[tag] = {oneliner: true}
         }
         this.__xmlEditor.postMessage(JSON.stringify({xml, docSpec}))
       } else if (message.xml) {
@@ -814,10 +833,15 @@ class Actions {
 
   static async syncDatasets() {
     //GUI.showSpinner("Synchronizing datasets with repository, please wait...")
+    const model_name = State.model.name
+    if (model_name == "default") {
+      console.log("Not syncing default model")
+      return
+    }
     try {
       await Actions.runCgiScript('sync.py', {
         channel_id: State.channel_id,
-        model_name: State.model.name
+        model_name
       })
     } finally {
       //GUI.hideSpinner()

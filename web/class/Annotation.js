@@ -139,6 +139,7 @@ class Annotation {
     return html
       .replace(Config.REGEX.DIV, "")
       .replace(Config.REGEX.BR, "\n")
+      .replace(/&nbsp;/g, " ")
       .replace(Config.REGEX.DATA_TAG_SPAN, "<$1>$2</$1>")
       .trim()
   }
