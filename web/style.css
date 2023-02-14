@@ -277,6 +277,14 @@ nav {
     background-color: rgb(246, 248, 248);
 }
 
+[data-tag="affiliation"] {
+    background-color: #ffbecf;
+}
+
+[data-tag="acknowledge"] {
+    background-color: #e0ffbe;
+}
+
 /* ref identification exparser */
 
 [data-tag="oth"] {

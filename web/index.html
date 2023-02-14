@@ -68,7 +68,7 @@
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-model" id="model-names">
-                <li><a href="#" class="visible-if-webdav hidden"
+                <li><a href="#" class="visible-if-webdav hidden model-training"
                        onclick="Actions.syncDatasets()">Synchronize current model with repository</a></li>
                 <li role="separator" class="divider visible-if-webdav hidden"></li>
                 <li><a href="#" class="model-training"
@@ -299,6 +299,12 @@
         </a></li>
         <li><a data-tag="abstract" onclick="GUI.addTag('abstract', true);" href="#">
             Abstract
+        </a></li>
+        <li><a data-tag="affiliation" onclick="GUI.addTag('affiliation', true);" href="#">
+            Affiliation
+        </a></li>
+        <li><a data-tag="acknowledge" onclick="GUI.addTag('acknowledge', true);" href="#">
+            Acknowledgemts
         </a></li>
     </div>
     <!-- parser mode -->
