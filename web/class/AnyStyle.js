@@ -138,7 +138,9 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
       .split("\n")
       .map(l => l.replace(/^(\S*)\s+\| /, ''))
       .filter(l => l.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START))
-    return maybeFn.length > 10 ? this.extractFootnotes(content) : this.extractLabelledLines(content, "ref")
+    return maybeFn.length > 10 ?
+      this.extractFootnotes(content) :
+      this.extractLabelledLines(content, "ref")
   }
 
   toParserAnnotation() {
@@ -149,6 +151,12 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
     return this;
   }
 
+  /**
+   *
+   * @param content
+   * @param {String|RegExp} label
+   * @returns {string}
+   */
   extractLabelledLines(content, label) {
     let inLabel = false;
     let lines = content.split("\n");
@@ -157,7 +165,7 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
       let l = line.match(/^(\S*)\s+\| ?(.*)/)
       if (l) {
         l[1] = l[1].trim()
-        if (l[1] === label) {
+        if (l[1].match(label)) {
           inLabel = true;
         } else if (l[1]) {
           inLabel = false
@@ -198,7 +206,7 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
         let isFnNum = text.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START)
         // && index > 0 && lines[index-1].length < line.length // heuristic needs to be tested
         let prefix = isFnNum ? "\n" : ""
-        if (label === "ref") {
+        if (label.match(/^ref/)) {
           in_ref = true
         } else if (label !== "") {
           in_ref = false
