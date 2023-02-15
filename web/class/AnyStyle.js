@@ -32,8 +32,7 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
       if (text === "") {
         tag = "blank"
       } else {
-        // isn't there any simpler way of escaping HTML entities?
-        text = $(document.createElement('span')).text(text).html()
+        line = text = Utils.encodeHtmlEntities(text)
       }
       switch (tag) {
         case "blank":
@@ -134,13 +133,17 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
 
   extractReferences() {
     let content = this.getContent()
+    // count the number of what could possibly be teh start of a footnote
     let maybeFn = content
       .split("\n")
       .map(l => l.replace(/^(\S*)\s+\| /, ''))
       .filter(l => l.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START))
-    return maybeFn.length > 10 ?
+    // if we find more than ten of these patterns, assume that this is a footnoted text
+    // and parse it accordingly
+    let text = maybeFn.length > 10 ?
       this.extractFootnotes(content) :
       this.extractLabelledLines(content, "ref")
+    return Utils.encodeHtmlEntities(text)
   }
 
   toParserAnnotation() {

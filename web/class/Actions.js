@@ -330,7 +330,7 @@ class Actions {
       });
       await Utils.upload(annoFile1, Config.URL.UPLOAD)
       content = await Actions.runCgiScript("find.rb", {filename, model: State.model.name})
-      console.log(content)
+      //console.log(content)
       filename = filename.replace(/(\.pdf)/, "").replace(/\.txt/, ".ttx")
       const annoFile2 = new File([content], filename, {
         lastModified: 1534584790000,
@@ -370,11 +370,11 @@ class Actions {
     }
     const msg = `Do you want to automatically label the references?`
     if (!confirm(msg)) return
-    const refs = annotation.getContent()
+    let refs = annotation.getContent()
       .replace(Config.REGEX.TAG_OPEN, "")
       .replace(Config.REGEX.TAG_CLOSE, " ")
-      .replace(/&amp;/g, "&")
       .trim()
+    refs = Utils.decodeHtmlEntities(refs)
     const params = {
       refs,
       model: State.model.name

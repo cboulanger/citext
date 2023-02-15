@@ -76,4 +76,14 @@ class Utils {
     const resultDoc = xsltProcessor.transformToDocument(xmlDoc);
     return new XMLSerializer().serializeToString(resultDoc);
   }
+
+  static encodeHtmlEntities(text) {
+    return $(document.createElement('span')).text(text).html()
+  }
+
+  static decodeHtmlEntities(text) {
+    const t = document.createElement('textarea');
+    t.innerHTML = text;
+    return t.value;
+  }
 }
