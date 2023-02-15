@@ -8,6 +8,7 @@ import cgi
 import json
 import os
 import sys
+import time
 import traceback
 from pathlib import Path
 
@@ -110,10 +111,22 @@ try:
     toast.show("Retrieving version information...")
 
     # get lock, this has race condition issues, but good enough for now
-    if client.check(remote_lock_path):
-        raise Exception("Remote sync in progress. Try again later.")
-    if os.path.exists(local_lock_path):
-        raise Exception("Local sync in progress. Try again later.")
+    attempts = 0
+    time_wait = 5
+    while True:
+        if client.check(remote_lock_path):
+            toast.show(f"Remote sync in progress. Retrying after {time_wait} seconds.")
+        elif os.path.exists(local_lock_path):
+            toast.show(f"Local sync in progress. Retrying after {time_wait} seconds.")
+        else:
+            break
+        attempts += 1
+        if attempts > 3:
+            # take over the lock, since it is probably stale
+            break
+        # wait and try again
+        time.sleep(time_wait)
+
     Path(local_lock_path).touch()
     local_lock_created = True
     client.upload_sync(remote_lock_path, local_lock_path)
