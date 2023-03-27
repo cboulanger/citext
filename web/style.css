@@ -286,15 +286,19 @@ nav {
 }
 
 [data-tag="acknowledge"] {
-    background-color: #e0ffbe;
+    background-color: #a3bd87;
 }
 
 [data-tag="bio"] {
-    background-color: #bdfd64;
+    background-color: #85b046;
+}
+
+[data-tag="toc"] {
+    background-color: #71c021;
 }
 
 [data-tag="index"] {
-    background-color: #88f811;
+    background-color: #6fa209;
 }
 
 /* ref identification exparser */

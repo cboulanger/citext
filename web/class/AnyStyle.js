@@ -22,7 +22,8 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
       let line = lines[i]
       let pipe_idx = line.indexOf("|");
       let tag;
-      if (pipe_idx < 0) {
+      if (pipe_idx < 0 || !line.match(/^\p{L}/u)) { // replace with propert TTX regex
+        // add tag formatting if missing
         pipe_idx = 14
         line = " ".repeat(pipe_idx) + "| " + line
       }
