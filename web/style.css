@@ -289,6 +289,14 @@ nav {
     background-color: #e0ffbe;
 }
 
+[data-tag="bio"] {
+    background-color: #bdfd64;
+}
+
+[data-tag="index"] {
+    background-color: #88f811;
+}
+
 /* ref identification exparser */
 
 [data-tag="oth"] {
