@@ -159,11 +159,10 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
     function* extractParagraphs(lines) {
       let output = ""
       for (let [index, line] of lines.entries()) {
-        console.log("Line:" + line)
         // simple heuristics - we should really have our own model for this
         let startsWithFnNumber = line.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START)
         let previousEndsWithDash = index > 0 && lines[index - 1].trim().match(Config.REGEX.DASH_AT_LINE_END)
-        let previousEndsWithDot = index > 0 && lines[index - 1].trim().match(/\.$/)
+        //let previousEndsWithDot = index > 0 && lines[index - 1].trim().match(/\.$/)
         let previousEndsWithNumberOrPunctuation = index > 0 && lines[index - 1].trim().match(/[\p{N}\p{P}]$/u)
         let isLongerThanPrevious = index > 0 && line.length - lines[index - 1].length > 3
         let isNewParagraph = isFootnote ?
