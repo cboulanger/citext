@@ -290,15 +290,15 @@ nav {
 }
 
 [data-tag="bio"] {
-    background-color: #85b046;
+    background-color: #67a2a9;
 }
 
 [data-tag="toc"] {
-    background-color: #71c021;
+    background-color: #7cb0e1;
 }
 
 [data-tag="index"] {
-    background-color: #6fa209;
+    background-color: #e8e5df;
 }
 
 /* ref identification exparser */
