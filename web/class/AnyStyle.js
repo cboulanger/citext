@@ -130,22 +130,6 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
     return this.content;
   }
 
-
-  extractReferences() {
-    let content = this.getContent()
-    // count the number of what could possibly be teh start of a footnote
-    let maybeFn = content
-      .split("\n")
-      .map(l => l.replace(/^(\S*)\s+\| /, ''))
-      .filter(l => l.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START))
-    // if we find more than ten of these patterns, assume that this is a footnoted text
-    // and parse it accordingly
-    let text = maybeFn.length > 10 ?
-      this.extractFootnotes(content) :
-      this.extractLabelledLines(content, "ref")
-    return Utils.encodeHtmlEntities(text)
-  }
-
   toParserAnnotation() {
     return new AnystyleParserAnnotation(this.extractReferences(), this.getFileName().replace(/.ttx/, ".xml"))
   }
@@ -154,15 +138,61 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
     return this;
   }
 
+  extractReferences() {
+    const lines = this.getContent().replace("\r", "").split("\n")
+    const footnoteLines = this.extractLabelledLines(lines, /^ref/)
+    const footnotes = this.splitParagraphs(footnoteLines, true)
+    const bibliographyLines = this.extractLabelledLines(lines, /^bib/)
+    const bibliography = this.splitParagraphs(bibliographyLines)
+    return Utils.encodeHtmlEntities(footnotes.concat(bibliography).join("\n"))
+  }
+
+  /**
+   * Given an array of lines, apply a number of heuristics to infer where one paragraph starts and ends
+   * @param {Array<String>} lines
+   * @param isFootnote
+   */
+  splitParagraphs(lines, isFootnote = false) {
+    if (lines.length === 0) return []
+    self = this
+
+    function* extractParagraphs(lines) {
+      let output = ""
+      for (let [index, line] of lines.entries()) {
+        console.log("Line:" + line)
+        // simple heuristics - we should really have our own model for this
+        let startsWithFnNumber = line.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START)
+        let previousEndsWithDash = index > 0 && lines[index - 1].trim().match(Config.REGEX.DASH_AT_LINE_END)
+        let previousEndsWithDot = index > 0 && lines[index - 1].trim().match(/\.$/)
+        let previousEndsWithNumberOrPunctuation = index > 0 && lines[index - 1].trim().match(/[\p{N}\p{P}]$/u)
+        let isLongerThanPrevious = index > 0 && line.length - lines[index - 1].length > 3
+        let isNewParagraph = isFootnote ?
+          (startsWithFnNumber && (isLongerThanPrevious || previousEndsWithNumberOrPunctuation)) :
+          (isLongerThanPrevious && !previousEndsWithDash)
+        if (isNewParagraph) {
+          if (output) {
+            yield output
+            output = ""
+          }
+        }
+        output += self.prepareUnwrapLine(line)
+      }
+      if (output) {
+        yield output
+      }
+    }
+    return Array.from(extractParagraphs(lines))
+  }
+
   /**
    *
-   * @param content
+   * @param {Array<String>} lines
    * @param {String|RegExp} label
-   * @returns {string}
+   * @returns {Array<String>}
    */
-  extractLabelledLines(content, label) {
+  extractLabelledLines(lines, label) {
+    if (lines.length === 0) return []
     let inLabel = false;
-    let lines = content.split("\n");
     let labelledLines = [];
     for (let line of lines) {
       let l = line.match(/^(\S*)\s+\| ?(.*)/)
@@ -172,32 +202,35 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
           inLabel = true;
         } else if (l[1]) {
           inLabel = false
-          // end of reference
-          labelledLines.push("\n")
         }
         if (inLabel) {
-          let text = this.prepareUnwrapLine(l[2])
-          labelledLines.push(text)
+          labelledLines.push(l[2])
         }
       }
     }
-    return labelledLines.join("")
+    return labelledLines
   }
 
   prepareUnwrapLine(line) {
     line = line.trim()
     if (line.match(Config.REGEX.DASH_AT_LINE_END)) {
-      line = line.replace(Config.REGEX.DASH_AT_LINE_END,'')
+      line = line.replace(Config.REGEX.DASH_AT_LINE_END, '')
     } else {
       line += " "
     }
     return line
   }
 
-  extractFootnotes(content) {
-    let lines = content.split("\n")
+  /**
+   * @param {Array<String>} lines
+   * @param {string|RegExp} footnoteLabel
+   * @return {Array<String>}
+   */
+  extractFootnotes(lines, footnoteLabel) {
+    if (lines.length === 0) return []
     let in_ref = false
     let self = this
+
     function* extractRefs(lines) {
       for (let line of lines) {
         let m = line.match(/^(\S*)\s+\| ?(.*)/)
@@ -209,7 +242,7 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
         let isFnNum = text.match(Config.REGEX.FOOTNOTE_NUMBER_AT_LINE_START)
         // && index > 0 && lines[index-1].length < line.length // heuristic needs to be tested
         let prefix = isFnNum ? "\n" : ""
-        if (label.match(/^ref/)) {
+        if (label.match(footnoteLabel)) {
           in_ref = true
         } else if (label !== "") {
           in_ref = false
@@ -220,11 +253,7 @@ class AnystyleFinderAnnotation extends FinderAnnotation {
       }
     }
 
-    let footnotes = "";
-    for (let line of extractRefs(lines)) {
-      footnotes += line
-    }
-    return footnotes
+    return Array.from(extractRefs(lines))
   }
 }
 

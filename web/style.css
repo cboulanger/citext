@@ -257,6 +257,10 @@ nav {
     background-color: rgb(155, 194, 229);
 }
 
+[data-tag="bib"] {
+    background-color: rgb(94, 146, 183);
+}
+
 [data-tag="author"] {
     background-color: #fabd11;
 }

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-./bin/update-permissions
+#./bin/update-permissions
 
 # configuration
 EXCITE_PORT=${EXCITE_PORT:-8000}
