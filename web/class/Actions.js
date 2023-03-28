@@ -186,7 +186,7 @@ class Actions {
     }
   }
 
-  static async loadFile(file) {
+  static loadFile(file) {
     return new Promise((resolve, reject) => {
       let fileName = file.name;
       // FIXME ad-hoc filename fix to remave ".pdfa" infix, needs to be configurable
@@ -250,6 +250,7 @@ class Actions {
             return reject(new Error("Unknown file type: " + fileType));
         }
         GUI.loadAnnotation(annotation);
+        console.log("Annotation loaded")
         resolve(annotation)
       }
       fileReader.readAsText(file, "UTF-8");

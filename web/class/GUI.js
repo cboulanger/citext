@@ -27,6 +27,7 @@ class GUI {
     source.addEventListener("open", () => {
       console.log("Initialized SSE connection with id " + channel_id)
     })
+    toastr.options.preventDuplicates = true;
     for (let type of ['success', 'info', 'warning', 'error']) {
       source.addEventListener(type, evt => {
         let data = evt.data;
@@ -56,8 +57,8 @@ class GUI {
           // } : undefined;
           toast = toastr[type](text, title, {
             positionClass: "toast-bottom-full-width",
-            timeOut: 5000,
-            extendedTimeOut: 5000,
+            timeOut: 30000,
+            extendedTimeOut: 30000,
             closeButton: true,
             onCloseClick: undefined
           })

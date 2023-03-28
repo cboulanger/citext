@@ -64,12 +64,12 @@
                     aria-haspopup="true" aria-expanded="false"
                     type="button">
                 <i class="fas fa-brain"></i>
-                <span class="button-label">Model</span>
+                <span class="button-label">Dataset/Model</span>
                 <span class="caret"></span>
             </button>
             <ul class="dropdown-menu" aria-labelledby="btn-model" id="model-names">
                 <li><a href="#" class="visible-if-webdav hidden model-training"
-                       onclick="Actions.syncDatasets()">Synchronize current model with repository</a></li>
+                       onclick="Actions.syncDatasets()">Synchronize current dataset with repository</a></li>
                 <li role="separator" class="divider visible-if-webdav hidden"></li>
                 <li><a href="#" class="model-training"
                        onclick="Actions.trainModel()">Train current finder/parser model</a></li>
@@ -78,6 +78,7 @@
                 <li><a href="#" class="model-training"
                        onclick="Actions.trainModel('parser')">Train parser model</a></li>
                 <li role="separator" class="divider"></li>
+                <li><a href="#" style="font-weight:bold">Datasets:</a></li>
             </ul>
         </div>
         <!-- finder menu -->
@@ -283,10 +284,13 @@
     </a></li>
     <div class="refs-button-grid anystyle visible-in-document-mode enabled-if-selection">
         <li><a data-tag="ref" onclick="GUI.addTag('ref', true);" href="#">
-            Footnote
+            Footnote Ref
         </a></li>
         <li><a data-tag="bib" onclick="GUI.addTag('bib', true);" href="#">
-            Bibliography
+            Bibliography Ref
+        </a></li>
+        <li><a data-tag="intext" onclick="GUI.addTag('intext', true);" href="#">
+            In-Text Ref
         </a></li>
         <li><a data-tag="meta" onclick="GUI.addTag('meta', true);" href="#">
             Meta
@@ -309,13 +313,13 @@
         <li><a data-tag="acknowledge" onclick="GUI.addTag('acknowledge', true);" href="#">
             Acknowledgemts
         </a></li>
-        <li><a data-tag="acknowledge" onclick="GUI.addTag('bio', true);" href="#">
+        <li><a data-tag="bio" onclick="GUI.addTag('bio', true);" href="#">
             Author-Bio
         </a></li>
-        <li><a data-tag="acknowledge" onclick="GUI.addTag('toc', true);" href="#">
+        <li><a data-tag="toc" onclick="GUI.addTag('toc', true);" href="#">
             Table of Contents
         </a></li>
-        <li><a data-tag="acknowledge" onclick="GUI.addTag('index', true);" href="#">
+        <li><a data-tag="index" onclick="GUI.addTag('index', true);" href="#">
             Index
         </a></li>
     </div>

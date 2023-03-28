@@ -261,6 +261,10 @@ nav {
     background-color: rgb(94, 146, 183);
 }
 
+[data-tag="intext"] {
+    background-color: rgb(44, 130, 183);
+}
+
 [data-tag="author"] {
     background-color: #fabd11;
 }
@@ -270,7 +274,7 @@ nav {
 }
 
 [data-tag="abstract"] {
-    background-color: #88e3c9;
+    background-color: #bed3ff;
 }
 
 [data-tag="meta"] {
@@ -286,15 +290,15 @@ nav {
 }
 
 [data-tag="acknowledge"] {
-    background-color: #a3bd87;
+    background-color: #cc7373;
 }
 
 [data-tag="bio"] {
-    background-color: #67a2a9;
+    background-color: #be293b;
 }
 
 [data-tag="toc"] {
-    background-color: #7cb0e1;
+    background-color: #b4b2ac;
 }
 
 [data-tag="index"] {
@@ -310,7 +314,7 @@ nav {
 /* ref segmentation anystyle */
 
 [data-tag="citation-number"] {
-    background-color: #b99a0e;
+    background-color: #b92d0e;
 }
 
 [data-tag="signal"] {
