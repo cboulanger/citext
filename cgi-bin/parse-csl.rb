@@ -12,7 +12,7 @@ model_name = cgi.params["model"].first
 
 # find refs in document
 if model_name != "default"
-  AnyStyle.parser.load_model File.join("Models", model_name, "parser.mod").untaint
+  AnyStyle.parser.load_model File.join("Models", model_name, "parser.mod")
 end
 
 doc = REXML::Document.new seq.gsub(/\n */,"")

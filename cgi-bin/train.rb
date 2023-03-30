@@ -5,6 +5,7 @@ require 'anystyle'
 require 'fileutils'
 require 'nokogiri'
 require 'rexml/document'
+require 'tempfile'
 require_relative '../lib/sse.rb'
 require_relative '../lib/utils.rb'
 
@@ -41,19 +42,18 @@ begin
     dataset_finder_dir = File.join('Dataset', model_name, 'anystyle', 'finder')
 
     # assemble finder annotations to train on
-    files = Dir[File.join(dataset_finder_dir, '*.ttx')].map(&:untaint)
+    files = Dir[File.join(dataset_finder_dir, '*.ttx')]
     merge_finder_datasets_file = File.join(dataset_finder_dir, merge_datasets_file)
     if File.exist? merge_finder_datasets_file
       File.read(merge_finder_datasets_file).split().each do |dataset|
         new_files = Dir[File.join('Dataset', dataset, 'anystyle', 'finder', '*.ttx')]
-        new_files = new_files.map(&:untaint)
         STDERR.puts "Merging #{new_files.length} files from parser dataset #{dataset}"
         files = (files + new_files).uniq
       end
     end
     toast.show "Using dataset with #{files.length} sequences, please wait..."
     AnyStyle.finder.train files
-    finder_model_path = File.join(Dir.pwd, 'Models', model_name, 'finder.mod').untaint
+    finder_model_path = File.join(Dir.pwd, 'Models', model_name, 'finder.mod')
     AnyStyle.finder.model.save finder_model_path
     Utils.increment_file_version finder_model_path
     toast.close
@@ -67,11 +67,11 @@ begin
     toast = Toast.new(sse, 'info', 'Training parser model')
     # assemble parser annotations to train on
     dataset_parser_dir = File.join(Dir.pwd, 'Dataset', model_name, 'anystyle', 'parser')
-    files = Dir[File.join(dataset_parser_dir, '*.xml')].map(&:untaint)
+    files = Dir[File.join(dataset_parser_dir, '*.xml')]
     merge_parser_datasets_file = File.join(dataset_parser_dir, merge_datasets_file)
     if File.exist? merge_parser_datasets_file
       File.read(merge_parser_datasets_file).split().each do |dataset|
-        new_files = Dir[File.join('Dataset', dataset, 'anystyle', 'parser', '*.xml')].map(&:untaint)
+        new_files = Dir[File.join('Dataset', dataset, 'anystyle', 'parser', '*.xml')]
         STDERR.puts "Merging #{new_files.length} files from parser dataset #{dataset}"
         files = (files + new_files).uniq
       end
@@ -114,7 +114,7 @@ begin
     STDERR.puts "#{tmp_xml_path} seems legit"
     toast.show "Using dataset with #{num_sequences.to_i} sequences, please wait..."
     AnyStyle.parser.train Wapiti::Dataset.open(tmp_xml_path)
-    parser_model_path = File.join(Dir.pwd, 'Models', model_name, 'parser.mod').untaint
+    parser_model_path = File.join(Dir.pwd, 'Models', model_name, 'parser.mod')
     AnyStyle.parser.model.save parser_model_path
     Utils.increment_file_version parser_model_path
     toast.close

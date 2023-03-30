@@ -9,7 +9,7 @@ server_file =""
 if params.has_key?"file"
     file = params["file"].first
     server_file = File.join('tmp', file.original_filename)
-    File.open(server_file.untaint, "wb") do |f|
+    File.open(server_file, "wb") do |f|
         f << file.read
     end
 end

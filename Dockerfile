@@ -19,5 +19,11 @@ ADD requirements.txt .
 RUN  pip install --upgrade pip && \
      pip install -r requirements.txt && \
      gem install anystyle nokogiri serrano remote_syslog_logger
+
+# for https://github.com/viig99/SymSpellCppPy:
+#  RUN  apt-get -y install git cmake wget && \
+#    wget -O resources/frequency_dictionary_de-100k.txt https://raw.githubusercontent.com/wolfgarbe/SymSpell/master/SymSpell.FrequencyDictionary/de-100k.txt && \
+#    pip install --upgrade SymSpellCppPy
+
 #RUN chmod 0777 app/tmp && chmod 0777 app/Dataset && chmod 00777 app/Models && chmod 0777 app/cgi-bin/*
 ENTRYPOINT ["python3", "/app/run-main.py"]
