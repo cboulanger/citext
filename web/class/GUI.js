@@ -136,7 +136,7 @@ class GUI {
             nodes.map(n => focusParent.parentNode.append(n))
           }
           if (focusParent.innerHTML.endsWith("<br>")) {
-            focusParent.innerHTML = focusParent.innerHTML.replace(/<br>$/,'')
+            focusParent.innerHTML = focusParent.innerHTML.replace(/<br>$/, '')
           }
           let range = new Range();
           range.setStart(newNode, 0);
@@ -191,30 +191,34 @@ class GUI {
     });
 
     // long-pressing selects span
-    let longpress = false;
-    textContent.on('click', e => {
-      if (!longpress) return;
-      let sel = window.getSelection();
-      //if (sel.toString().length) return; // so that <oth> element can be inserted into selection
 
-      if (!sel.focusNode || !sel.focusNode.parentElement) return;
-      let p = sel.focusNode.parentElement;
-      if (e.target !== p) return;
-      if (p.dataset && p.dataset.tag) {
-        sel.removeAllRanges();
-        let range = document.createRange();
-        range.selectNodeContents(p);
-        sel.addRange(range);
-        GUI._showPopupOnSelect(e);
-      }
-    });
-    let startTime, endTime;
-    $(document).on('pointerdown', function () {
+    let startTime, endTime, selectedText,orginalTarget;
+    $(document).on('pointerdown', e => {
       startTime = new Date().getTime();
+      selectedText = window.getSelection().toString();
+      orginalTarget = e.target;
     });
-    $(document).on('pointerup', function () {
+
+    $(document).on('pointerup', e => {
       endTime = new Date().getTime();
-      longpress = (endTime - startTime >= 500);
+      //console.log([selectedText, window.getSelection().toString(), endTime-startTime])
+      let longpress = (endTime - startTime >= 500) &&
+        selectedText === window.getSelection().toString();
+      if (longpress) {
+        selectedText = '';
+        let sel = window.getSelection();
+        if (!sel.focusNode || !sel.focusNode.parentElement) return;
+        let p = sel.focusNode.parentElement;
+        //console.log(orginalTarget, p)
+        //if (orginalTarget !== p) return;
+        if (p.dataset && p.dataset.tag) {
+          sel.removeAllRanges();
+          let range = document.createRange();
+          range.selectNodeContents(p);
+          sel.addRange(range);
+          GUI._showPopupOnSelect(e);
+        }
+      }
     });
 
     // synchronize scroll positions
