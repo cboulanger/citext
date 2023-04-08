@@ -345,9 +345,11 @@ class GUI {
     if (!(annotation instanceof Annotation)) {
       throw new Error("Argument must be annotation")
     }
+    GUI.showSpinner("Loading annotation")
     this.annotation = annotation;
     this.resetVersions()
     this.update()
+    GUI.hideSpinner()
   }
 
   static update() {

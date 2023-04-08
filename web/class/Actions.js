@@ -686,7 +686,9 @@ class Actions {
     } else {
       // save the state of the finder annotation and convert it to parser annotation
       this.__finderAnnotation = annotation
+      GUI.showSpinner("Converting...")
       annotation = annotation.toParserAnnotation()
+      GUI.hideSpinner()
     }
     GUI.loadAnnotation(annotation)
   }
