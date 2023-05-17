@@ -223,7 +223,6 @@ try:
                 num_updated_remotely += 1
                 client.upload_sync(remote_file_path, local_file_path)
 
-
             elif 'version' not in l or r['version'] > l['version']:
                 toast.show(f"Downloading {file_name} ({i + 1}/{num_files})")
                 sys.stderr.write(f"{local_file_path}: Remote file is newer, downloading...\n")
