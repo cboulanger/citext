@@ -30,16 +30,15 @@ class Actions {
       }
     })
 
-    // save text before leaving the page
-    window.onbeforeunload = Actions.saveToLocalStorage;
+    $(window).on('beforeunload', Actions.saveToLocalStorage);
 
     // check if we have a backend and intialize UI
-    fetch(Config.SERVER_URL + "status.py")
+    fetch(`${Config.SERVER_URL}/status.py`)
       .then(response => response.json())
       .then(result => Actions._configureStatus(result))
 
     // check if Zotero is running
-    fetch(Config.SERVER_URL + "zotero/proxy.py?connector/ping")
+    fetch(`${Config.SERVER_URL}/zotero/proxy.py?connector/ping`)
       .then(response => response.text())
       .then(result => $(".visible-if-zotero-connection")
         .toggleClass("hidden", !result.includes("Zotero Connector Server is Available")));
@@ -699,7 +698,7 @@ class Actions {
     localStorage.setItem(Config.LOCAL_STORAGE.LAST_MODEL_NAME, name);
     GUI.setModel(name, oldName)
     if (State.webdav_storage) {
-      Actions.syncDatasets()
+      //Actions.syncDatasets()
     }
   }
 

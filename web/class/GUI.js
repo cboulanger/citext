@@ -20,13 +20,23 @@ class GUI {
       $('[data-toggle="tooltip"]').tooltip()
     });
 
+    this.initSSE()
+  }
+
+  static initSSE() {
     // Display SSE messages
     const channel_id = State.channel_id = Math.random().toString().slice(2)
-    const source = new EventSource(Config.SERVER_URL + "sse.py?" + channel_id);
+    const source = new EventSource(`${Config.SERVER_URL}/sse.py?${channel_id}`);
     let toasts = {};
     source.addEventListener("open", () => {
       console.log("Initialized SSE connection with id " + channel_id)
     })
+    // end sse process when window closes
+    $(window).on('beforeunload', () => {
+      source.close()
+      navigator.sendBeacon(`${Config.SERVER_URL}/sse-terminate.py?${channel_id}`);
+    });
+
     toastr.options.preventDuplicates = true;
     for (let type of ['success', 'info', 'warning', 'error']) {
       source.addEventListener(type, evt => {
@@ -74,6 +84,39 @@ class GUI {
       console.error("EventSource failed:", evt);
     });
   }
+
+  static async loadStyleSheetAndHTMLFromCSV(csvFilePath, parentNodeId) {
+    try {
+      const response = await fetch(csvFilePath);
+      const csvContent = await response.text();
+      const lines = csvContent.split('\n');
+      const styleSheet = document.styleSheets[0];
+      const parentNode = document.getElementById(parentNodeId);
+
+      for (let i = 1; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (line === '') continue;
+
+        const [dataTag, backgroundColor, textContent, title] = line.split(',').map(value => value.trim().replace(/"/g, ''));
+
+        const rule = `[data-tag="${dataTag}"] { background-color: ${backgroundColor}; }`;
+        styleSheet.insertRule(rule, styleSheet.cssRules.length);
+
+        const liNode = document.createElement('li');
+        const aNode = document.createElement('a');
+        aNode.setAttribute('data-tag', dataTag);
+        aNode.setAttribute('onclick', 'GUI.addTag(\'' + dataTag + '\');');
+        aNode.setAttribute('href', '#');
+        aNode.textContent = textContent;
+        aNode.title = title;
+        liNode.appendChild(aNode);
+        parentNode.appendChild(liNode);
+      }
+    } catch (error) {
+      console.error('Failed to load the CSV file:', error);
+    }
+  }
+
 
   static _configureStatus(status) {
     $(".visible-if-backend").toggleClass("hidden", false);
@@ -192,7 +235,7 @@ class GUI {
 
     // long-pressing selects span
 
-    let startTime, endTime, selectedText,orginalTarget;
+    let startTime, endTime, selectedText, orginalTarget;
     $(document).on('pointerdown', e => {
       startTime = new Date().getTime();
       selectedText = window.getSelection().toString();

@@ -1,6 +1,6 @@
 class Config {
   /* The url of the exparser backend */
-  static SERVER_URL = "/cgi-bin/"
+  static SERVER_URL = "/cgi-bin"
   static URL = {
     SERVER: "/cgi-bin/",
     UPLOAD: "/cgi-bin/upload.rb",

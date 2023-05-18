@@ -51,6 +51,11 @@ while True:
         evt = json.loads(from_client)
         event_name = evt['name']
         event_data = evt['data']
+        if event_name == "sse_terminate":
+            conn.close()
+            message = f"SSE: Shutting down process for channel #{channel_id}.\n"
+            sys.stderr.write(message)
+            sys.exit(0)
         sys.stdout.write(f"event:{event_name}\ndata:{event_data}\n\n")
         sys.stdout.flush()
 
